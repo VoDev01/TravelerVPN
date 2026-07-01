@@ -1,24 +1,27 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import AppLayout from '@/components/AppLayout';
 import MainScreen from '@/screens/MainScreen';
-import LocationScreen from '@/screens/LocationScreen';
+import LocationDialogue from '@/components/LocationDialogue';
 import SettingsScreen from '@/screens/SettingsScreen';
 
 export default function AppNavigation() {
-  const [activeScreen, setActiveScreen] = useState<'main' | 'location' | 'settings'>('main');
+  const [activeScreen, setActiveScreen] = useState<'main' | 'settings'>('main');
+  const [showLocationDialogue, setShowLocationDialogue] = useState(false);
 
   return (
-    <View style={styles.container}>
+    <AppLayout>
       {activeScreen === 'main' && <MainScreen />}
-      {activeScreen === 'location' && <LocationScreen />}
       {activeScreen === 'settings' && <SettingsScreen />}
-    </View>
+      {showLocationDialogue && (
+        <LocationDialogue onClose={() => setShowLocationDialogue(false)} />
+      )}
+    </AppLayout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
   },
 });

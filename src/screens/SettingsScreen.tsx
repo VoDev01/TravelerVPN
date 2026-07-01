@@ -1,38 +1,54 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Image } from 'react-native';
 
 export default function SettingsScreen() {
-  const [languageEnabled, setLanguageEnabled] = React.useState(true);
-  const [setting1, setSetting1] = React.useState(true);
-  const [setting2, setSetting2] = React.useState(true);
-  const [setting3, setSetting3] = React.useState(true);
-  const [setting4, setSetting4] = React.useState(false);
+  const [setting1, setSetting1] = useState(true);
+  const [setting2, setSetting2] = useState(true);
+  const [setting3, setSetting3] = useState(true);
+  const [setting4, setSetting4] = useState(false);
+
+  const handleBackPress = () => {
+    // TODO: Navigate back
+  };
+
+  const handleLanguageChange = () => {
+    // TODO: Change language
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Настройки</Text>
+        <Text style={styles.headerTitle}>Settings</Text>
       </View>
 
       <View style={styles.settingsContainer}>
         <View style={styles.settingGroup}>
-          <Text style={styles.groupLabel}>Язык</Text>
+          <Text style={styles.groupLabel}>Language</Text>
           <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Скандинавский</Text>
-            <View style={styles.languageButton}>
-              <Text style={styles.languageText}>Русский</Text>
+            <Text style={styles.settingLabel}>Choose Language</Text>
+            <TouchableOpacity
+              style={styles.languageButton}
+              onPress={handleLanguageChange}
+            >
+              <Text style={styles.languageText}>English</Text>
               <Text style={styles.languageArrow}>▼</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.settingGroup}>
-          <Text style={styles.groupLabel}>Уведомления</Text>
+          <Text style={styles.groupLabel}>Notifications</Text>
           <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Показывать входящие сообщения</Text>
+            <View style={styles.settingLabelRow}>
+              <Image
+                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
+                style={styles.settingIcon}
+              />
+              <Text style={styles.settingLabel}>Connection alerts</Text>
+            </View>
             <Switch
               value={setting1}
               onValueChange={setSetting1}
@@ -41,7 +57,13 @@ export default function SettingsScreen() {
             />
           </View>
           <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Показывать логи подключения</Text>
+            <View style={styles.settingLabelRow}>
+              <Image
+                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
+                style={styles.settingIcon}
+              />
+              <Text style={styles.settingLabel}>Data usage alerts</Text>
+            </View>
             <Switch
               value={setting2}
               onValueChange={setSetting2}
@@ -50,7 +72,13 @@ export default function SettingsScreen() {
             />
           </View>
           <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Показывать долг/Ч подключения</Text>
+            <View style={styles.settingLabelRow}>
+              <Image
+                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
+                style={styles.settingIcon}
+              />
+              <Text style={styles.settingLabel}>Security warnings</Text>
+            </View>
             <Switch
               value={setting3}
               onValueChange={setSetting3}
@@ -61,9 +89,15 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.settingGroup}>
-          <Text style={styles.groupLabel}>Оповещения</Text>
+          <Text style={styles.groupLabel}>Privacy</Text>
           <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Основные уровни</Text>
+            <View style={styles.settingLabelRow}>
+              <Image
+                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
+                style={styles.settingIcon}
+              />
+              <Text style={styles.settingLabel}>Kill switch</Text>
+            </View>
             <Switch
               value={true}
               onValueChange={() => {}}
@@ -72,7 +106,13 @@ export default function SettingsScreen() {
             />
           </View>
           <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Важные события</Text>
+            <View style={styles.settingLabelRow}>
+              <Image
+                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
+                style={styles.settingIcon}
+              />
+              <Text style={styles.settingLabel}>DNS protection</Text>
+            </View>
             <Switch
               value={setting4}
               onValueChange={setSetting4}
@@ -110,15 +150,15 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   headerTitle: {
-    color: '#888',
-    fontSize: 16,
+    color: '#fff',
+    fontSize: 18,
     fontWeight: '600',
   },
   settingsContainer: {
     flex: 1,
   },
   settingGroup: {
-    marginBottom: 24,
+    marginBottom: 28,
   },
   groupLabel: {
     color: '#666',
@@ -132,30 +172,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    marginBottom: 8,
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  settingLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  settingIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 12,
+    tintColor: '#888',
   },
   settingLabel: {
     color: '#ccc',
-    fontSize: 13,
+    fontSize: 14,
     flex: 1,
-    marginRight: 10,
   },
   languageButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   languageText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
-    marginRight: 6,
+    marginRight: 8,
   },
   languageArrow: {
     color: '#888',
