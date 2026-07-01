@@ -1,49 +1,67 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Svg, Circle, Path } from 'react-native-svg';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 
 export default function MainScreen() {
+  const handleSettingsPress = () => {
+    // TODO: Navigate to settings
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.settingsIcon}>
-          <Text style={styles.iconText}>⚙️</Text>
+        <TouchableOpacity onPress={handleSettingsPress} style={styles.settingsIcon}>
+          <Image
+            source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PC9zdmc+' }}
+            style={styles.iconImage}
+          />
         </TouchableOpacity>
       </View>
 
       <View style={styles.statsContainer}>
-        <Text style={styles.statsText}>127 mph</Text>
-        <Text style={styles.statsText} style={{ color: '#ff4444' }}>
-          ↓ 10 mins
-        </Text>
-        <Text style={styles.altitudeText}>10016 ft</Text>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>0.00</Text>
+          <Text style={styles.statLabel}>Mbps</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>0.00</Text>
+          <Text style={styles.statLabel}>GB</Text>
+        </View>
+      </View>
+
+      <View style={styles.connectionStatus}>
+        <Text style={styles.connectionText}>Not Connected</Text>
+        <Text style={styles.ipText}>0.0.0.0</Text>
       </View>
 
       <View style={styles.mapContainer}>
-        <Text style={styles.airportName}>Frankfurt</Text>
-        <Svg width={150} height={150} viewBox="0 0 150 150">
-          <Circle cx="75" cy="75" r="70" fill="none" stroke="#666" strokeWidth="1" />
-          <Circle cx="75" cy="75" r="50" fill="none" stroke="#666" strokeWidth="1" />
-          <Path
-            d="M 75 30 L 85 75 L 75 100 L 65 75 Z"
-            fill="white"
-            stroke="white"
-            strokeWidth="2"
+        <Text style={styles.locationName}>Location</Text>
+        <View style={styles.mapPlaceholder}>
+          <Image
+            source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiPjwvc3ZnPg==' }}
+            style={styles.mapImage}
           />
-        </Svg>
+        </View>
       </View>
 
-      <TouchableOpacity style={styles.landingButton}>
-        <Text style={styles.landingButtonText}>Точка посадки 📍</Text>
+      <TouchableOpacity
+        style={styles.connectButton}
+        onPress={() => {
+          // TODO: Connect to VPN
+        }}
+      >
+        <Text style={styles.connectButtonText}>Connect</Text>
       </TouchableOpacity>
 
-      <View style={styles.storageContainer}>
-        <View style={styles.storageIcon}>
-          <Text style={styles.storageIconText}>📦</Text>
+      <View style={styles.dataContainer}>
+        <View style={styles.dataIcon}>
+          <Image
+            source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PC9zdmc+' }}
+            style={styles.dataIconImage}
+          />
         </View>
-        <Text style={styles.storageText}>4.5/5.0 GB</Text>
-        <View style={styles.storageBar}>
-          <View style={styles.storageBarFill} />
+        <Text style={styles.dataLabel}>Data Used</Text>
+        <View style={styles.dataBar}>
+          <View style={styles.dataBarFill} />
         </View>
       </View>
     </View>
@@ -59,7 +77,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     marginBottom: 30,
   },
@@ -69,69 +87,106 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconText: {
-    fontSize: 20,
+  iconImage: {
+    width: 24,
+    height: 24,
+    tintColor: '#999',
   },
   statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 30,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    color: '#00ff00',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  statLabel: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  connectionStatus: {
     alignItems: 'center',
     marginBottom: 30,
   },
-  statsText: {
-    color: '#00ff00',
+  connectionText: {
+    color: '#ff4444',
     fontSize: 14,
     fontWeight: '600',
   },
-  altitudeText: {
+  ipText: {
     color: '#888',
     fontSize: 12,
-    marginTop: 8,
+    marginTop: 4,
   },
   mapContainer: {
     alignItems: 'center',
     marginBottom: 30,
   },
-  airportName: {
+  locationName: {
     color: '#fff',
     fontSize: 16,
     marginBottom: 15,
     fontWeight: '600',
   },
-  landingButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+  mapPlaceholder: {
+    width: 150,
+    height: 150,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapImage: {
+    width: 150,
+    height: 150,
+  },
+  connectButton: {
+    backgroundColor: 'rgba(0, 255, 0, 0.2)',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     alignSelf: 'center',
     marginBottom: 30,
+    borderWidth: 1,
+    borderColor: '#00ff00',
   },
-  landingButtonText: {
-    color: '#fff',
-    fontSize: 14,
+  connectButtonText: {
+    color: '#00ff00',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  storageContainer: {
+  dataContainer: {
     marginTop: 'auto',
     marginBottom: 20,
   },
-  storageIcon: {
+  dataIcon: {
     marginBottom: 10,
   },
-  storageIconText: {
-    fontSize: 24,
+  dataIconImage: {
+    width: 24,
+    height: 24,
+    tintColor: '#888',
   },
-  storageText: {
+  dataLabel: {
     color: '#888',
     fontSize: 12,
     marginBottom: 8,
   },
-  storageBar: {
+  dataBar: {
     height: 6,
     backgroundColor: '#333',
     borderRadius: 3,
     overflow: 'hidden',
   },
-  storageBarFill: {
+  dataBarFill: {
     height: '100%',
     backgroundColor: '#00ff00',
-    width: '90%',
+    width: '0%',
   },
 });
