@@ -1,15 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Image } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
   const [setting1, setSetting1] = useState(true);
   const [setting2, setSetting2] = useState(true);
   const [setting3, setSetting3] = useState(true);
   const [setting4, setSetting4] = useState(false);
-
-  const handleBackPress = () => {
-    // TODO: Navigate back
-  };
 
   const handleLanguageChange = () => {
     // TODO: Change language
@@ -18,9 +14,6 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
       </View>
 
@@ -43,10 +36,6 @@ export default function SettingsScreen() {
           <Text style={styles.groupLabel}>Notifications</Text>
           <View style={styles.settingItem}>
             <View style={styles.settingLabelRow}>
-              <Image
-                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
-                style={styles.settingIcon}
-              />
               <Text style={styles.settingLabel}>Connection alerts</Text>
             </View>
             <Switch
@@ -58,10 +47,6 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.settingItem}>
             <View style={styles.settingLabelRow}>
-              <Image
-                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
-                style={styles.settingIcon}
-              />
               <Text style={styles.settingLabel}>Data usage alerts</Text>
             </View>
             <Switch
@@ -73,10 +58,6 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.settingItem}>
             <View style={styles.settingLabelRow}>
-              <Image
-                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
-                style={styles.settingIcon}
-              />
               <Text style={styles.settingLabel}>Security warnings</Text>
             </View>
             <Switch
@@ -92,10 +73,6 @@ export default function SettingsScreen() {
           <Text style={styles.groupLabel}>Privacy</Text>
           <View style={styles.settingItem}>
             <View style={styles.settingLabelRow}>
-              <Image
-                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
-                style={styles.settingIcon}
-              />
               <Text style={styles.settingLabel}>Kill switch</Text>
             </View>
             <Switch
@@ -107,10 +84,6 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.settingItem}>
             <View style={styles.settingLabelRow}>
-              <Image
-                source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PC9zdmc+' }}
-                style={styles.settingIcon}
-              />
               <Text style={styles.settingLabel}>DNS protection</Text>
             </View>
             <Switch
@@ -151,8 +124,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 32,
   },
   settingsContainer: {
     flex: 1,
@@ -161,11 +133,9 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   groupLabel: {
-    color: '#666',
-    fontSize: 12,
-    fontWeight: '600',
+    color: '#fff',
+    fontSize: 18,
     marginBottom: 12,
-    textTransform: 'uppercase',
   },
   settingItem: {
     flexDirection: 'row',
