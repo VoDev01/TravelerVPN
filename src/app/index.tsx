@@ -4,12 +4,12 @@ import DownArrowIcon from "@/assets/images/line-md_arrow-down.svg";
 import UpArrowIcon from "@/assets/images/line-md_arrow-up.svg";
 import GasPumpIcon from "@/assets/images/osmic_fuel-14.svg";
 import PlaneIcon from "@/assets/images/Plane.svg";
+import LocationDialogue from "@/components/LocationDialogue";
+import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function MainScreen() {
-  const handleSettingsPress = () => {
-    // TODO: Navigate to settings
-  };
+  const [serverSelectionDialogueVisible, setServerSelectionDialogueVisible] = useState(false);
 
   return (
     <>
@@ -42,7 +42,7 @@ export default function MainScreen() {
         <TouchableOpacity
           style={styles.chooseServerButton}
           onPress={() => {
-            // TODO: Connect to VPN
+            setServerSelectionDialogueVisible(true)
           }}
         >
           <Text style={styles.chooseServerButtonText}>Choose server</Text>
@@ -57,6 +57,11 @@ export default function MainScreen() {
           <View style={styles.dataBarFill} />
         </View>
       </View>
+
+      <LocationDialogue
+            dialogueVisible={serverSelectionDialogueVisible}
+            onClose={() => {setServerSelectionDialogueVisible(!serverSelectionDialogueVisible)}}
+          />
     </>
   );
 }

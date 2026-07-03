@@ -1,72 +1,93 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
-interface LocationDialogueProps {
-  onClose?: () => void;
+type LocationDialogueProps = {
+  dialogueVisible: boolean; 
+  onClose: () => void;
 }
 
-export default function LocationDialogue({ onClose }: LocationDialogueProps) {
+const LocationDialogue = (props: LocationDialogueProps) => {
   return (
-    <View style={styles.container}>
-      <View style={styles.backdrop} />
-      <View style={styles.dialogue}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>✕</Text>
-          </TouchableOpacity>
-        </View>
+    <Modal
+      animationType='fade'
+      transparent={true}
+      backdropColor={"#272727"}
+      visible={props.dialogueVisible}
+      onRequestClose={props.onClose}
+    >
+      <TouchableWithoutFeedback onPress={props.onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Доступные аэропорты</Text>
 
-        <Text style={styles.title}>Доступные аэропорты</Text>
+          <ScrollView style={styles.airportList} showsVerticalScrollIndicator={false}>
+            {/* Здесь будут элементы списка */}
+          </ScrollView>
 
-        <View style={styles.content}>
-          {/* Content will be populated dynamically */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={props.onClose}>
+              <Text style={styles.buttonText}>Отмена</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.button, styles.submitButton]}>
+              <Text style={styles.buttonText}>Выбрать</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
+      </TouchableWithoutFeedback>
+    </Modal>
   );
 }
 
+export default LocationDialogue;
+
 const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFillObject,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 100,
   },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  modalContainer: {
+    width: "86%",
+    height: 512,
+    backgroundColor: '#272727ff',
+    borderRadius: 16,
+    padding: 24,
+    justifyContent: 'space-between',
   },
-  dialogue: {
-    width: '85%',
-    backgroundColor: '#252525',
-    borderRadius: 12,
-    padding: 20,
-    zIndex: 101,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+  modalTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
     marginBottom: 16,
   },
-  closeButton: {
-    width: 32,
-    height: 32,
+  airportList: {
+    flex: 1,
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  button: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeButtonText: {
-    color: '#888',
-    fontSize: 20,
+  cancelButton: {
+    backgroundColor: '#E53E3E',
   },
-  title: {
-    color: '#fff',
+  submitButton: {
+    backgroundColor: '#32D74B',
+  },
+  buttonText: {
+    color: '#000',
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  content: {
-    minHeight: 200,
   },
 });
