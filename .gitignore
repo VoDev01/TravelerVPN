@@ -231,3 +231,7 @@ __pycache__/
 /scripts/cxx-api/codegen
 
 /assets
+/drizzle
+
+i18next.config.ts
+*.env
