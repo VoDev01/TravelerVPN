@@ -15,6 +15,10 @@ export const ServerRepository = {
 		return await ServerDAO.getById(id);
 	},
 
+	async deleteAll() {
+		return await ServerDAO.deleteAll();
+	},
+
 	async add(server: NewServer) {
 		await ServerDAO.add(server);
 	},

@@ -17,6 +17,7 @@ import { ServerEntity } from "../../db/schema/servers";
 const enum ServerConnection {
 	NOT_SELECTED,
 	SELECTED,
+	CONNECTING,
 	CONNECTED,
 }
 
@@ -29,7 +30,6 @@ export default function MainScreen() {
 	const [serverSelectionDialogueVisible, setServerSelectionDialogueVisible] =
 		useState(false);
 	const { time, start, stop, formatTime, reset } = useDurationWatch();
-	const { getServerById } = useServers();
 	const [server, setServer] = useState<ServerEntityConnection>({
 		connectionState: ServerConnection.NOT_SELECTED,
 		entity: null,
@@ -39,6 +39,8 @@ export default function MainScreen() {
 
 	const theme = useAppTheme();
 	const styles = createStyles(theme);
+
+	const { getServerById } = useServers();
 
 	return (
 		<>
@@ -77,7 +79,7 @@ export default function MainScreen() {
 						reset();
 						start();
 						setServer({
-							connectionState: ServerConnection.CONNECTED,
+							connectionState: ServerConnection.CONNECTING,
 							entity: server.entity,
 						});
 					}}>
@@ -85,7 +87,8 @@ export default function MainScreen() {
 					<EarthIcon width={240} height={240} />
 				</TouchableOpacity>
 
-				{server.connectionState === ServerConnection.CONNECTED ? (
+				{server.connectionState === ServerConnection.CONNECTED ||
+				server.connectionState === ServerConnection.CONNECTING ? (
 					<TouchableOpacity
 						style={styles.disconnectButton}
 						onPress={() => {
@@ -125,12 +128,20 @@ export default function MainScreen() {
 				onClose={() => {
 					setServerSelectionDialogueVisible(!serverSelectionDialogueVisible);
 				}}
-				onSelect={async (server) => {
+				onSelect={async (serverId: number) => {
 					setServerSelectionDialogueVisible(!serverSelectionDialogueVisible);
-					setServer({
-						connectionState: ServerConnection.SELECTED,
-						entity: await getServerById(server),
-					});
+					try {
+						const serverEntity = await getServerById(serverId);
+
+						if (serverEntity) {
+							setServer({
+								connectionState: ServerConnection.SELECTED,
+								entity: serverEntity,
+							});
+						}
+					} catch (e) {
+						console.error(e);
+					}
 				}}
 			/>
 		</>

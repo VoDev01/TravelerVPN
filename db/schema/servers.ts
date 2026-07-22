@@ -7,6 +7,7 @@ export const serversTable = sqliteTable("servers", {
 	locationCountry: text().notNull(),
 	ipv4: text().notNull(),
 	ipv6: text().notNull(),
+	connectionLink: text().notNull(),
 });
 
 export type ServerEntity = InferSelectModel<typeof serversTable>;

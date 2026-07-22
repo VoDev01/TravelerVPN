@@ -23,6 +23,10 @@ export const ServerDAO = {
 		await db.delete(serversTable).where(eq(serversTable.id, server.id));
 	},
 
+	async deleteAll() {
+		await db.delete(serversTable);
+	},
+
 	async update(server: ServerEntity) {
 		await db
 			.update(serversTable)
