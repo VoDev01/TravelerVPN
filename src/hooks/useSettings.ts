@@ -9,6 +9,7 @@ export interface SettingsState {
 	securityWarnings: boolean;
 	killSwitch: boolean;
 	serverHoppingInterval: number;
+	clientUuid: string;
 }
 
 const DEFAULT_SETTINGS: SettingsState = {
@@ -19,6 +20,7 @@ const DEFAULT_SETTINGS: SettingsState = {
 	securityWarnings: false,
 	killSwitch: false,
 	serverHoppingInterval: 0,
+	clientUuid: "",
 };
 
 const STORAGE_KEY = "@user_settings";

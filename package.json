@@ -12,6 +12,7 @@
     "drizzle-orm": "^1.0.0-rc.4",
     "drizzle-seed": "^0.3.1",
     "expo": "~57.0.2",
+    "expo-asset": "~57.0.6",
     "expo-constants": "~57.0.2",
     "expo-device": "~57.0.0",
     "expo-drizzle-studio-plugin": "^0.2.1",

@@ -1,4 +1,5 @@
 import HomeIcon from "@/assets/images/Home.svg";
+import GearIcon from "@/assets/images/mdi_gear.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import AppLayout from "@/components/AppLayout";
 import { ThemeProvider, useAppTheme } from "@/ThemeContext";
@@ -6,10 +7,9 @@ import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import { createBottomTabNavigator } from "expo-router/build/react-navigation/bottom-tabs";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
 import { LogBox } from "react-native";
 import MainScreen from ".";
-import { db, expoDb, seedDatabase } from "../../db/client";
+import { db, expoDb } from "../../db/client";
 import migrations from "../../drizzle/migrations";
 import "../../i18n";
 import SettingsScreen from "./settings";
@@ -38,16 +38,25 @@ function LayoutContent() {
 					tabBarStyle: {
 						backgroundColor: theme.colors.card,
 						borderRadius: 32,
-						height: 65,
 						borderTopWidth: 0,
 						paddingBottom: 0,
 						overflow: "hidden",
 						elevation: 0,
+						justifyContent: "center",
+						alignItems: "center",
 					},
 
-					tabBarShowLabel: true,
+					tabBarShowLabel: false,
 					tabBarActiveTintColor: theme.colors.important2,
 					tabBarInactiveTintColor: theme.colors.secondary,
+
+					tabBarIconStyle: {
+						width: "100%",
+						height: "100%",
+						justifyContent: "center",
+						alignItems: "center",
+					},
+
 					tabBarItemStyle: {
 						paddingVertical: 8,
 					},
@@ -56,13 +65,20 @@ function LayoutContent() {
 					name="Home"
 					component={MainScreen}
 					options={{
-						title: "Home",
-						tabBarIcon({ color, size }) {
-							<HomeIcon color={color} width={size} height={size} />;
-						},
+						tabBarIcon: ({ color }) => (
+							<HomeIcon color={color} width={36} height={36} />
+						),
 					}}
 				/>
-				<Tab.Screen name="Settings" component={SettingsScreen} />
+				<Tab.Screen
+					name="Settings"
+					component={SettingsScreen}
+					options={{
+						tabBarIcon: ({ color }) => (
+							<GearIcon color={color} width={36} height={36} />
+						),
+					}}
+				/>
 			</Tab.Navigator>
 		</AppLayout>
 	);
@@ -77,15 +93,6 @@ export default function Layout() {
 	} as any);
 
 	useDrizzleStudio(expoDb);
-
-	useEffect(() => {
-		async function initDb() {
-			if (success) {
-				await seedDatabase();
-			}
-		}
-		initDb();
-	}, [success]);
 
 	return (
 		<ThemeProvider>

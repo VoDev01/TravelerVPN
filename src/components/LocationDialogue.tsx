@@ -1,11 +1,13 @@
 import { useAppTheme } from "@/ThemeContext";
 import { CustomTheme } from "@/constants/theme";
 import { useServers } from "@/hooks/useServers";
-import { useState } from "react";
+import { Suspense, use, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+	ActivityIndicator,
 	FlatList,
 	Modal,
+	RefreshControl,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
@@ -20,29 +22,69 @@ type LocationDialogueProps = {
 	onSelect: (serverId: number) => void;
 };
 
-const LocationDialogue = (props: LocationDialogueProps) => {
-	const { servers, addServer } = useServers();
+function LocationDialogueContent({
+	onSelect,
+}: {
+	onSelect: (id: number) => void;
+}) {
 	const [selectedServer, setSelectedServer] = useState<number>();
-	const { t } = useTranslation();
+	const [isRefreshing, setIsRefreshing] = useState(false);
+
+	const { serversPromise, refreshServers } = useServers();
+	const servers = use(serversPromise);
 
 	const theme = useAppTheme();
 	const styles = createStyle(theme);
 
+	const onRefresh = async () => {
+		setIsRefreshing(true);
+		await refreshServers();
+		setIsRefreshing(false);
+	};
+
+	const handlePress = (id: number) => {
+		setSelectedServer(id);
+		onSelect(id);
+	};
+
 	const renderServer = ({ item }: { item: ServerEntity }) => {
 		const borderColor =
 			item.id === selectedServer ? theme.colors.important2 : "#00000000";
-
 		return (
 			<TouchableOpacity
 				key={item.id}
-				style={[styles.serverRow, { borderColor: borderColor }]}
-				onPress={() => setSelectedServer(item.id)}>
+				style={[styles.serverRow, { borderColor }]}
+				onPress={() => handlePress(item.id)}>
 				<View style={styles.serverInfo}>
 					<Text style={styles.serverLocation}>{item.locationCountry}</Text>
 				</View>
 			</TouchableOpacity>
 		);
 	};
+
+	return (
+		<FlatList
+			data={servers}
+			keyExtractor={(item) => item.id.toString()}
+			renderItem={renderServer}
+			ItemSeparatorComponent={() => <View style={{ height: 24 }} />}
+			refreshControl={
+				<RefreshControl
+					refreshing={isRefreshing}
+					onRefresh={onRefresh}
+					tintColor={theme.colors.background}
+				/>
+			}
+		/>
+	);
+}
+
+const LocationDialogue = (props: LocationDialogueProps) => {
+	const [selectedServer, setSelectedServer] = useState<number>();
+	const { t } = useTranslation();
+
+	const theme = useAppTheme();
+	const styles = createStyle(theme);
 
 	return (
 		<Modal
@@ -56,13 +98,34 @@ const LocationDialogue = (props: LocationDialogueProps) => {
 					<View style={styles.modalContainer}>
 						<Text style={styles.modalTitle}>{t("available_servers")}</Text>
 
-						<FlatList
-							data={servers}
-							style={styles.serverList}
-							showsVerticalScrollIndicator={false}
-							contentContainerStyle={styles.serverListScrollContent}
-							renderItem={renderServer}
-						/>
+						<View
+							style={{
+								flex: 1,
+								justifyContent: "center",
+							}}>
+							<Suspense
+								fallback={
+									<View
+										style={{
+											padding: 20,
+											alignItems: "center",
+											justifyContent: "center",
+										}}>
+										<ActivityIndicator
+											size="large"
+											color={theme.colors.background}
+										/>
+										<Text style={{ color: theme.colors.text, marginTop: 10 }}>
+											Загрузка серверов...
+										</Text>
+									</View>
+								}>
+								<LocationDialogueContent
+									onSelect={(id) => setSelectedServer(id)}
+								/>
+							</Suspense>
+						</View>
+
 						<View style={styles.buttonContainer}>
 							<TouchableOpacity
 								style={[styles.button, styles.cancelButton]}
