@@ -10,8 +10,7 @@ export const db = drizzle(expoDb);
 
 export const seedDatabase = async () => {
 	try {
-		// Проверяем, есть ли уже данные, чтобы не дублировать их при каждом перезапуске
-		const existingServers = await db.select().from(serversTable).limit(1);
+		const existingServers = await db.select().from(serversTable);
 
 		if (existingServers.length === 0) {
 			console.log(

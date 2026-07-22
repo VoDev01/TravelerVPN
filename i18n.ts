@@ -19,6 +19,7 @@ const fallbackResources = {
 			section_privacy: "Privacy",
 			section_language: "Language",
 
+			theme: "Theme",
 			choose_language: "Choose Language",
 			show_connection_speed: "Show connection speed",
 			show_region: "Show region",
@@ -51,6 +52,7 @@ const fallbackResources = {
 			section_privacy: "Приватность",
 			section_language: "Язык",
 
+			theme: "Тема",
 			choose_language: "Локализация",
 			show_connection_speed: "Показывать скорость соединения",
 			show_region: "Показывать регион",

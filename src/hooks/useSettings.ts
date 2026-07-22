@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 
 export interface SettingsState {
+	theme: string;
 	localization: string;
 	connectionAlerts: boolean;
 	dataUsageAlerts: boolean;
@@ -11,6 +12,7 @@ export interface SettingsState {
 }
 
 const DEFAULT_SETTINGS: SettingsState = {
+	theme: "dark",
 	localization: "en",
 	connectionAlerts: false,
 	dataUsageAlerts: false,
@@ -49,11 +51,9 @@ export const useSettings = () => {
 		try {
 			const updatedSettings = { ...settings, [key]: value };
 
-			// Сначала обновляем стейт для быстрого отклика UI
 			setSettings(updatedSettings);
 
-			// Затем сохраняем весь объект в AsyncStorage
-			await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
+			AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
 		} catch (e) {
 			console.log(`Error saving setting [${key}]: ${e}`);
 		}

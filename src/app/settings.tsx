@@ -1,6 +1,10 @@
+import SunIcon from "@/assets/images/bi_sun.svg";
 import ChevronDown from "@/assets/images/chevron_down.svg";
 import ChevronUp from "@/assets/images/chevron_up.svg";
+import MoonIcon from "@/assets/images/tabler_moon-filled.svg";
 import { Locales } from "@/constants/locales";
+import { CustomTheme } from "@/constants/theme";
+import { useAppTheme, useAppThemeToggle } from "@/ThemeContext";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,6 +14,7 @@ import {
 	Switch,
 	Text,
 	TextInput,
+	TouchableOpacity,
 	View,
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
@@ -23,6 +28,10 @@ export default function SettingsScreen() {
 	const [language, setLanguage] = useState(settings.localization);
 	const [languages, setLanguages] = useState(Locales);
 
+	const theme = useAppTheme();
+	const { themeName, updateTheme } = useAppThemeToggle();
+	const styles = createStyles(theme);
+
 	if (isLoading) {
 		return <ActivityIndicator size="large" />;
 	}
@@ -33,6 +42,19 @@ export default function SettingsScreen() {
 				<Text style={styles.headerTitle}>{t("settings_title")}</Text>
 			</View>
 			<ScrollView style={styles.settingsContainer}>
+				<View style={styles.settingGroup}>
+					<Text style={styles.groupLabel}>{t("section_ui")}</Text>
+					<View style={styles.settingItem}>
+						<Text style={styles.settingLabel}>{t("theme")}</Text>
+						<TouchableOpacity
+							style={styles.settingThemeButton}
+							onPress={() => {
+								updateTheme("theme", themeName === "dark" ? "light" : "dark");
+							}}>
+							{themeName === "dark" ? <SunIcon /> : <MoonIcon />}
+						</TouchableOpacity>
+					</View>
+				</View>
 				<View style={styles.settingGroup}>
 					<Text style={styles.groupLabel}>{t("section_language")}</Text>
 					<View style={styles.settingItem}>
@@ -57,7 +79,7 @@ export default function SettingsScreen() {
 							setItems={setLanguages}
 							listMode="SCROLLVIEW"
 							style={{
-								backgroundColor: "#000",
+								backgroundColor: theme.colors.primary,
 								borderColor: "transparent",
 								minHeight: 40,
 								width: 125,
@@ -67,12 +89,12 @@ export default function SettingsScreen() {
 								borderRadius: 12,
 							}}
 							dropDownContainerStyle={{
-								backgroundColor: "#000",
+								backgroundColor: theme.colors.primary,
 								borderColor: "#3D3D3D",
 								borderRadius: 12,
 							}}
 							textStyle={{
-								color: "#FFFFFF",
+								color: theme.colors.text,
 								fontSize: 14,
 							}}
 							ArrowDownIconComponent={() => (
@@ -95,8 +117,10 @@ export default function SettingsScreen() {
 							onValueChange={(value) =>
 								updateSetting("connectionAlerts", value)
 							}
-							trackColor={{ false: "#000", true: "#666" }}
-							thumbColor={settings.connectionAlerts ? "#00ff00" : "#999"}
+							trackColor={{ false: theme.colors.background, true: "#666" }}
+							thumbColor={
+								settings.connectionAlerts ? theme.colors.important2 : "#999"
+							}
 						/>
 					</View>
 					<View style={styles.settingItem}>
@@ -106,8 +130,10 @@ export default function SettingsScreen() {
 						<Switch
 							value={settings.dataUsageAlerts}
 							onValueChange={(value) => updateSetting("dataUsageAlerts", value)}
-							trackColor={{ false: "#000", true: "#666" }}
-							thumbColor={settings.dataUsageAlerts ? "#00ff00" : "#999"}
+							trackColor={{ false: theme.colors.background, true: "#666" }}
+							thumbColor={
+								settings.dataUsageAlerts ? theme.colors.important2 : "#999"
+							}
 						/>
 					</View>
 					<View style={styles.settingItem}>
@@ -119,8 +145,10 @@ export default function SettingsScreen() {
 							onValueChange={(value) =>
 								updateSetting("securityWarnings", value)
 							}
-							trackColor={{ false: "#000", true: "#666" }}
-							thumbColor={settings.securityWarnings ? "#00ff00" : "#999"}
+							trackColor={{ false: theme.colors.background, true: "#666" }}
+							thumbColor={
+								settings.securityWarnings ? theme.colors.important2 : "#999"
+							}
 						/>
 					</View>
 				</View>
@@ -134,8 +162,10 @@ export default function SettingsScreen() {
 						<Switch
 							value={settings.killSwitch}
 							onValueChange={(value) => updateSetting("killSwitch", value)}
-							trackColor={{ false: "#000", true: "#999" }}
-							thumbColor={settings.killSwitch ? "#00ff00" : "#999"}
+							trackColor={{ false: theme.colors.background, true: "#666" }}
+							thumbColor={
+								settings.killSwitch ? theme.colors.important2 : "#999"
+							}
 						/>
 					</View>
 					<View style={styles.settingItem}>
@@ -158,9 +188,9 @@ export default function SettingsScreen() {
 									}}
 									style={styles.settingInput}
 									inputMode="numeric"
-									cursorColor={"#fff"}
+									cursorColor={theme.colors.text}
 									maxLength={4}
-									selectionColor={"#000"}
+									selectionColor={theme.colors.primary}
 								/>
 								<Text style={styles.settingLabelFrag}>{t("minutes")}</Text>
 							</View>
@@ -172,83 +202,92 @@ export default function SettingsScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
-	settingsContainer: {
-		flex: 1,
-		rowGap: 12,
-	},
-	header: {
-		flexDirection: "row",
-		alignItems: "center",
-		marginBottom: 30,
-	},
-	backButton: {
-		width: 40,
-		height: 40,
-		justifyContent: "center",
-		alignItems: "center",
-		marginRight: 12,
-	},
-	backButtonText: {
-		color: "#fff",
-		fontSize: 24,
-	},
-	headerTitle: {
-		color: "#fff",
-		fontSize: 32,
-	},
-	settingGroup: {
-		marginBottom: 28,
-	},
-	groupLabel: {
-		color: "#ccc",
-		fontSize: 20,
-		marginBottom: 12,
-	},
-	settingItem: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		backgroundColor: "rgba(255, 255, 255, 0.06)",
-		borderRadius: 12,
-		paddingVertical: 14,
-		paddingHorizontal: 14,
-		marginBottom: 12,
-		width: "100%",
-	},
-	settingLabelRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		flex: 1,
-	},
-	settingLabel: {
-		color: "#ccc",
-		fontSize: 16,
-		flex: 1,
-	},
-	settingLabelFrag: {
-		color: "#ccc",
-		fontSize: 16,
-	},
-	languageSelect: {
-		backgroundColor: "#969696",
-		width: 48,
-		height: 48,
-		borderRadius: 12,
-	},
-	settingInput: {
-		backgroundColor: "#000",
-		borderRadius: 12,
-		width: 60,
-		color: "#fff",
-		paddingHorizontal: 12,
-	},
-	settingContainerInput: {
-		flexDirection: "row",
-		flex: 1,
-		alignItems: "center",
-		columnGap: 12,
-		justifyContent: "flex-end",
-	},
-});
+const createStyles = (theme: CustomTheme) =>
+	StyleSheet.create({
+		settingsContainer: {
+			flex: 1,
+			rowGap: 12,
+		},
+		header: {
+			flexDirection: "row",
+			alignItems: "center",
+			marginBottom: 30,
+		},
+		backButton: {
+			width: 40,
+			height: 40,
+			justifyContent: "center",
+			alignItems: "center",
+			marginRight: 12,
+		},
+		backButtonText: {
+			color: theme.colors.text,
+			fontSize: 24,
+		},
+		headerTitle: {
+			color: theme.colors.text,
+			fontSize: 32,
+		},
+		settingGroup: {
+			marginBottom: 28,
+		},
+		groupLabel: {
+			color: theme.colors.text,
+			fontSize: 20,
+			marginBottom: 12,
+		},
+		settingItem: {
+			flexDirection: "row",
+			justifyContent: "space-between",
+			alignItems: "center",
+			backgroundColor: theme.colors.card,
+			borderRadius: 12,
+			paddingVertical: 14,
+			paddingHorizontal: 14,
+			marginBottom: 12,
+			width: "100%",
+		},
+		settingLabelRow: {
+			flexDirection: "row",
+			alignItems: "center",
+			justifyContent: "space-between",
+			flex: 1,
+		},
+		settingLabel: {
+			color: theme.colors.secondary,
+			fontSize: 16,
+			flex: 1,
+		},
+		settingLabelFrag: {
+			color: theme.colors.secondary,
+			fontSize: 16,
+		},
+		languageSelect: {
+			backgroundColor: "#969696",
+			width: 48,
+			height: 48,
+			borderRadius: 12,
+		},
+		settingInput: {
+			backgroundColor: theme.colors.primary,
+			borderRadius: 12,
+			width: 60,
+			color: theme.colors.text,
+			paddingHorizontal: 12,
+		},
+		settingContainerInput: {
+			flexDirection: "row",
+			flex: 1,
+			alignItems: "center",
+			columnGap: 12,
+			justifyContent: "flex-end",
+		},
+		settingThemeButton: {
+			justifyContent: "center",
+			alignItems: "center",
+			borderRadius: 12,
+			height: 48,
+			width: 48,
+			backgroundColor: theme.colors.text,
+		},
+	});
