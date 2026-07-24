@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { ServerRepository } from "../../db/repository/ServerRepository";
 import { ServerEntity } from "../../db/schema/servers";
 import { useSettings } from "./useSettings";
@@ -20,7 +20,10 @@ export function useServers() {
 		if (typeof response !== "object" || !response) {
 			throw new Error("Server didn't return any response.");
 		}
-		updateSetting("clientUuid", response.uuid);
+
+		if (response.uuid && response.uuid !== settings.clientUuid) {
+			updateSetting("clientUuid", response.uuid);
+		}
 
 		await Promise.all(
 			response.connectionLinks.map((link) =>
@@ -31,47 +34,47 @@ export function useServers() {
 					ipv6: "::",
 				}),
 			),
-		);
+		).catch((e) => console.error(e));
 
 		setVersion(0);
 
 		return await ServerRepository.getAll();
 	}
 
-	const serversPromise = useMemo(() => {
-		return ServerRepository.getAll().then(async (localServers) => {
-			const url = new URL(
-				`${process.env.EXPO_PUBLIC_BACKEND_BASEURL}${process.env.EXPO_PUBLIC_BACKEND_CONNECTION_LINKS}`,
-			);
-			const formBody = new URLSearchParams({
-				userId: settings.clientUuid || "",
-			});
+	const fetchServers = useCallback(async (): Promise<ServerEntity[]> => {
+		const localServers = await ServerRepository.getAll();
+		if (localServers && localServers.length > 0) {
+			return localServers;
+		}
 
-			try {
-				const fetchRequest = fetch(url, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-					},
-					body: formBody.toString(),
-				});
+		const url = `${process.env.EXPO_PUBLIC_BACKEND_BASEURL}${process.env.EXPO_PUBLIC_BACKEND_CONNECTION_LINKS}`;
+		const formBody = new URLSearchParams();
+		formBody.append("userId", settings.clientUuid || "");
 
-				const response = await fetchRequest;
-				if (!response.ok)
-					throw new Error(
-						`Server responded with an error: ${response.statusText}`,
-					);
-
-				const json: VpnResponse = await response.json();
-
-				console.debug(json);
-
-				return await processResponse(json);
-			} catch (e) {
-				console.error(e);
-			}
+		const response = await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+			},
+			body: formBody.toString(),
 		});
-	}, [settings.clientUuid, version]);
+
+		if (!response.ok)
+			throw new Error(
+				`Network response error: ${response.status} ${response.statusText}.`,
+			);
+		const json = await response.json();
+
+		return await processResponse(json);
+	}, [settings.clientUuid]);
+
+	const connectToServer = useCallback(
+		async (server: ServerEntity): Promise<boolean> => {
+			// TODO: Implement native module with vpn client or use library
+			return false;
+		},
+		[settings.clientUuid],
+	);
 
 	const refreshServers = useCallback(async () => {
 		try {
@@ -83,7 +86,8 @@ export function useServers() {
 	}, []);
 
 	return {
-		serversPromise,
+		fetchServers,
+		connectToServer,
 		refreshServers,
 		deleteServer: ServerRepository.delete,
 		addServer: ServerRepository.add,

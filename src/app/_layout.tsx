@@ -4,12 +4,11 @@ import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import AppLayout from "@/components/AppLayout";
 import { ThemeProvider, useAppTheme } from "@/ThemeContext";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
-import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import { createBottomTabNavigator } from "expo-router/build/react-navigation/bottom-tabs";
 import * as SplashScreen from "expo-splash-screen";
 import { LogBox } from "react-native";
 import MainScreen from ".";
-import { db, expoDb } from "../../db/client";
+import { db } from "../../db/client";
 import migrations from "../../drizzle/migrations";
 import "../../i18n";
 import SettingsScreen from "./settings";
@@ -91,8 +90,6 @@ export default function Layout() {
 		},
 		migrations: migrations.migrations,
 	} as any);
-
-	useDrizzleStudio(expoDb);
 
 	return (
 		<ThemeProvider>

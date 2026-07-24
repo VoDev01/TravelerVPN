@@ -16,6 +16,7 @@ import { ServerEntity } from "../../db/schema/servers";
 
 const enum ServerConnection {
 	NOT_SELECTED,
+	DISCONNECTED,
 	SELECTED,
 	CONNECTING,
 	CONNECTED,
@@ -95,8 +96,8 @@ export default function MainScreen() {
 							reset();
 							stop();
 							setServer({
-								connectionState: ServerConnection.NOT_SELECTED,
-								entity: null,
+								connectionState: ServerConnection.DISCONNECTED,
+								entity: server.entity,
 							});
 						}}>
 						<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>
@@ -122,7 +123,6 @@ export default function MainScreen() {
 					<View style={styles.dataBarFill} />
 				</View>
 			</View>
-
 			<LocationDialogue
 				dialogueVisible={serverSelectionDialogueVisible}
 				onClose={() => {
@@ -144,6 +144,7 @@ export default function MainScreen() {
 					}
 				}}
 			/>
+			)
 		</>
 	);
 }

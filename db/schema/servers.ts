@@ -1,8 +1,8 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const serversTable = sqliteTable("servers", {
-	id: int().primaryKey({ autoIncrement: true }),
+	id: integer("id").primaryKey({ autoIncrement: true }),
 	locationCity: text(),
 	locationCountry: text().notNull(),
 	ipv4: text().notNull(),
