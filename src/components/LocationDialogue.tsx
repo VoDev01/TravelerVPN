@@ -1,7 +1,7 @@
 import { useAppTheme } from "@/ThemeContext";
 import { CustomTheme } from "@/constants/theme";
 import { useServers } from "@/hooks/useServers";
-import { Suspense, use, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
@@ -28,18 +28,43 @@ function LocationDialogueContent({
 	onSelect: (id: number) => void;
 }) {
 	const [selectedServer, setSelectedServer] = useState<number>();
-	const [isRefreshing, setIsRefreshing] = useState(false);
-
-	const { serversPromise, refreshServers } = useServers();
-	const servers = use(serversPromise);
+	const [isRefreshing, setIsRefreshing] = useState(true);
+	const [servers, setServers] = useState<ServerEntity[]>([]);
+	const { fetchServers, refreshServers } = useServers();
 
 	const theme = useAppTheme();
 	const styles = createStyle(theme);
 
+	useEffect(() => {
+		let isMounted = true;
+
+		fetchServers()
+			.then((data) => {
+				if (isMounted) {
+					setServers(data);
+					setIsRefreshing(false);
+				}
+			})
+			.catch((err) => {
+				console.error(err);
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, [fetchServers]);
+
 	const onRefresh = async () => {
 		setIsRefreshing(true);
-		await refreshServers();
-		setIsRefreshing(false);
+		try {
+			await refreshServers();
+			const freshData = await fetchServers();
+			setServers(freshData);
+		} catch (err) {
+			console.error(err);
+		} finally {
+			setIsRefreshing(false);
+		}
 	};
 
 	const handlePress = (id: number) => {
@@ -61,6 +86,21 @@ function LocationDialogueContent({
 			</TouchableOpacity>
 		);
 	};
+
+	if (isRefreshing)
+		return (
+			<View
+				style={{
+					padding: 20,
+					alignItems: "center",
+					justifyContent: "center",
+				}}>
+				<ActivityIndicator size="large" color={theme.colors.background} />
+				<Text style={{ color: theme.colors.text, marginTop: 10 }}>
+					Загрузка серверов...
+				</Text>
+			</View>
+		);
 
 	return (
 		<FlatList
@@ -103,27 +143,9 @@ const LocationDialogue = (props: LocationDialogueProps) => {
 								flex: 1,
 								justifyContent: "center",
 							}}>
-							<Suspense
-								fallback={
-									<View
-										style={{
-											padding: 20,
-											alignItems: "center",
-											justifyContent: "center",
-										}}>
-										<ActivityIndicator
-											size="large"
-											color={theme.colors.background}
-										/>
-										<Text style={{ color: theme.colors.text, marginTop: 10 }}>
-											Загрузка серверов...
-										</Text>
-									</View>
-								}>
-								<LocationDialogueContent
-									onSelect={(id) => setSelectedServer(id)}
-								/>
-							</Suspense>
+							<LocationDialogueContent
+								onSelect={(id) => setSelectedServer(id)}
+							/>
 						</View>
 
 						<View style={styles.buttonContainer}>
