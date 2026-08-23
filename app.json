@@ -18,7 +18,16 @@
 				"monochromeImage": "./assets/images/android-icon-monochrome.png"
 			},
 			"predictiveBackGestureEnabled": false,
-			"package": "com.anonymous.TravelerVPN"
+			"package": "com.vodev.TravelerVPN",
+			"permissions": [
+				"INTERNET",
+				"FOREGROUND_SERVICE",
+				"FOREGROUND_SERVICE_SYSTEM_EXEMPTED",
+				"BIND_VPN_SERVICE",
+				"POST_NOTIFICATIONS",
+				"ACCESS_NETWORK_STATE",
+				"ACCESS_WIFI_STATE"
+			]
 		},
 		"web": {
 			"output": "static",
@@ -34,7 +43,10 @@
 					"imageWidth": 76
 				}
 			],
-			"expo-sqlite"
+			"expo-sqlite",
+			"expo-secure-store",
+			"./plugins/withAndroidPlugin.ts",
+			"./plugins/withAndroidAbiFilters.ts"
 		],
 		"experiments": {
 			"typedRoutes": true,

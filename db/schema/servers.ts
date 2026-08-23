@@ -3,11 +3,10 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const serversTable = sqliteTable("servers", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
-	locationCity: text(),
-	locationCountry: text().notNull(),
-	ipv4: text().notNull(),
-	ipv6: text().notNull(),
+	flag: text(),
+	remark: text().notNull(),
 	connectionLink: text().notNull(),
+	inboundId: integer("inbound_id"),
 });
 
 export type ServerEntity = InferSelectModel<typeof serversTable>;

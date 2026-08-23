@@ -1,7 +1,14 @@
 import { useAppTheme } from "@/ThemeContext";
 import { CustomTheme } from "@/constants/theme";
+import {
+	ServerMetrics,
+	useBackendClient,
+	VpnResponse,
+} from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
-import { useEffect, useState } from "react";
+import { ActivationState, Client } from "@stomp/stompjs";
+import * as SecureStore from "expo-secure-store";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
@@ -14,34 +21,63 @@ import {
 	TouchableWithoutFeedback,
 	View,
 } from "react-native";
+import SockJS from "sockjs-client";
 import { ServerEntity } from "../../db/schema/servers";
 
-type LocationDialogueProps = {
+type MetricsServerData = ServerEntity & {
+	metrics: ServerMetrics | null;
+};
+
+type ServersDialogueProps = {
 	dialogueVisible: boolean;
 	onClose: () => void;
 	onSelect: (serverId: number) => void;
+	onServerResponse: () => Promise<VpnResponse | undefined>;
 };
 
-function LocationDialogueContent({
+function ServersDialogueContent({
 	onSelect,
+	onServerResponse,
+	wsConnect,
 }: {
 	onSelect: (id: number) => void;
+	onServerResponse: () => Promise<VpnResponse | undefined>;
+	wsConnect: (servers: MetricsServerData[]) => void;
 }) {
 	const [selectedServer, setSelectedServer] = useState<number>();
 	const [isRefreshing, setIsRefreshing] = useState(true);
-	const [servers, setServers] = useState<ServerEntity[]>([]);
+	const [servers, setServers] = useState<MetricsServerData[]>([]);
 	const { fetchServers, refreshServers } = useServers();
+	const { ws } = useBackendClient();
 
 	const theme = useAppTheme();
 	const styles = createStyle(theme);
 
+	const wsEstablishConnection = useCallback(() => {
+		const response = ws();
+		response.then((v) => {
+			if (v?.status === "success") {
+				console.info("Ws connection authorized");
+			} else {
+				console.error("Could not establish ws connection");
+			}
+		});
+	}, []);
+
 	useEffect(() => {
 		let isMounted = true;
 
-		fetchServers()
+		fetchServers(onServerResponse())
 			.then((data) => {
 				if (isMounted) {
-					setServers(data);
+					const renderData: MetricsServerData[] = [];
+					data.forEach((server) => {
+						renderData.push({
+							...server,
+							metrics: null,
+						});
+					});
+					setServers(renderData);
 					setIsRefreshing(false);
 				}
 			})
@@ -54,12 +90,25 @@ function LocationDialogueContent({
 		};
 	}, [fetchServers]);
 
+	useEffect(() => {
+		wsEstablishConnection();
+		wsConnect(servers);
+	}, []);
+
 	const onRefresh = async () => {
 		setIsRefreshing(true);
 		try {
 			await refreshServers();
-			const freshData = await fetchServers();
-			setServers(freshData);
+			await fetchServers(onServerResponse()).then((data) => {
+				const renderData: MetricsServerData[] = [];
+				data.forEach((server) => {
+					renderData.push({
+						...server,
+						metrics: null,
+					});
+				});
+				setServers(renderData);
+			});
 		} catch (err) {
 			console.error(err);
 		} finally {
@@ -72,7 +121,7 @@ function LocationDialogueContent({
 		onSelect(id);
 	};
 
-	const renderServer = ({ item }: { item: ServerEntity }) => {
+	const renderServer = ({ item }: { item: MetricsServerData }) => {
 		const borderColor =
 			item.id === selectedServer ? theme.colors.important2 : "#00000000";
 		return (
@@ -81,7 +130,8 @@ function LocationDialogueContent({
 				style={[styles.serverRow, { borderColor }]}
 				onPress={() => handlePress(item.id)}>
 				<View style={styles.serverInfo}>
-					<Text style={styles.serverLocation}>{item.locationCountry}</Text>
+					<Text style={styles.serverInfoText}>{item.remark}</Text>
+					<Text style={styles.serverInfoText}>{item.metrics?.latencyMs}</Text>
 				</View>
 			</TouchableOpacity>
 		);
@@ -119,12 +169,107 @@ function LocationDialogueContent({
 	);
 }
 
-const LocationDialogue = (props: LocationDialogueProps) => {
+const ServersDialogue = (props: ServersDialogueProps) => {
 	const [selectedServer, setSelectedServer] = useState<number>();
 	const { t } = useTranslation();
 
 	const theme = useAppTheme();
 	const styles = createStyle(theme);
+
+	const { wsLogout } = useBackendClient();
+
+	const wsClose = useCallback(() => {
+		const response = wsLogout();
+		response.then((v) => {
+			if (v?.status === "success") {
+				console.info("Ws connection closed successfully");
+				wsClientRef.current?.deactivate();
+				wsClientRef.current = null;
+			} else console.info(`Ws connection closed with an error: ${v?.message}`);
+		});
+	}, []);
+
+	const [closeWs, setCloseWs] = useState(false);
+
+	const wsClientRef = useRef<Client | null>(null);
+	const [wsUrl, setWsUrl] = useState(
+		process.env.EXPO_PUBLIC_BACKEND_WSURL ??
+			"http://10.0.2.2:8080/ws" + "/data/metrics",
+	);
+
+	const wsConnect = (servers: MetricsServerData[]) => {
+		if (wsClientRef.current?.state === ActivationState.ACTIVE) return;
+
+		wsClientRef.current = new Client({
+			webSocketFactory: () => new SockJS(wsUrl),
+			debug: (str) => console.log("STOMP Log:", str),
+			reconnectDelay: 5000,
+			heartbeatIncoming: 4000,
+			heartbeatOutgoing: 4000,
+		});
+
+		wsClientRef.current.onConnect = (frame) => {
+			console.info("Ws connection opened");
+
+			wsClientRef.current?.subscribe("/data/metrics", (message) => {
+				try {
+					const data = JSON.parse(message.body);
+					if (data.type === "client_traffic") {
+						(data.data as Array<any>).forEach((metric) => {
+							servers
+								.filter((v) => {
+									v.inboundId == metric.inboundId;
+								})
+								.forEach((v) => {
+									v.metrics = {
+										latencyMs: metric.delay,
+										status: metric.status,
+									};
+								});
+						});
+					}
+				} catch (e) {
+					console.error(e);
+				}
+			});
+
+			SecureStore.getItemAsync("USER_ID").then((userId) => {
+				wsClientRef.current?.publish({
+					destination: "/app/metrics",
+					body: JSON.stringify({
+						type: "client_creds",
+						data: { userId },
+					}),
+				});
+			});
+		};
+
+		wsClientRef.current.onStompError = (frame) => {
+			console.error(`STOMP Error: ${frame.headers["message"]}`);
+			return () => {
+				wsClientRef.current?.deactivate();
+				wsClientRef.current = null;
+			};
+		};
+
+		wsClientRef.current.onDisconnect = () => {
+			console.info("Ws connection closed");
+		};
+
+		wsClientRef.current.activate();
+
+		return () => {
+			wsClientRef.current?.deactivate();
+			wsClientRef.current = null;
+		};
+	};
+
+	useEffect(() => {
+		if (closeWs) {
+			wsClose();
+			setCloseWs(false);
+		}
+	}, [closeWs]);
 
 	return (
 		<Modal
@@ -143,15 +288,20 @@ const LocationDialogue = (props: LocationDialogueProps) => {
 								flex: 1,
 								justifyContent: "center",
 							}}>
-							<LocationDialogueContent
+							<ServersDialogueContent
 								onSelect={(id) => setSelectedServer(id)}
+								onServerResponse={() => props.onServerResponse()}
+								wsConnect={(servers) => wsConnect(servers)}
 							/>
 						</View>
 
 						<View style={styles.buttonContainer}>
 							<TouchableOpacity
 								style={[styles.button, styles.cancelButton]}
-								onPress={props.onClose}>
+								onPress={() => {
+									props.onClose();
+									setCloseWs(true);
+								}}>
 								<Text style={styles.buttonText}>{t("cancel")}</Text>
 							</TouchableOpacity>
 
@@ -172,7 +322,7 @@ const LocationDialogue = (props: LocationDialogueProps) => {
 	);
 };
 
-export default LocationDialogue;
+export default ServersDialogue;
 
 const createStyle = (theme: CustomTheme) =>
 	StyleSheet.create({
@@ -240,8 +390,9 @@ const createStyle = (theme: CustomTheme) =>
 		},
 		serverInfo: {
 			flex: 1,
+			justifyContent: "space-around",
 		},
-		serverLocation: {
+		serverInfoText: {
 			color: theme.colors.text,
 			fontSize: 16,
 			fontWeight: "600",

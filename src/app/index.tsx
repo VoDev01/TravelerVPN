@@ -4,12 +4,16 @@ import DownArrowIcon from "@/assets/images/line-md_arrow-down.svg";
 import UpArrowIcon from "@/assets/images/line-md_arrow-up.svg";
 import GasPumpIcon from "@/assets/images/osmic_fuel-14.svg";
 import PlaneIcon from "@/assets/images/Plane.svg";
-import LocationDialogue from "@/components/LocationDialogue";
+import ServersDialogue from "@/components/ServersDialogue";
 import { CustomTheme } from "@/constants/theme";
+import { useBackendClient } from "@/hooks/useBackendClient";
 import { useDurationWatch } from "@/hooks/useDurationWatch";
+import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { useAppTheme } from "@/ThemeContext";
-import { useState } from "react";
+import * as Crypto from "expo-crypto";
+import * as SecureStore from "expo-secure-store";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ServerEntity } from "../../db/schema/servers";
@@ -37,11 +41,26 @@ export default function MainScreen() {
 	});
 
 	const { t } = useTranslation();
-
 	const theme = useAppTheme();
 	const styles = createStyles(theme);
 
 	const { getServerById } = useServers();
+	const [userId, setUserId] = useState("");
+	const { runXray, stopXray } = useLibxray();
+	const { getSubscription } = useBackendClient();
+
+	useEffect(() => {
+		const userIdStorage = SecureStore.getItemAsync("USER_ID");
+		userIdStorage.then((id) => {
+			if (!id) {
+				let generated = Crypto.randomUUID();
+				SecureStore.setItemAsync("USER_ID", generated);
+				setUserId(generated);
+			} else {
+				if (id != userId) setUserId(id);
+			}
+		});
+	}, []);
 
 	return (
 		<>
@@ -64,7 +83,7 @@ export default function MainScreen() {
 						<Text style={styles.locationText}>
 							{server.connectionState === ServerConnection.NOT_SELECTED
 								? t("not_connected")
-								: server.entity?.locationCountry}
+								: server.entity?.remark}
 						</Text>
 						{server.connectionState === ServerConnection.NOT_SELECTED ? (
 							<></>
@@ -77,12 +96,14 @@ export default function MainScreen() {
 				<TouchableOpacity
 					style={styles.mapContainer}
 					onPress={() => {
+						if (server.connectionState == ServerConnection.NOT_SELECTED) return;
 						reset();
 						start();
 						setServer({
 							connectionState: ServerConnection.CONNECTING,
 							entity: server.entity,
 						});
+						runXray(server.entity?.connectionLink ?? "");
 					}}>
 					<PlaneIcon width={108} height={48} />
 					<EarthIcon width={240} height={240} />
@@ -99,6 +120,7 @@ export default function MainScreen() {
 								connectionState: ServerConnection.DISCONNECTED,
 								entity: server.entity,
 							});
+							stopXray();
 						}}>
 						<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>
 					</TouchableOpacity>
@@ -123,7 +145,7 @@ export default function MainScreen() {
 					<View style={styles.dataBarFill} />
 				</View>
 			</View>
-			<LocationDialogue
+			<ServersDialogue
 				dialogueVisible={serverSelectionDialogueVisible}
 				onClose={() => {
 					setServerSelectionDialogueVisible(!serverSelectionDialogueVisible);
@@ -143,8 +165,10 @@ export default function MainScreen() {
 						console.error(e);
 					}
 				}}
+				onServerResponse={() => {
+					return getSubscription(userId);
+				}}
 			/>
-			)
 		</>
 	);
 }

@@ -6,7 +6,9 @@
 		"paths": {
 			"@/*": ["./src/*"],
 			"@/assets/*": ["./assets/*"]
-		}
+		},
+		"allowJs": true,
+		"checkJs": false
 	},
 	"include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }
