@@ -2,7 +2,9 @@ import { Paths } from "expo-file-system";
 import * as Xray from "expo-libxray";
 
 export const useLibxray = () => {
-	const runXray: (config: string) => Promise<boolean> = Xray.default.runXray;
+	const runXray: (
+		request: Xray.RunXrayRequest,
+	) => Promise<Xray.RunXrayResponse> = Xray.default.runXray;
 	const stopXray: () => Promise<boolean> = Xray.default.stopXray;
 
 	const startXray = async (shareLink: string) => {
@@ -101,8 +103,19 @@ export const useLibxray = () => {
 					)
 					.build();
 
-				const result = runXray(config);
-				return result;
+				const result = runXray({
+					xrayJson: config,
+					geoIpUrl: undefined,
+					geoSiteUrl: undefined,
+					downloadEvery: "1",
+					timeUnit: Xray.TimeUnit.HOURS,
+					maxGeoAgeMillis: undefined,
+					vpnServiceErrorLocalized: "Vpn permission is rejected.",
+					notificationErrorLocalized: "Vpn permission is rejected.",
+				});
+				result.then((r) => {
+					if (!r.success) throw new Error(r.error);
+				});
 			} catch (error) {
 				console.error("Error starting Xray:", error);
 				return false;

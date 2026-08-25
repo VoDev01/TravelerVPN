@@ -1,14 +1,12 @@
 import { useAppTheme } from "@/ThemeContext";
 import { CustomTheme } from "@/constants/theme";
-import {
-	ServerMetrics,
-	useBackendClient,
-	VpnResponse,
-} from "@/hooks/useBackendClient";
+import { useBackendClient, VpnResponse } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
-import { ActivationState, Client } from "@stomp/stompjs";
-import * as SecureStore from "expo-secure-store";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	MetricsServerData,
+	useWebSocketClient,
+} from "@/hooks/useWebSocketClient";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
@@ -21,12 +19,6 @@ import {
 	TouchableWithoutFeedback,
 	View,
 } from "react-native";
-import SockJS from "sockjs-client";
-import { ServerEntity } from "../../db/schema/servers";
-
-type MetricsServerData = ServerEntity & {
-	metrics: ServerMetrics | null;
-};
 
 type ServersDialogueProps = {
 	dialogueVisible: boolean;
@@ -35,7 +27,7 @@ type ServersDialogueProps = {
 	onServerResponse: () => Promise<VpnResponse | undefined>;
 };
 
-function ServersDialogueContent({
+export function ServersDialogueContent({
 	onSelect,
 	onServerResponse,
 	wsConnect,
@@ -176,93 +168,8 @@ const ServersDialogue = (props: ServersDialogueProps) => {
 	const theme = useAppTheme();
 	const styles = createStyle(theme);
 
-	const { wsLogout } = useBackendClient();
-
-	const wsClose = useCallback(() => {
-		const response = wsLogout();
-		response.then((v) => {
-			if (v?.status === "success") {
-				console.info("Ws connection closed successfully");
-				wsClientRef.current?.deactivate();
-				wsClientRef.current = null;
-			} else console.info(`Ws connection closed with an error: ${v?.message}`);
-		});
-	}, []);
-
 	const [closeWs, setCloseWs] = useState(false);
-
-	const wsClientRef = useRef<Client | null>(null);
-	const [wsUrl, setWsUrl] = useState(
-		process.env.EXPO_PUBLIC_BACKEND_WSURL ??
-			"http://10.0.2.2:8080/ws" + "/data/metrics",
-	);
-
-	const wsConnect = (servers: MetricsServerData[]) => {
-		if (wsClientRef.current?.state === ActivationState.ACTIVE) return;
-
-		wsClientRef.current = new Client({
-			webSocketFactory: () => new SockJS(wsUrl),
-			debug: (str) => console.log("STOMP Log:", str),
-			reconnectDelay: 5000,
-			heartbeatIncoming: 4000,
-			heartbeatOutgoing: 4000,
-		});
-
-		wsClientRef.current.onConnect = (frame) => {
-			console.info("Ws connection opened");
-
-			wsClientRef.current?.subscribe("/data/metrics", (message) => {
-				try {
-					const data = JSON.parse(message.body);
-					if (data.type === "client_traffic") {
-						(data.data as Array<any>).forEach((metric) => {
-							servers
-								.filter((v) => {
-									v.inboundId == metric.inboundId;
-								})
-								.forEach((v) => {
-									v.metrics = {
-										latencyMs: metric.delay,
-										status: metric.status,
-									};
-								});
-						});
-					}
-				} catch (e) {
-					console.error(e);
-				}
-			});
-
-			SecureStore.getItemAsync("USER_ID").then((userId) => {
-				wsClientRef.current?.publish({
-					destination: "/app/metrics",
-					body: JSON.stringify({
-						type: "client_creds",
-						data: { userId },
-					}),
-				});
-			});
-		};
-
-		wsClientRef.current.onStompError = (frame) => {
-			console.error(`STOMP Error: ${frame.headers["message"]}`);
-			return () => {
-				wsClientRef.current?.deactivate();
-				wsClientRef.current = null;
-			};
-		};
-
-		wsClientRef.current.onDisconnect = () => {
-			console.info("Ws connection closed");
-		};
-
-		wsClientRef.current.activate();
-
-		return () => {
-			wsClientRef.current?.deactivate();
-			wsClientRef.current = null;
-		};
-	};
+	const { wsClose, wsConnect } = useWebSocketClient();
 
 	useEffect(() => {
 		if (closeWs) {
