@@ -1,33 +1,27 @@
-import { useAppTheme } from "@/ThemeContext";
 import { CustomTheme } from "@/constants/theme";
-import { useBackendClient, VpnResponse } from "@/hooks/useBackendClient";
+import { VpnResponse, useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
 import {
 	MetricsServerData,
 	useWebSocketClient,
 } from "@/hooks/useWebSocketClient";
+import { useAppTheme } from "@/ThemeContext";
+import { appEmitter } from "@/utility/emmiter";
+import { useHeaderHeight } from "expo-router/build/react-navigation";
+import * as SecureStore from "expo-secure-store";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
 	FlatList,
-	Modal,
 	RefreshControl,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
-	TouchableWithoutFeedback,
 	View,
 } from "react-native";
 
-type ServersDialogueProps = {
-	dialogueVisible: boolean;
-	onClose: () => void;
-	onSelect: (serverId: number) => void;
-	onServerResponse: () => Promise<VpnResponse | undefined>;
-};
-
-export function ServersDialogueContent({
+function ServersScreenContent({
 	onSelect,
 	onServerResponse,
 	wsConnect,
@@ -43,7 +37,7 @@ export function ServersDialogueContent({
 	const { ws } = useBackendClient();
 
 	const theme = useAppTheme();
-	const styles = createStyle(theme);
+	const styles = createStyles(theme);
 
 	const wsEstablishConnection = useCallback(() => {
 		const response = ws();
@@ -161,93 +155,68 @@ export function ServersDialogueContent({
 	);
 }
 
-const ServersDialogue = (props: ServersDialogueProps) => {
+export default function ServersScreen() {
 	const [selectedServer, setSelectedServer] = useState<number>();
 	const { t } = useTranslation();
 
 	const theme = useAppTheme();
-	const styles = createStyle(theme);
+	const styles = createStyles(theme);
 
-	const [closeWs, setCloseWs] = useState(false);
-	const { wsClose, wsConnect } = useWebSocketClient();
+	const { wsConnect } = useWebSocketClient();
+	const [userId, setUserId] = useState("");
+	const { getSubscription } = useBackendClient();
+
+	const headerHeight = useHeaderHeight();
+	const paddingTop = headerHeight + 16;
 
 	useEffect(() => {
-		if (closeWs) {
-			wsClose();
-			setCloseWs(false);
-		}
-	}, [closeWs]);
+		const userIdStorage = SecureStore.getItemAsync("USER_ID");
+		userIdStorage.then((id) => setUserId(id ?? ""));
+	}, []);
 
 	return (
-		<Modal
-			animationType="fade"
-			transparent={true}
-			backdropColor={"#272727"}
-			visible={props.dialogueVisible}
-			onRequestClose={props.onClose}>
-			<TouchableWithoutFeedback onPress={props.onClose}>
-				<View style={styles.modalOverlay}>
-					<View style={styles.modalContainer}>
-						<Text style={styles.modalTitle}>{t("available_servers")}</Text>
+		<View style={[styles.container, { paddingTop }]}>
+			<Text style={styles.title}>{t("available_servers")}</Text>
 
-						<View
-							style={{
-								flex: 1,
-								justifyContent: "center",
-							}}>
-							<ServersDialogueContent
-								onSelect={(id) => setSelectedServer(id)}
-								onServerResponse={() => props.onServerResponse()}
-								wsConnect={(servers) => wsConnect(servers)}
-							/>
-						</View>
+			<View
+				style={{
+					flex: 1,
+					justifyContent: "center",
+				}}>
+				<ServersScreenContent
+					onSelect={(id) => setSelectedServer(id)}
+					onServerResponse={() => getSubscription(userId)}
+					wsConnect={(servers) => wsConnect(servers)}
+				/>
+			</View>
 
-						<View style={styles.buttonContainer}>
-							<TouchableOpacity
-								style={[styles.button, styles.cancelButton]}
-								onPress={() => {
-									props.onClose();
-									setCloseWs(true);
-								}}>
-								<Text style={styles.buttonText}>{t("cancel")}</Text>
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								style={[styles.button, styles.submitButton]}
-								onPress={() =>
-									selectedServer !== undefined
-										? props.onSelect(selectedServer)
-										: props.onClose
-								}>
-								<Text style={styles.buttonText}>{t("select")}</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-				</View>
-			</TouchableWithoutFeedback>
-		</Modal>
+			<View style={styles.buttonContainer}>
+				<TouchableOpacity
+					style={[styles.button, styles.submitButton]}
+					onPress={() => {
+						if (selectedServer)
+							appEmitter.emit("onServerSelected", { id: selectedServer });
+					}}>
+					<Text style={styles.buttonText}>{t("select")}</Text>
+				</TouchableOpacity>
+			</View>
+		</View>
 	);
-};
+}
 
-export default ServersDialogue;
-
-const createStyle = (theme: CustomTheme) =>
+const createStyles = (theme: CustomTheme) =>
 	StyleSheet.create({
-		modalOverlay: {
+		container: {
 			flex: 1,
-			backgroundColor: "rgba(0, 0, 0, 0.8)",
-			justifyContent: "center",
-			alignItems: "center",
+			paddingTop: 64,
+			rowGap: 12,
 		},
-		modalContainer: {
-			width: "86%",
-			height: 512,
-			backgroundColor: theme.colors.card,
-			borderRadius: 16,
-			padding: 24,
-			justifyContent: "space-between",
+		navigation: {
+			flex: 1,
+			flexDirection: "row",
+			justifyContent: "flex-start",
 		},
-		modalTitle: {
+		title: {
 			color: theme.colors.secondary,
 			fontSize: 20,
 			fontWeight: "600",
@@ -264,13 +233,14 @@ const createStyle = (theme: CustomTheme) =>
 		},
 		buttonContainer: {
 			flexDirection: "row",
-			justifyContent: "space-between",
+			justifyContent: "center",
 			width: "100%",
 		},
 		button: {
 			paddingHorizontal: 24,
 			paddingVertical: 12,
 			borderRadius: 12,
+			width: "50%",
 			justifyContent: "center",
 			alignItems: "center",
 		},
