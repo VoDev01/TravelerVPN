@@ -4,19 +4,19 @@ import DownArrowIcon from "@/assets/images/line-md_arrow-down.svg";
 import UpArrowIcon from "@/assets/images/line-md_arrow-up.svg";
 import GasPumpIcon from "@/assets/images/osmic_fuel-14.svg";
 import PlaneIcon from "@/assets/images/Plane.svg";
-import ServersDialogue from "@/components/ServersDialogue";
 import { CustomTheme } from "@/constants/theme";
-import { useBackendClient } from "@/hooks/useBackendClient";
 import { useDurationWatch } from "@/hooks/useDurationWatch";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { useAppTheme } from "@/ThemeContext";
+import { appEmitter } from "@/utility/emmiter";
 import * as Crypto from "expo-crypto";
+import { Link } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ServerEntity } from "../../db/schema/servers";
+import { ServerEntity } from "../../../db/schema/servers";
 
 const enum ServerConnection {
 	NOT_SELECTED,
@@ -32,22 +32,19 @@ type ServerEntityConnection = {
 };
 
 export default function MainScreen() {
-	const [serverSelectionDialogueVisible, setServerSelectionDialogueVisible] =
-		useState(false);
 	const { time, start, stop, formatTime, reset } = useDurationWatch();
 	const [server, setServer] = useState<ServerEntityConnection>({
 		connectionState: ServerConnection.NOT_SELECTED,
 		entity: null,
 	});
+	const { getServerById } = useServers();
 
 	const { t } = useTranslation();
 	const theme = useAppTheme();
 	const styles = createStyles(theme);
 
-	const { getServerById } = useServers();
 	const [userId, setUserId] = useState("");
 	const { runXray, stopXray } = useLibxray();
-	const { getSubscription } = useBackendClient();
 
 	useEffect(() => {
 		const userIdStorage = SecureStore.getItemAsync("USER_ID");
@@ -59,6 +56,17 @@ export default function MainScreen() {
 			} else {
 				if (id != userId) setUserId(id);
 			}
+		});
+	}, []);
+
+	useEffect(() => {
+		appEmitter.addListener("onServerSelected", (id: number) => {
+			getServerById(id).then((server: ServerEntity) => {
+				setServer({
+					connectionState: ServerConnection.SELECTED,
+					entity: server,
+				});
+			});
 		});
 	}, []);
 
@@ -125,15 +133,15 @@ export default function MainScreen() {
 						<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>
 					</TouchableOpacity>
 				) : (
-					<TouchableOpacity
-						style={styles.chooseServerButton}
-						onPress={() => {
-							setServerSelectionDialogueVisible(true);
-						}}>
-						<Text style={styles.chooseServerButtonText}>
-							{t("choose_server")}
-						</Text>
-					</TouchableOpacity>
+					<Link href="/servers" asChild>
+						<TouchableOpacity
+							style={styles.chooseServerButton}
+							onPress={() => {}}>
+							<Text style={styles.chooseServerButtonText}>
+								{t("choose_server")}
+							</Text>
+						</TouchableOpacity>
+					</Link>
 				)}
 			</View>
 			<View style={styles.trafficContainer}>
@@ -145,30 +153,6 @@ export default function MainScreen() {
 					<View style={styles.dataBarFill} />
 				</View>
 			</View>
-			<ServersDialogue
-				dialogueVisible={serverSelectionDialogueVisible}
-				onClose={() => {
-					setServerSelectionDialogueVisible(!serverSelectionDialogueVisible);
-				}}
-				onSelect={async (serverId: number) => {
-					setServerSelectionDialogueVisible(!serverSelectionDialogueVisible);
-					try {
-						const serverEntity = await getServerById(serverId);
-
-						if (serverEntity) {
-							setServer({
-								connectionState: ServerConnection.SELECTED,
-								entity: serverEntity,
-							});
-						}
-					} catch (e) {
-						console.error(e);
-					}
-				}}
-				onServerResponse={() => {
-					return getSubscription(userId);
-				}}
-			/>
 		</>
 	);
 }
@@ -179,7 +163,7 @@ const createStyles = (theme: CustomTheme) =>
 			flex: 1,
 			justifyContent: "center",
 			alignItems: "center",
-			gap: 15,
+			rowGap: 12,
 		},
 		speedContainer: {
 			flexDirection: "row",
