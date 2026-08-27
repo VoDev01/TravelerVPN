@@ -1,6 +1,6 @@
 import { ActivationState, Client } from "@stomp/stompjs";
 import * as SecureStore from "expo-secure-store";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import SockJS from "sockjs-client";
 import { ServerEntity } from "../../db/schema/servers";
 import { ServerMetrics, useBackendClient } from "./useBackendClient";
@@ -18,16 +18,21 @@ export const useWebSocketClient = () => {
 			"http://10.0.2.2:8080/ws" + "/data/metrics",
 	);
 
-	const wsClose = useCallback(() => {
+	const wsClose = () => {
 		const response = wsLogout();
 		response.then((v) => {
-			if (v?.status === "success") {
-				console.info("Ws connection closed successfully");
-				wsClientRef.current?.deactivate();
-				wsClientRef.current = null;
-			} else console.info(`Ws connection closed with an error: ${v?.message}`);
+			try {
+				if (v?.status === "success") {
+					console.info("Ws connection closed successfully");
+				} else throw Error(`Ws connection closed with an error: ${v?.message}`);
+			} catch (e) {
+				console.error(e);
+			}
 		});
-	}, []);
+
+		wsClientRef.current?.deactivate();
+		wsClientRef.current = null;
+	};
 
 	const wsConnect = (servers: MetricsServerData[]) => {
 		if (wsClientRef.current?.state === ActivationState.ACTIVE) return;
