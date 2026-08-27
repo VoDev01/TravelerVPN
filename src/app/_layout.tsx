@@ -4,7 +4,12 @@ import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import AppLayout from "@/components/AppLayout";
 import { ThemeProvider, useAppTheme } from "@/ThemeContext";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
+<<<<<<< Updated upstream
 import { createBottomTabNavigator } from "expo-router/build/react-navigation/bottom-tabs";
+=======
+import { useFonts } from "expo-font";
+import { Stack, useRouter } from "expo-router";
+>>>>>>> Stashed changes
 import * as SplashScreen from "expo-splash-screen";
 import { LogBox } from "react-native";
 import MainScreen from ".";
@@ -23,6 +28,35 @@ const Tab = createBottomTabNavigator();
 
 function LayoutContent() {
 	const theme = useAppTheme();
+<<<<<<< Updated upstream
+=======
+	const { settings } = useSettings();
+
+	const [closeWs, setCloseWs] = useState(false);
+	const { wsClose } = useWebSocketClient();
+
+	const [loaded, error] = useFonts({
+		"CustomFont-Regular": require("@/assets/fonts/Nunito-Regular.ttf"),
+		"CustomFont-Bold": require("@/assets/fonts/Nunito-Bold.ttf"),
+	});
+
+	useEffect(() => {
+		if (closeWs) {
+			wsClose();
+			setCloseWs(false);
+		}
+	}, [closeWs]);
+>>>>>>> Stashed changes
+
+	useEffect(() => {
+		if (loaded || error) {
+			SplashScreen.hideAsync();
+		}
+	}, [loaded, error]);
+
+	if (!loaded && !error) {
+		return null;
+	}
 
 	return (
 		<AppLayout>

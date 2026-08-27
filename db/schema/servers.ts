@@ -5,6 +5,7 @@ export const serversTable = sqliteTable("servers", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
 	flag: text(),
 	remark: text().notNull(),
+	contryTag: text("country_tag").notNull(),
 	connectionLink: text().notNull(),
 	inboundId: integer("inbound_id"),
 });

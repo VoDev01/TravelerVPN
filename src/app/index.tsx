@@ -192,6 +192,7 @@ const createStyles = (theme: CustomTheme) =>
 		statValue: {
 			color: theme.colors.text,
 			fontSize: 18,
+			fontFamily: "CustomFont-Regular",
 		},
 		statLabel: {
 			color: "#888",
@@ -207,11 +208,13 @@ const createStyles = (theme: CustomTheme) =>
 			color: theme.colors.text,
 			fontSize: 18,
 			marginTop: 4,
+			fontFamily: "CustomFont-Regular",
 		},
 		locationText: {
 			color: theme.colors.text,
 			fontSize: 18,
 			marginTop: 4,
+			fontFamily: "CustomFont-Regular",
 		},
 		mapContainer: {
 			alignItems: "center",
@@ -246,10 +249,12 @@ const createStyles = (theme: CustomTheme) =>
 		chooseServerButtonText: {
 			color: theme.colors.important2,
 			fontSize: 20,
+			fontFamily: "CustomFont-Regular",
 		},
 		disconnectButtonText: {
 			color: theme.colors.important1,
 			fontSize: 20,
+			fontFamily: "CustomFont-Regular",
 		},
 		trafficContainer: {
 			marginTop: "auto",
@@ -269,6 +274,7 @@ const createStyles = (theme: CustomTheme) =>
 			color: theme.colors.text,
 			fontSize: 18,
 			marginBottom: 8,
+			fontFamily: "CustomFont-Regular",
 		},
 		trafficStatusBar: {
 			height: 12,

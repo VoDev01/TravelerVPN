@@ -283,7 +283,7 @@ const createStyle = (theme: CustomTheme) =>
 		buttonText: {
 			color: "#000",
 			fontSize: 16,
-			fontWeight: "600",
+			fontFamily: "CustomFont-Regular",
 		},
 		serverRow: {
 			flexDirection: "row",
@@ -302,6 +302,6 @@ const createStyle = (theme: CustomTheme) =>
 		serverInfoText: {
 			color: theme.colors.text,
 			fontSize: 16,
-			fontWeight: "600",
+			fontFamily: "CustomFont-Regular",
 		},
 	});
