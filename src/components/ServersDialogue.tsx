@@ -27,7 +27,7 @@ type ServersDialogueProps = {
 	onServerResponse: () => Promise<VpnResponse | undefined>;
 };
 
-export function ServersDialogueContent({
+function ServersDialogueContent({
 	onSelect,
 	onServerResponse,
 	wsConnect,
