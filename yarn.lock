@@ -3592,7 +3592,7 @@ expo-file-system@~57.0.4, expo-file-system@~57.0.5:
   resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-57.0.5.tgz#f909ba3820b690691d8a04635d9e5624d1578dd1"
   integrity sha512-XjGrCClF0935y5wLB9qNQQUVptNEy+0OloBstXlCd+IeNXLo3uNOod6cX4N0hofIhNIrN1Al8fwfay7R0Z1a2A==
 
-expo-font@~57.0.0, expo-font@~57.0.1:
+expo-font@~57.0.1:
   version "57.0.1"
   resolved "https://registry.yarnpkg.com/expo-font/-/expo-font-57.0.1.tgz#7932576f74a22b4259d0f27bf61425f41bbd5a79"
   integrity sha512-QyS9L1Kh9sKJg4gfU6rdbpxpmH+DyzBX8z6jVvXMUDoqLr1GqmkO/Wu379KCXjL///kWbhpNlbi7AgBuj4VdIQ==
@@ -6761,11 +6761,6 @@ three-mesh-bvh@^0.8.3:
   version "0.8.3"
   resolved "https://registry.yarnpkg.com/three-mesh-bvh/-/three-mesh-bvh-0.8.3.tgz#c5e72472e7f062ff79084157a25c122d73184163"
   integrity sha512-4G5lBaF+g2auKX3P0yqx+MJC6oVt6sB5k+CchS6Ob0qvH0YIhuUk1eYr7ktsIpY+albCqE80/FVQGV190PmiAg==
-
-three-mesh-ui@^6.5.4:
-  version "6.5.4"
-  resolved "https://registry.yarnpkg.com/three-mesh-ui/-/three-mesh-ui-6.5.4.tgz#68f0a5aba4dced0ed168d2574f45d93b55f4fd03"
-  integrity sha512-QA2KlHrbj7zGjKqpNXcwvini8g5gOXb44ExdupVpxCqmHln/sWNGOmN0yIa/HjnMGYJWP4M+NchTHvwUp+MWIw==
 
 three-stdlib@^2.35.6:
   version "2.36.1"

@@ -24,6 +24,7 @@ export function useServers() {
 						ServerRepository.add({
 							connectionLink: r.connectionLink,
 							remark: r.inbound.remark,
+							contryTag: r.inbound.tag,
 						});
 					});
 				} catch (e) {

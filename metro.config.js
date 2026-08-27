@@ -13,7 +13,7 @@ module.exports = (() => {
 		...resolver,
 		assetExts: resolver.assetExts
 			.filter((ext) => ext !== "svg")
-			.concat(["glb", "gltf", "png", "jpg"]),
+			.concat(["glb", "gltf", "png", "jpg", "json"]),
 		sourceExts: [...resolver.sourceExts, "svg", "sql", "cjs", "mjs"],
 	};
 	config.resolver.unstable_enablePackageExports = false;
