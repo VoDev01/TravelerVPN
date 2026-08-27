@@ -1,10 +1,10 @@
 import { OrbitControls, Text3D } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
-import { useAssets } from "expo-asset";
 import { useIsFocused } from "expo-router";
-import { RefObject, Suspense, useEffect, useRef } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { RefObject, useEffect, useRef } from "react";
+import { StyleSheet, View } from "react-native";
 import * as THREE from "three";
+import nunitoFontJson from "../../assets/fonts/Nunito_Regular.json";
 import { Model } from "./Model";
 
 function Animate({ ref }: { ref: RefObject<THREE.Object3D | null> }) {
@@ -19,14 +19,6 @@ function Animate({ ref }: { ref: RefObject<THREE.Object3D | null> }) {
 	return null;
 }
 
-function Loader() {
-	return (
-		<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-			<ActivityIndicator size="large" color="#fff" />
-		</View>
-	);
-}
-
 export default function InteractiveServerMap() {
 	const aircraftRef = useRef<THREE.Object3D>(null);
 	const earthRef = useRef<THREE.Group>(null);
@@ -34,10 +26,6 @@ export default function InteractiveServerMap() {
 	const germany = earthRef.current?.getObjectByName("Germany");
 	const netherlands = earthRef.current?.getObjectByName("Netherlands");
 	const serbia = earthRef.current?.getObjectByName("Serbia");
-
-	const [asset, error] = useAssets(
-		require("../../assets/fonts/Nunito_Regular.json"),
-	);
 
 	const isActive = useIsFocused();
 
@@ -50,60 +38,53 @@ export default function InteractiveServerMap() {
 		}
 	}, [isActive]);
 
-	if (!asset) {
-		if (error) {
-			console.warn(error);
-		}
-		return null;
-	}
-
 	return (
 		<View style={styles.content}>
 			<Canvas camera={{ position: [0, 14, 0], fov: 65 }}>
-				<Suspense fallback={null}>
-					<ambientLight intensity={0.7} />
-					<directionalLight color="white" position={[0, 14, 0]} intensity={3} />
-					<Animate ref={earthRef} />
+				<ambientLight intensity={0.7} />
+				<directionalLight color="white" position={[0, 14, 0]} intensity={3} />
+				<Animate ref={earthRef} />
+				<Model
+					ref={aircraftRef}
+					model={"aircraft"}
+					props={{
+						scale: 0.1,
+						position: [0, 8, 0],
+						rotation: [Math.PI / 8, 0, 0],
+					}}
+				/>
+				<group ref={earthRef}>
 					<Model
-						ref={aircraftRef}
-						model={"aircraft"}
+						model={"earth"}
 						props={{
-							scale: 0.1,
-							position: [0, 8, 0],
-							rotation: [Math.PI / 8, 0, 0],
+							position: [0, 0, 0],
 						}}
 					/>
-					<group ref={earthRef}>
-						<Model
-							model={"earth"}
-							props={{
-								position: [0, 0, 0],
-							}}
-						/>
-						<mesh position={germany?.position} scale={0.1}>
-							<sphereGeometry />
-							<meshBasicMaterial color={"#ff0000"} />
-						</mesh>
-						<mesh position={germany?.position.addScalar(1)}>
-							<Text3D font={asset[0].localUri || ""}>Germany</Text3D>
-						</mesh>
-						<mesh position={netherlands?.position} scale={0.1}>
-							<sphereGeometry />
-							<meshBasicMaterial color={"#ff0000"} />
-						</mesh>
-						<mesh position={netherlands?.position.addScalar(1)}>
-							<Text3D font={asset[0].localUri || ""}>Netherlands</Text3D>
-						</mesh>
-						<mesh position={serbia?.position} scale={0.1}>
-							<sphereGeometry />
-							<meshBasicMaterial color={"#ff0000"} />
-						</mesh>
-						<mesh position={serbia?.position.addScalar(1)}>
-							<Text3D font={asset[0].localUri || ""}>Serbia</Text3D>
-						</mesh>
-					</group>
-					<OrbitControls enableRotate={true} enableZoom={true} />
-				</Suspense>
+					<mesh position={germany?.position} scale={0.1}>
+						<sphereGeometry />
+						<meshBasicMaterial color={"#ff0000"} />
+					</mesh>
+					<mesh position={germany?.position.addScalar(1)}>
+						<Text3D font={nunitoFontJson}>Germany</Text3D>
+					</mesh>
+					<mesh position={netherlands?.position} scale={0.1}>
+						<sphereGeometry />
+						<meshBasicMaterial color={"#ff0000"} />
+					</mesh>
+					<mesh position={netherlands?.position.addScalar(1)}>
+						<Text3D font={nunitoFontJson}>Netherlands</Text3D>
+					</mesh>
+					<mesh position={serbia?.position} scale={0.1}>
+						<sphereGeometry />
+						<meshBasicMaterial color={"#ff0000"} />
+					</mesh>
+					<mesh position={serbia?.position.addScalar(1)}>
+						<Text3D font={nunitoFontJson} scale={0.2}>
+							Serbia
+						</Text3D>
+					</mesh>
+				</group>
+				<OrbitControls enableRotate={true} enableZoom={true} />
 			</Canvas>
 		</View>
 	);
