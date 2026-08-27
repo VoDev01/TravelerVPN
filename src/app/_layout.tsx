@@ -1,17 +1,17 @@
-import HomeIcon from "@/assets/images/Home.svg";
-import GearIcon from "@/assets/images/mdi_gear.svg";
+import LeftArrowWhite from "@/assets/images/line-md_arrow-left-white.svg";
+import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
-import AppLayout from "@/components/AppLayout";
+import { useSettings } from "@/hooks/useSettings";
+import { useWebSocketClient } from "@/hooks/useWebSocketClient";
 import { ThemeProvider, useAppTheme } from "@/ThemeContext";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
-import { createBottomTabNavigator } from "expo-router/build/react-navigation/bottom-tabs";
+import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { LogBox } from "react-native";
-import MainScreen from ".";
+import { useEffect, useState } from "react";
+import { LogBox, TouchableOpacity } from "react-native";
 import { db } from "../../db/client";
 import migrations from "../../drizzle/migrations";
 import "../../i18n";
-import SettingsScreen from "./settings";
 
 LogBox.ignoreLogs([
 	"SafeAreaView has been deprecated and will be removed in a future release",
@@ -19,67 +19,63 @@ LogBox.ignoreLogs([
 
 SplashScreen.preventAutoHideAsync();
 
-const Tab = createBottomTabNavigator();
-
 function LayoutContent() {
 	const theme = useAppTheme();
+	const { settings } = useSettings();
+
+	const [closeWs, setCloseWs] = useState(false);
+	const { wsClose } = useWebSocketClient();
+
+	useEffect(() => {
+		if (closeWs) {
+			wsClose();
+			setCloseWs(false);
+		}
+	}, [closeWs]);
 
 	return (
-		<AppLayout>
-			<Tab.Navigator
-				screenOptions={{
+		<Stack
+			screenOptions={{
+				headerBackTitle: undefined,
+				title: undefined,
+				headerShadowVisible: false,
+				contentStyle: {
+					flex: 1,
+					backgroundColor: theme.colors.primary,
+					padding: 24,
+				},
+			}}>
+			<Stack.Screen
+				name="(tabs)"
+				options={{
 					headerShown: false,
+				}}
+			/>
+			<Stack.Screen
+				name="servers"
+				options={{
+					headerLeft: () => {
+						const router = useRouter();
 
-					sceneStyle: {
-						backgroundColor: theme.colors.primary,
+						return (
+							<TouchableOpacity
+								onPress={() => {
+									router.back();
+									setCloseWs(true);
+								}}>
+								{settings.theme === "dark" ? (
+									<LeftArrowWhite width={48} height={48} />
+								) : (
+									<LeftArrow width={48} height={48} />
+								)}
+							</TouchableOpacity>
+						);
 					},
-
-					tabBarStyle: {
-						backgroundColor: theme.colors.card,
-						borderRadius: 32,
-						borderTopWidth: 0,
-						paddingBottom: 0,
-						overflow: "hidden",
-						elevation: 0,
-						justifyContent: "center",
-						alignItems: "center",
-					},
-
-					tabBarShowLabel: false,
-					tabBarActiveTintColor: theme.colors.important2,
-					tabBarInactiveTintColor: theme.colors.secondary,
-
-					tabBarIconStyle: {
-						width: "100%",
-						height: "100%",
-						justifyContent: "center",
-						alignItems: "center",
-					},
-
-					tabBarItemStyle: {
-						paddingVertical: 8,
-					},
-				}}>
-				<Tab.Screen
-					name="Home"
-					component={MainScreen}
-					options={{
-						tabBarIcon: ({ color }) => (
-							<HomeIcon color={color} width={36} height={36} />
-						),
-					}}
-				/>
-				<Tab.Screen
-					name="Settings"
-					component={SettingsScreen}
-					options={{
-						tabBarIcon: ({ color }) => (
-							<GearIcon color={color} width={36} height={36} />
-						),
-					}}
-				/>
-			</Tab.Navigator>
-		</AppLayout>
+					headerTitle: "",
+					headerTransparent: true,
+				}}
+			/>
+		</Stack>
 	);
 }
 

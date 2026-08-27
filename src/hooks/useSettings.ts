@@ -44,7 +44,7 @@ export const useSettings = () => {
 		};
 
 		loadSettings();
-	}, []);
+	});
 
 	const updateSetting = async <K extends keyof SettingsState>(
 		key: K,
