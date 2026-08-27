@@ -12,9 +12,15 @@ import { useServers } from "@/hooks/useServers";
 import { useAppTheme } from "@/ThemeContext";
 import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+	ActivityIndicator,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+	View,
+} from "react-native";
 import { ServerEntity } from "../../db/schema/servers";
 
 const enum ServerConnection {
@@ -29,6 +35,14 @@ type ServerEntityConnection = {
 	connectionState: ServerConnection;
 	entity: ServerEntity | null;
 };
+
+function Loader() {
+	return (
+		<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+			<ActivityIndicator size="large" color="#fff" />
+		</View>
+	);
+}
 
 export default function MainScreen() {
 	const [serverSelectionDialogueVisible, setServerSelectionDialogueVisible] =
@@ -92,20 +106,23 @@ export default function MainScreen() {
 					</View>
 				</View>
 
-				<TouchableOpacity
-					style={styles.mapContainer}
-					onPress={() => {
-						if (server.connectionState == ServerConnection.NOT_SELECTED) return;
-						reset();
-						start();
-						setServer({
-							connectionState: ServerConnection.CONNECTING,
-							entity: server.entity,
-						});
-						runXray(server.entity?.connectionLink ?? "");
-					}}>
-					<InteractiveServerMap />
-				</TouchableOpacity>
+				<Suspense fallback={<Loader />}>
+					<TouchableOpacity
+						style={styles.mapContainer}
+						onPress={() => {
+							if (server.connectionState == ServerConnection.NOT_SELECTED)
+								return;
+							reset();
+							start();
+							setServer({
+								connectionState: ServerConnection.CONNECTING,
+								entity: server.entity,
+							});
+							runXray(server.entity?.connectionLink ?? "");
+						}}>
+						<InteractiveServerMap />
+					</TouchableOpacity>
+				</Suspense>
 
 				{server.connectionState === ServerConnection.CONNECTED ||
 				server.connectionState === ServerConnection.CONNECTING ? (

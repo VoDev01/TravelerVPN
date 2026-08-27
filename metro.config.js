@@ -9,14 +9,16 @@ module.exports = (() => {
 		...transformer,
 		babelTransformerPath: require.resolve("react-native-svg-transformer/expo"),
 	};
+
 	config.resolver = {
 		...resolver,
 		assetExts: resolver.assetExts
-			.filter((ext) => ext !== "svg")
-			.concat(["glb", "gltf", "png", "jpg", "json"]),
-		sourceExts: [...resolver.sourceExts, "svg", "sql", "cjs", "mjs"],
+			.filter((ext) => ext !== "svg" && ext !== "json")
+			.concat(["glb", "gltf", "png", "jpg"]),
+		sourceExts: resolver.sourceExts
+			.filter((ext) => ext !== "glb" && ext !== "gltf")
+			.concat(["svg", "sql", "cjs", "mjs", "json"]),
 	};
-	config.resolver.unstable_enablePackageExports = false;
 
 	return config;
 })();

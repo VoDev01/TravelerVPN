@@ -2,15 +2,14 @@ import HomeIcon from "@/assets/images/Home.svg";
 import GearIcon from "@/assets/images/mdi_gear.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import AppLayout from "@/components/AppLayout";
+import { useSettings } from "@/hooks/useSettings";
+import { useWebSocketClient } from "@/hooks/useWebSocketClient";
 import { ThemeProvider, useAppTheme } from "@/ThemeContext";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
-<<<<<<< Updated upstream
-import { createBottomTabNavigator } from "expo-router/build/react-navigation/bottom-tabs";
-=======
 import { useFonts } from "expo-font";
-import { Stack, useRouter } from "expo-router";
->>>>>>> Stashed changes
+import { createBottomTabNavigator } from "expo-router/build/react-navigation/bottom-tabs";
 import * as SplashScreen from "expo-splash-screen";
+import { useEffect, useState } from "react";
 import { LogBox } from "react-native";
 import MainScreen from ".";
 import { db } from "../../db/client";
@@ -28,8 +27,6 @@ const Tab = createBottomTabNavigator();
 
 function LayoutContent() {
 	const theme = useAppTheme();
-<<<<<<< Updated upstream
-=======
 	const { settings } = useSettings();
 
 	const [closeWs, setCloseWs] = useState(false);
@@ -46,7 +43,6 @@ function LayoutContent() {
 			setCloseWs(false);
 		}
 	}, [closeWs]);
->>>>>>> Stashed changes
 
 	useEffect(() => {
 		if (loaded || error) {
