@@ -16,6 +16,7 @@ module.exports = (() => {
 			.concat(["glb", "gltf", "png", "jpg"]),
 		sourceExts: [...resolver.sourceExts, "svg", "sql", "cjs", "mjs"],
 	};
+	config.resolver.unstable_enablePackageExports = false;
 
 	return config;
 })();

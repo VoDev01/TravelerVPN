@@ -1,9 +1,8 @@
-import EarthIcon from "@/assets/images/boxicons_globe.svg";
 import GermanyIcon from "@/assets/images/emojione_flag-for-germany.svg";
 import DownArrowIcon from "@/assets/images/line-md_arrow-down.svg";
 import UpArrowIcon from "@/assets/images/line-md_arrow-up.svg";
 import GasPumpIcon from "@/assets/images/osmic_fuel-14.svg";
-import PlaneIcon from "@/assets/images/Plane.svg";
+import InteractiveServerMap from "@/components/InteractiveServerMap";
 import ServersDialogue from "@/components/ServersDialogue";
 import { CustomTheme } from "@/constants/theme";
 import { useBackendClient } from "@/hooks/useBackendClient";
@@ -105,8 +104,7 @@ export default function MainScreen() {
 						});
 						runXray(server.entity?.connectionLink ?? "");
 					}}>
-					<PlaneIcon width={108} height={48} />
-					<EarthIcon width={240} height={240} />
+					<InteractiveServerMap />
 				</TouchableOpacity>
 
 				{server.connectionState === ServerConnection.CONNECTED ||
