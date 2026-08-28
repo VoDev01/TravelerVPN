@@ -236,6 +236,8 @@ const createStyles = (theme: CustomTheme) =>
 		mapContainer: {
 			alignItems: "center",
 			marginBottom: 24,
+			width: 350,
+			height: 350,
 		},
 		locationData: {
 			flexDirection: "row",
