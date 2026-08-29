@@ -1,3 +1,4 @@
+import { ServerRepository } from "../../db/repository/ServerRepository";
 import makeRequest from "../utility/api";
 
 export interface VpnResponse {
@@ -11,12 +12,23 @@ export interface ServerMetrics {
 	status: string;
 }
 
+export interface GeoLocation {
+	country: string;
+	city: string;
+	latitude: number;
+	longtitude: number;
+}
+
 export const useBackendClient = () => {
 	const getSubscription = async (userId: string | undefined) => {
 		try {
-			const response = (await makeRequest("/api/user/subscription", "POST", {
-				userId,
-			})) as VpnResponse;
+			const local = await ServerRepository.getAll();
+			const response =
+				local.length === 0
+					? ((await makeRequest("/api/user/subscription", "POST", {
+							userId,
+						})) as VpnResponse)
+					: { status: "success", response: null };
 			return response;
 		} catch (error) {
 			console.error("Error fetching subscription:", error);
@@ -86,6 +98,16 @@ export const useBackendClient = () => {
 		}
 	};
 
+	const getUserLastGeo = async (email: string) => {
+		try {
+			return (await makeRequest("/api/user/geo", "POST", {
+				email,
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error attaching inbounds:", error);
+		}
+	};
+
 	const ws = async () => {
 		try {
 			return (await makeRequest("/api/ws", "GET")) as VpnResponse;
@@ -116,6 +138,7 @@ export const useBackendClient = () => {
 		getSubscription,
 		getUser,
 		getUserTraffic,
+		getUserLastGeo,
 		metrics,
 		testNode,
 		updateUser,

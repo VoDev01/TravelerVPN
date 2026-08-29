@@ -21,12 +21,10 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
-import { ServerEntity } from "../../db/schema/servers";
+import { ServerEntity } from "../../../db/schema/servers";
 
 const enum ServerConnection {
-	NOT_SELECTED,
 	DISCONNECTED,
-	SELECTED,
 	CONNECTING,
 	CONNECTED,
 }
@@ -47,7 +45,7 @@ function Loader() {
 export default function MainScreen() {
 	const { time, start, stop, formatTime, reset } = useDurationWatch();
 	const [server, setServer] = useState<ServerEntityConnection>({
-		connectionState: ServerConnection.NOT_SELECTED,
+		connectionState: ServerConnection.DISCONNECTED,
 		entity: null,
 	});
 	const { getServerById } = useServers();
@@ -73,12 +71,28 @@ export default function MainScreen() {
 	}, []);
 
 	useEffect(() => {
-		appEmitter.addListener("onServerSelected", (id: number) => {
+		appEmitter.addListener("onServerConnecting", (id: number) => {
 			getServerById(id).then((server: ServerEntity) => {
 				setServer({
-					connectionState: ServerConnection.SELECTED,
+					connectionState: ServerConnection.CONNECTING,
 					entity: server,
 				});
+				runXray(server.connectionLink)
+					.then(() => {
+						reset();
+						start();
+						setServer({
+							connectionState: ServerConnection.CONNECTED,
+							entity: server,
+						});
+					})
+					.catch((e) => {
+						console.error(e);
+						setServer({
+							connectionState: ServerConnection.DISCONNECTED,
+							entity: server,
+						});
+					});
 			});
 		});
 	}, []);
@@ -102,11 +116,11 @@ export default function MainScreen() {
 					<Text style={styles.connectionDurationText}>{formatTime(time)}</Text>
 					<View style={styles.locationData}>
 						<Text style={styles.locationText}>
-							{server.connectionState === ServerConnection.NOT_SELECTED
+							{server.connectionState === ServerConnection.DISCONNECTED
 								? t("not_connected")
 								: server.entity?.remark}
 						</Text>
-						{server.connectionState === ServerConnection.NOT_SELECTED ? (
+						{server.connectionState === ServerConnection.DISCONNECTED ? (
 							<></>
 						) : (
 							<GermanyIcon width={32} height={32} />
