@@ -107,21 +107,9 @@ export default function MainScreen() {
 				</View>
 
 				<Suspense fallback={<Loader />}>
-					<TouchableOpacity
-						style={styles.mapContainer}
-						onPress={() => {
-							if (server.connectionState == ServerConnection.NOT_SELECTED)
-								return;
-							reset();
-							start();
-							setServer({
-								connectionState: ServerConnection.CONNECTING,
-								entity: server.entity,
-							});
-							runXray(server.entity?.connectionLink ?? "");
-						}}>
+					<View style={styles.mapContainer}>
 						<InteractiveServerMap />
-					</TouchableOpacity>
+					</View>
 				</Suspense>
 
 				{server.connectionState === ServerConnection.CONNECTED ||
