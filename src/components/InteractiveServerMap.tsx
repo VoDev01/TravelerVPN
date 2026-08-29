@@ -16,7 +16,7 @@ export function Animate({ ref }: { ref: RefObject<THREE.Object3D | null> }) {
 	useFrame((state, delta) => {
 		{
 			if (ref.current) {
-				ref.current.rotation.y += delta * 0.1;
+				ref.current.rotation.y -= delta * 0.1;
 			}
 		}
 	});
@@ -89,9 +89,7 @@ export default function InteractiveServerMap() {
 						ref={aircraftRef}
 						model={"aircraft"}
 						props={{
-							scale: 0.05,
-							position: [0, 8, 0],
-							rotation: [Math.PI / 8, 0, 0],
+							scale: 0.02,
 						}}
 					/>
 					<FlightTrajectory

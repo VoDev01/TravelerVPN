@@ -89,7 +89,6 @@ export default function FlightTrajectory({
 					const nextPoint = points[currentIndex + 1];
 					if (nextPoint) {
 						aircraftRef.current?.lookAt(nextPoint);
-						aircraftRef.current?.rotateY(Math.PI / 2);
 					}
 
 					const currentHeight = currentPoint.y;
