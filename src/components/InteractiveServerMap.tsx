@@ -1,6 +1,10 @@
+import { GeoLocation, useBackendClient } from "@/hooks/useBackendClient";
+import { useServers } from "@/hooks/useServers";
+import { appEmitter } from "@/utility/emmiter";
 import { OrbitControls } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 import { useIsFocused } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import { RefObject, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import * as THREE from "three";
@@ -28,14 +32,15 @@ export default function InteractiveServerMap() {
 	const aircraftRef = useRef<THREE.Object3D>(null);
 	const earthRef = useRef<THREE.Group>(null);
 
-	const germany = earthRef.current?.getObjectByName("Germany")?.position;
-	const netherlands =
-		earthRef.current?.getObjectByName("Netherlands")?.position;
-	const serbia = earthRef.current?.getObjectByName("Serbia")?.position;
-
 	const isActive = useIsFocused();
+
 	const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
 	const [currentLabel, setCurrentLabel] = useState<ActiveLabel | null>(null);
+	const [userGeo, setUserGeo] = useState<GeoLocation | null>(null);
+
+	const { getUserLastGeo } = useBackendClient();
+	const { fetchServers } = useServers();
+	const { getSubscription } = useBackendClient();
 
 	useEffect(() => {
 		if (!isActive) {
@@ -48,6 +53,25 @@ export default function InteractiveServerMap() {
 		}
 	}, [isActive]);
 
+	useEffect(() => {
+		SecureStore.getItemAsync("USER_ID").then((userId) => {
+			if (userId) {
+				getUserLastGeo(userId).then((response) => {
+					setUserGeo(response?.response);
+				});
+				getSubscription(userId).then((response) => {
+					fetchServers(response?.response)
+						.then((data) => {
+							appEmitter.emit("onServersLoaded", { data });
+						})
+						.catch((err) => {
+							console.error(err);
+						});
+				});
+			}
+		});
+	}, []);
+
 	const serverData: ServerLocation[] = [
 		{ id: "nl", lat: 52.3676, lon: 4.9041, name: "Нидерланды" },
 		{ id: "de", lat: 52.52, lon: 13.405, name: "Германия" },
@@ -55,12 +79,23 @@ export default function InteractiveServerMap() {
 		{ id: "us", lat: 40.6892, lon: -74.0445, name: "US" },
 	];
 
-	const A = new THREE.Vector3(
-		...geodeticToECEF(serverData[0].lat, serverData[0].lon, 7.22),
-	);
-	const B = new THREE.Vector3(
-		...geodeticToECEF(serverData[3].lat, serverData[3].lon, 7.22),
-	);
+	let A = null;
+	let B = null;
+	if (userGeo) {
+		A = new THREE.Vector3(
+			...geodeticToECEF(userGeo.latitude, userGeo.longtitude, 7.22),
+		);
+		B = new THREE.Vector3(
+			...geodeticToECEF(serverData[3].lat, serverData[3].lon, 7.22),
+		);
+	} else {
+		A = new THREE.Vector3(
+			...geodeticToECEF(serverData[0].lat, serverData[0].lon, 7.22),
+		);
+		B = new THREE.Vector3(
+			...geodeticToECEF(serverData[3].lat, serverData[3].lon, 7.22),
+		);
+	}
 
 	return (
 		<View style={styles.content}>
@@ -92,15 +127,17 @@ export default function InteractiveServerMap() {
 							scale: 0.02,
 						}}
 					/>
-					<FlightTrajectory
-						A={A}
-						B={B}
-						height={3}
-						aircraftRef={aircraftRef}
-						minAircraftScale={0.02}
-						maxAircraftScale={0.05}
-						segments={50}
-					/>
+					{A && B && (
+						<FlightTrajectory
+							A={A}
+							B={B}
+							height={2.5}
+							aircraftRef={aircraftRef}
+							minAircraftScale={0.02}
+							maxAircraftScale={0.05}
+							segments={50}
+						/>
+					)}
 				</group>
 				<OrbitControls enableRotate={true} enableZoom={true} />
 			</Canvas>

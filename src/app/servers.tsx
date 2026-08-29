@@ -1,5 +1,5 @@
 import { CustomTheme } from "@/constants/theme";
-import { VpnResponse, useBackendClient } from "@/hooks/useBackendClient";
+import { useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
 import {
 	MetricsServerData,
@@ -20,21 +20,18 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
+import { ServerEntity } from "../../db/schema/servers";
 
 function ServersScreenContent({
-	onSelect,
-	onServerResponse,
 	wsConnect,
 }: {
-	onSelect: (id: number) => void;
-	onServerResponse: () => Promise<VpnResponse | undefined>;
 	wsConnect: (servers: MetricsServerData[]) => void;
 }) {
 	const [selectedServer, setSelectedServer] = useState<number>();
 	const [isRefreshing, setIsRefreshing] = useState(true);
 	const [servers, setServers] = useState<MetricsServerData[]>([]);
 	const { fetchServers, refreshServers } = useServers();
-	const { ws } = useBackendClient();
+	const { ws, getSubscription } = useBackendClient();
 
 	const theme = useAppTheme();
 	const styles = createStyles(theme);
@@ -51,60 +48,59 @@ function ServersScreenContent({
 	}, []);
 
 	useEffect(() => {
-		let isMounted = true;
+		setIsRefreshing(true);
 
-		fetchServers(onServerResponse())
-			.then((data) => {
-				if (isMounted) {
-					const renderData: MetricsServerData[] = [];
-					data.forEach((server) => {
-						renderData.push({
-							...server,
-							metrics: null,
-						});
-					});
-					setServers(renderData);
-					setIsRefreshing(false);
-				}
-			})
-			.catch((err) => {
-				console.error(err);
+		appEmitter.addListener("onServersLoaded", (data: ServerEntity[]) => {
+			const renderData: MetricsServerData[] = [];
+			data.forEach((server) => {
+				renderData.push({
+					...server,
+					metrics: null,
+				});
 			});
+			setServers(renderData);
+		});
 
 		return () => {
-			isMounted = false;
+			setIsRefreshing(false);
 		};
-	}, [fetchServers]);
+	}, []);
 
 	useEffect(() => {
 		wsEstablishConnection();
 		wsConnect(servers);
 	}, []);
 
-	const onRefresh = async () => {
+	const onRefresh = () => {
 		setIsRefreshing(true);
 		try {
-			await refreshServers();
-			await fetchServers(onServerResponse()).then((data) => {
-				const renderData: MetricsServerData[] = [];
-				data.forEach((server) => {
-					renderData.push({
-						...server,
-						metrics: null,
-					});
+			refreshServers().then(() => {
+				SecureStore.getItemAsync("USER_ID").then((userId) => {
+					if (userId) {
+						getSubscription(userId).then((response) => {
+							fetchServers(response?.response)
+								.then((data) => {
+									const renderData: MetricsServerData[] = [];
+									data.forEach((server) => {
+										renderData.push({
+											...server,
+											metrics: null,
+										});
+									});
+									setServers(renderData);
+								})
+								.catch((err) => {
+									console.error(err);
+								});
+						});
+					}
 				});
-				setServers(renderData);
 			});
 		} catch (err) {
 			console.error(err);
 		} finally {
 			setIsRefreshing(false);
 		}
-	};
-
-	const handlePress = (id: number) => {
-		setSelectedServer(id);
-		onSelect(id);
 	};
 
 	const renderServer = ({ item }: { item: MetricsServerData }) => {
@@ -114,7 +110,7 @@ function ServersScreenContent({
 			<TouchableOpacity
 				key={item.id}
 				style={[styles.serverRow, { borderColor }]}
-				onPress={() => handlePress(item.id)}>
+				onPress={() => setSelectedServer(item.id)}>
 				<View style={styles.serverInfo}>
 					<Text style={styles.serverInfoText}>{item.remark}</Text>
 					<Text style={styles.serverInfoText}>{item.metrics?.latencyMs}</Text>
@@ -127,9 +123,7 @@ function ServersScreenContent({
 		return (
 			<View
 				style={{
-					padding: 20,
 					alignItems: "center",
-					justifyContent: "center",
 				}}>
 				<ActivityIndicator size="large" color={theme.colors.background} />
 				<Text style={{ color: theme.colors.text, marginTop: 10 }}>
@@ -163,16 +157,9 @@ export default function ServersScreen() {
 	const styles = createStyles(theme);
 
 	const { wsConnect } = useWebSocketClient();
-	const [userId, setUserId] = useState("");
-	const { getSubscription } = useBackendClient();
 
 	const headerHeight = useHeaderHeight();
 	const paddingTop = headerHeight + 16;
-
-	useEffect(() => {
-		const userIdStorage = SecureStore.getItemAsync("USER_ID");
-		userIdStorage.then((id) => setUserId(id ?? ""));
-	}, []);
 
 	return (
 		<View style={[styles.container, { paddingTop }]}>
@@ -183,11 +170,7 @@ export default function ServersScreen() {
 					flex: 1,
 					justifyContent: "center",
 				}}>
-				<ServersScreenContent
-					onSelect={(id) => setSelectedServer(id)}
-					onServerResponse={() => getSubscription(userId)}
-					wsConnect={(servers) => wsConnect(servers)}
-				/>
+				<ServersScreenContent wsConnect={(servers) => wsConnect(servers)} />
 			</View>
 
 			<View style={styles.buttonContainer}>
@@ -195,9 +178,9 @@ export default function ServersScreen() {
 					style={[styles.button, styles.submitButton]}
 					onPress={() => {
 						if (selectedServer)
-							appEmitter.emit("onServerSelected", { id: selectedServer });
+							appEmitter.emit("onServerConnecting", { id: selectedServer });
 					}}>
-					<Text style={styles.buttonText}>{t("select")}</Text>
+					<Text style={styles.buttonText}>{t("connect")}</Text>
 				</TouchableOpacity>
 			</View>
 		</View>
