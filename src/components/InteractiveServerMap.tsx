@@ -1,7 +1,6 @@
 import { GeoLocation, useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
 import { useAppTheme } from "@/ThemeContext";
-import { appEmitter } from "@/utility/emmiter";
 import { OrbitControls } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 import { useIsFocused } from "expo-router";
@@ -32,7 +31,7 @@ export default function InteractiveServerMap() {
 	const isActive = useIsFocused();
 
 	const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
-	const [isReady, setIsReady] = useState(false);
+	const [isReady, setIsReady] = useState(true);
 	const [userGeo, setUserGeo] = useState<GeoLocation | null>(null);
 
 	const { getUserLastGeo } = useBackendClient();
@@ -58,25 +57,6 @@ export default function InteractiveServerMap() {
 				getUserLastGeo(userId)
 					.then((response) => {
 						setUserGeo(response?.response);
-					})
-					.catch((e) => {
-						console.error(e);
-					});
-				getSubscription(userId)
-					.then((response) => {
-						if (response) {
-							if ("response" in response) {
-								fetchServers(response.response)
-									.then((data) => {
-										appEmitter.emit("onServersLoaded", { data });
-									})
-									.catch((err) => {
-										console.error(err);
-									});
-							} else {
-								appEmitter.emit("onServersLoaded", { response });
-							}
-						}
 					})
 					.catch((e) => {
 						console.error(e);

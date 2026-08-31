@@ -1,18 +1,22 @@
 import { ServerRepository } from "../../db/repository/ServerRepository";
 import { ServerEntity } from "../../db/schema/servers";
+import { useBackendClient } from "./useBackendClient";
 
 export function useServers() {
-	const fetchServers = async (response?: any[]): Promise<ServerEntity[]> => {
+	const fetchServers = async (userId: string): Promise<ServerEntity[]> => {
+		const { getSubscription } = useBackendClient();
 		try {
 			const localServers = await ServerRepository.getAll();
 			if (localServers && localServers.length > 0) {
 				return localServers;
 			} else {
+				const response = await getSubscription(userId);
+
 				if (!response) {
 					throw new Error("Server didn't return any response.");
 				}
 
-				response.forEach((r) => {
+				(response.response as any[]).forEach((r) => {
 					ServerRepository.add({
 						connectionLink: r.connectionLink,
 						remark: r.inbound.remark,

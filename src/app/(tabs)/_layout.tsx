@@ -53,7 +53,7 @@ export default function TabLayout() {
 				component={MainScreen}
 				options={{
 					tabBarIcon: ({ color }) => (
-						<HomeIcon color={color} width={24} height={24} />
+						<HomeIcon color={color} width={36} height={36} />
 					),
 				}}
 			/>
@@ -62,7 +62,7 @@ export default function TabLayout() {
 				component={AddServers}
 				options={{
 					tabBarIcon: ({ color }) => (
-						<PlusIcon color={color} width={24} height={24} />
+						<PlusIcon color={color} width={36} height={36} />
 					),
 				}}
 			/>
@@ -71,7 +71,7 @@ export default function TabLayout() {
 				component={SettingsScreen}
 				options={{
 					tabBarIcon: ({ color }) => (
-						<GearIcon color={color} width={24} height={24} />
+						<GearIcon color={color} width={36} height={36} />
 					),
 				}}
 			/>

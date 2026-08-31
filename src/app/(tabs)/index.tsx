@@ -8,7 +8,7 @@ import { useDurationWatch } from "@/hooks/useDurationWatch";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { useAppTheme } from "@/ThemeContext";
-import { appEmitter } from "@/utility/emmiter";
+import { appEmitter } from "@/utility/emitter";
 import * as Crypto from "expo-crypto";
 import { Link } from "expo-router";
 import * as SecureStore from "expo-secure-store";

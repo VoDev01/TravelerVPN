@@ -6,7 +6,7 @@ import {
 	useWebSocketClient,
 } from "@/hooks/useWebSocketClient";
 import { useAppTheme } from "@/ThemeContext";
-import { appEmitter } from "@/utility/emmiter";
+import { appEmitter } from "@/utility/emitter";
 import { useHeaderHeight } from "expo-router/build/react-navigation";
 import * as SecureStore from "expo-secure-store";
 import { useCallback, useEffect, useState } from "react";
@@ -20,12 +20,11 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
-import { ServerEntity } from "../../db/schema/servers";
 
 function ServersScreenContent({
-	wsConnect,
+	wsProcessData,
 }: {
-	wsConnect: (servers: MetricsServerData[]) => void;
+	wsProcessData: (servers: MetricsServerData[]) => void;
 }) {
 	const [selectedServer, setSelectedServer] = useState<number>();
 	const [isRefreshing, setIsRefreshing] = useState(true);
@@ -47,28 +46,35 @@ function ServersScreenContent({
 		});
 	}, []);
 
+	const setServersAndMetrics = (userId: string) => {
+		fetchServers(userId).then((data) => {
+			if (data.length > 0) {
+				const renderData: MetricsServerData[] = [];
+				data.forEach((server) => {
+					renderData.push({
+						...server,
+						metrics: null,
+					});
+				});
+				setServers(renderData);
+			}
+		});
+	};
+
 	useEffect(() => {
 		setIsRefreshing(true);
 
-		appEmitter.addListener("onServersLoaded", (data: ServerEntity[]) => {
-			const renderData: MetricsServerData[] = [];
-			data.forEach((server) => {
-				renderData.push({
-					...server,
-					metrics: null,
-				});
-			});
-			setServers(renderData);
+		SecureStore.getItemAsync("USER_ID").then((userId) => {
+			if (userId) {
+				setServersAndMetrics(userId);
+				setIsRefreshing(false);
+			}
 		});
-
-		return () => {
-			setIsRefreshing(false);
-		};
 	}, []);
 
 	useEffect(() => {
 		wsEstablishConnection();
-		wsConnect(servers);
+		wsProcessData(servers);
 	}, []);
 
 	const onRefresh = () => {
@@ -77,22 +83,7 @@ function ServersScreenContent({
 			refreshServers().then(() => {
 				SecureStore.getItemAsync("USER_ID").then((userId) => {
 					if (userId) {
-						getSubscription(userId).then((response) => {
-							fetchServers(response?.response)
-								.then((data) => {
-									const renderData: MetricsServerData[] = [];
-									data.forEach((server) => {
-										renderData.push({
-											...server,
-											metrics: null,
-										});
-									});
-									setServers(renderData);
-								})
-								.catch((err) => {
-									console.error(err);
-								});
-						});
+						setServersAndMetrics(userId);
 					}
 				});
 			});
@@ -113,7 +104,9 @@ function ServersScreenContent({
 				onPress={() => setSelectedServer(item.id)}>
 				<View style={styles.serverInfo}>
 					<Text style={styles.serverInfoText}>{item.remark}</Text>
-					<Text style={styles.serverInfoText}>{item.metrics?.latencyMs}</Text>
+					{item.metrics && (
+						<Text style={styles.serverInfoText}>{item.metrics.latencyMs}</Text>
+					)}
 				</View>
 			</TouchableOpacity>
 		);
@@ -145,6 +138,11 @@ function ServersScreenContent({
 					tintColor={theme.colors.background}
 				/>
 			}
+			ListEmptyComponent={
+				<View style={styles.emptyContainer}>
+					<Text style={styles.emptyText}>No available servers found</Text>
+				</View>
+			}
 		/>
 	);
 }
@@ -165,13 +163,7 @@ export default function ServersScreen() {
 		<View style={[styles.container, { paddingTop }]}>
 			<Text style={styles.title}>{t("available_servers")}</Text>
 
-			<View
-				style={{
-					flex: 1,
-					justifyContent: "center",
-				}}>
-				<ServersScreenContent wsConnect={(servers) => wsConnect(servers)} />
-			</View>
+			<ServersScreenContent wsProcessData={(servers) => wsConnect(servers)} />
 
 			<View style={styles.buttonContainer}>
 				<TouchableOpacity
@@ -191,7 +183,6 @@ const createStyles = (theme: CustomTheme) =>
 	StyleSheet.create({
 		container: {
 			flex: 1,
-			paddingTop: 64,
 			rowGap: 12,
 		},
 		navigation: {
@@ -239,7 +230,6 @@ const createStyles = (theme: CustomTheme) =>
 			fontFamily: "CustomFont-Regular",
 		},
 		serverRow: {
-			flexDirection: "row",
 			alignItems: "center",
 			justifyContent: "space-between",
 			paddingVertical: 14,
@@ -250,11 +240,22 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		serverInfo: {
 			flex: 1,
-			justifyContent: "space-around",
+			flexDirection: "row",
+			justifyContent: "space-between",
 		},
 		serverInfoText: {
 			color: theme.colors.text,
 			fontSize: 16,
 			fontFamily: "CustomFont-Regular",
+		},
+		emptyContainer: {
+			flex: 1,
+			alignItems: "center",
+			justifyContent: "center",
+			textAlign: "center",
+		},
+		emptyText: {
+			fontSize: 24,
+			color: theme.colors.text,
 		},
 	});

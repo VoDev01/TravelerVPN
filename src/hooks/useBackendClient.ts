@@ -1,4 +1,3 @@
-import { ServerRepository } from "../../db/repository/ServerRepository";
 import makeRequest from "../utility/api";
 
 export interface VpnResponse {
@@ -22,14 +21,9 @@ export interface GeoLocation {
 export const useBackendClient = () => {
 	const getSubscription = async (userId: string | undefined) => {
 		try {
-			const local = await ServerRepository.getAll();
-			const response =
-				local.length === 0
-					? ((await makeRequest("/api/user/subscription", "POST", {
-							userId,
-						})) as VpnResponse)
-					: local;
-			return response;
+			return (await makeRequest("/api/user/subscription", "POST", {
+				userId,
+			})) as VpnResponse;
 		} catch (error) {
 			console.error("Error fetching subscription:", error);
 		}
