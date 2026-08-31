@@ -10,7 +10,7 @@ export function useServers() {
 				if (localServers && localServers.length > 0) {
 					return localServers;
 				} else {
-					if (response.length == 0) {
+					if (response.length == 0 || !response) {
 						throw new Error("Server didn't return any response.");
 					}
 

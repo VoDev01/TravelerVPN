@@ -43,7 +43,6 @@ const makeRequest = async (
 		return json;
 	} catch (error) {
 		console.error("Error making request:", error);
-		throw error;
 	}
 };
 
