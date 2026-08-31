@@ -1,19 +1,16 @@
 import { GeoLocation, useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
+import { useAppTheme } from "@/ThemeContext";
 import { appEmitter } from "@/utility/emmiter";
 import { OrbitControls } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 import { useIsFocused } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { RefObject, useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import * as THREE from "three";
 import FlightTrajectory from "./FlightTrajectory";
-import GlobeMarker, {
-	ActiveLabel,
-	geodeticToECEF,
-	ServerLocation,
-} from "./GlobeMarker";
+import GlobeMarker, { geodeticToECEF, ServerLocation } from "./GlobeMarker";
 import { Model } from "./Model";
 
 export function Animate({ ref }: { ref: RefObject<THREE.Object3D | null> }) {
@@ -35,12 +32,14 @@ export default function InteractiveServerMap() {
 	const isActive = useIsFocused();
 
 	const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
-	const [currentLabel, setCurrentLabel] = useState<ActiveLabel | null>(null);
+	const [isReady, setIsReady] = useState(false);
 	const [userGeo, setUserGeo] = useState<GeoLocation | null>(null);
 
 	const { getUserLastGeo } = useBackendClient();
 	const { fetchServers } = useServers();
 	const { getSubscription } = useBackendClient();
+
+	const theme = useAppTheme();
 
 	useEffect(() => {
 		if (!isActive) {
@@ -49,7 +48,7 @@ export default function InteractiveServerMap() {
 			aircraftRef.current = null;
 			earthRef.current = null;
 			setActiveLocationId(null);
-			setCurrentLabel(null);
+			setIsReady(false);
 		}
 	}, [isActive]);
 
@@ -62,7 +61,11 @@ export default function InteractiveServerMap() {
 				getSubscription(userId).then((response) => {
 					fetchServers(response?.response)
 						.then((data) => {
-							appEmitter.emit("onServersLoaded", { data });
+							if (data.length === 0) setIsReady(false);
+							else {
+								appEmitter.emit("onServersLoaded", { data });
+								setIsReady(true);
+							}
 						})
 						.catch((err) => {
 							console.error(err);
@@ -94,6 +97,17 @@ export default function InteractiveServerMap() {
 		);
 		B = new THREE.Vector3(
 			...geodeticToECEF(serverData[3].lat, serverData[3].lon, 7.22),
+		);
+	}
+
+	if (!isReady) {
+		return (
+			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+				<ActivityIndicator size="large" color="#fff" />
+				<Text style={{ color: theme.colors.text, marginTop: 10 }}>
+					Загрузка серверов...
+				</Text>
+			</View>
 		);
 	}
 
