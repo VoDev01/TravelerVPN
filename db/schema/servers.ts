@@ -8,6 +8,9 @@ export const serversTable = sqliteTable("servers", {
 	contryTag: text("country_tag").notNull(),
 	connectionLink: text().notNull(),
 	inboundId: integer("inbound_id"),
+	type: text("type", { enum: ["traveler_vpn", "user_defined"] }).default(
+		"traveler_vpn",
+	),
 });
 
 export type ServerEntity = InferSelectModel<typeof serversTable>;

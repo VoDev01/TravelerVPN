@@ -98,69 +98,68 @@ export default function MainScreen() {
 	}, []);
 
 	return (
-		<>
-			<View style={styles.contentContainer}>
-				<View style={styles.connectionStatus}>
-					<View style={styles.speedContainer}>
-						<View style={styles.statItem}>
-							<Text style={styles.statValue}>0.00 Mbps</Text>
-							<DownArrowIcon width={24} height={24} />
-						</View>
-
-						<View style={styles.statItem}>
-							<Text style={styles.statValue}>0.00 Mbps</Text>
-							<UpArrowIcon width={24} height={24} />
-						</View>
+		<View style={styles.container}>
+			<View style={styles.connectionStatus}>
+				<View style={styles.speedContainer}>
+					<View style={styles.statItem}>
+						<Text style={styles.statValue}>0.00 Mbps</Text>
+						<DownArrowIcon width={24} height={24} />
 					</View>
 
-					<Text style={styles.connectionDurationText}>{formatTime(time)}</Text>
-					<View style={styles.locationData}>
-						<Text style={styles.locationText}>
-							{server.connectionState === ServerConnection.DISCONNECTED
-								? t("not_connected")
-								: server.entity?.remark}
-						</Text>
-						{server.connectionState === ServerConnection.DISCONNECTED ? (
-							<></>
-						) : (
-							<GermanyIcon width={32} height={32} />
-						)}
+					<View style={styles.statItem}>
+						<Text style={styles.statValue}>0.00 Mbps</Text>
+						<UpArrowIcon width={24} height={24} />
 					</View>
 				</View>
 
-				<Suspense fallback={<Loader />}>
-					<View style={styles.mapContainer}>
-						<InteractiveServerMap />
-					</View>
-				</Suspense>
-
-				{server.connectionState === ServerConnection.CONNECTED ||
-				server.connectionState === ServerConnection.CONNECTING ? (
-					<TouchableOpacity
-						style={styles.disconnectButton}
-						onPress={() => {
-							reset();
-							stop();
-							setServer({
-								connectionState: ServerConnection.DISCONNECTED,
-								entity: server.entity,
-							});
-							stopXray();
-						}}>
-						<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>
-					</TouchableOpacity>
-				) : (
-					<Link href="/servers" asChild>
-						<TouchableOpacity
-							style={styles.chooseServerButton}
-							onPress={() => {}}>
-							<Text style={styles.chooseServerButtonText}>
-								{t("choose_server")}
-							</Text>
-						</TouchableOpacity>
-					</Link>
-				)}
+				<Text style={styles.connectionDurationText}>{formatTime(time)}</Text>
+				<View style={styles.locationData}>
+					<Text style={styles.locationText}>
+						{server.connectionState === ServerConnection.DISCONNECTED
+							? t("not_connected")
+							: server.entity?.remark}
+					</Text>
+					{server.connectionState === ServerConnection.DISCONNECTED ? (
+						<></>
+					) : (
+						<GermanyIcon width={32} height={32} />
+					)}
+				</View>
 			</View>
+
+			<Suspense fallback={<Loader />}>
+				<View style={styles.mapContainer}>
+					<InteractiveServerMap />
+				</View>
+			</Suspense>
+
+			{server.connectionState === ServerConnection.CONNECTED ||
+			server.connectionState === ServerConnection.CONNECTING ? (
+				<TouchableOpacity
+					style={styles.disconnectButton}
+					onPress={() => {
+						reset();
+						stop();
+						setServer({
+							connectionState: ServerConnection.DISCONNECTED,
+							entity: server.entity,
+						});
+						stopXray();
+					}}>
+					<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>
+				</TouchableOpacity>
+			) : (
+				<Link href="/servers" asChild>
+					<TouchableOpacity
+						style={styles.chooseServerButton}
+						onPress={() => {}}>
+						<Text style={styles.chooseServerButtonText}>
+							{t("choose_server")}
+						</Text>
+					</TouchableOpacity>
+				</Link>
+			)}
+
 			<View style={styles.trafficContainer}>
 				<View style={styles.trafficStatusData}>
 					<GasPumpIcon width={48} height={48} fill={"#c40"} />
@@ -170,17 +169,16 @@ export default function MainScreen() {
 					<View style={styles.dataBarFill} />
 				</View>
 			</View>
-		</>
+		</View>
 	);
 }
 
 const createStyles = (theme: CustomTheme) =>
 	StyleSheet.create({
-		contentContainer: {
+		container: {
 			flex: 1,
-			justifyContent: "center",
-			alignItems: "center",
 			rowGap: 12,
+			paddingVertical: 24,
 		},
 		speedContainer: {
 			flexDirection: "row",
@@ -238,7 +236,6 @@ const createStyles = (theme: CustomTheme) =>
 			paddingVertical: 12,
 			paddingHorizontal: 24,
 			alignSelf: "center",
-			marginBottom: 30,
 			borderWidth: 1,
 			borderColor: theme.colors.important2,
 		},
@@ -247,7 +244,6 @@ const createStyles = (theme: CustomTheme) =>
 			paddingVertical: 12,
 			paddingHorizontal: 24,
 			alignSelf: "center",
-			marginBottom: 30,
 			borderWidth: 1,
 			borderColor: theme.colors.important1,
 		},
@@ -263,7 +259,6 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		trafficContainer: {
 			marginTop: "auto",
-			marginBottom: 24,
 		},
 		trafficStatusData: {
 			marginBottom: 10,

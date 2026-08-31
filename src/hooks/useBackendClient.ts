@@ -28,7 +28,7 @@ export const useBackendClient = () => {
 					? ((await makeRequest("/api/user/subscription", "POST", {
 							userId,
 						})) as VpnResponse)
-					: { status: "success", response: null };
+					: local;
 			return response;
 		} catch (error) {
 			console.error("Error fetching subscription:", error);

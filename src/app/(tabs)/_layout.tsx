@@ -1,8 +1,10 @@
+import PlusIcon from "@/assets/images/akar-icons_plus.svg";
 import HomeIcon from "@/assets/images/Home.svg";
 import GearIcon from "@/assets/images/mdi_gear.svg";
 import { useAppTheme } from "@/ThemeContext";
 import { createBottomTabNavigator } from "expo-router/build/react-navigation/bottom-tabs";
 import MainScreen from ".";
+import AddServers from "./addServers";
 import SettingsScreen from "./settings";
 
 const Tab = createBottomTabNavigator();
@@ -17,6 +19,7 @@ export default function TabLayout() {
 
 				sceneStyle: {
 					backgroundColor: theme.colors.primary,
+					margin: 12,
 				},
 
 				tabBarStyle: {
@@ -50,7 +53,16 @@ export default function TabLayout() {
 				component={MainScreen}
 				options={{
 					tabBarIcon: ({ color }) => (
-						<HomeIcon color={color} width={36} height={36} />
+						<HomeIcon color={color} width={24} height={24} />
+					),
+				}}
+			/>
+			<Tab.Screen
+				name="Add servers"
+				component={AddServers}
+				options={{
+					tabBarIcon: ({ color }) => (
+						<PlusIcon color={color} width={24} height={24} />
 					),
 				}}
 			/>
@@ -59,7 +71,7 @@ export default function TabLayout() {
 				component={SettingsScreen}
 				options={{
 					tabBarIcon: ({ color }) => (
-						<GearIcon color={color} width={36} height={36} />
+						<GearIcon color={color} width={24} height={24} />
 					),
 				}}
 			/>

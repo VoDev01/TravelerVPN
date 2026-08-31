@@ -56,18 +56,32 @@ export default function InteractiveServerMap() {
 	useEffect(() => {
 		SecureStore.getItemAsync("USER_ID").then((userId) => {
 			if (userId) {
-				getUserLastGeo(userId).then((response) => {
-					setUserGeo(response?.response);
-				});
-				getSubscription(userId).then((response) => {
-					fetchServers(response?.response)
-						.then((data) => {
-							appEmitter.emit("onServersLoaded", { data });
-						})
-						.catch((err) => {
-							console.error(err);
-						});
-				});
+				getUserLastGeo(userId)
+					.then((response) => {
+						setUserGeo(response?.response);
+					})
+					.catch((e) => {
+						console.error(e);
+					});
+				getSubscription(userId)
+					.then((response) => {
+						if (response) {
+							if ("response" in response) {
+								fetchServers(response.response)
+									.then((data) => {
+										appEmitter.emit("onServersLoaded", { data });
+									})
+									.catch((err) => {
+										console.error(err);
+									});
+							} else {
+								appEmitter.emit("onServersLoaded", { response });
+							}
+						}
+					})
+					.catch((e) => {
+						console.error(e);
+					});
 			}
 		});
 	}, []);
