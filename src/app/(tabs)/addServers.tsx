@@ -135,7 +135,7 @@ const createStyles = (theme: CustomTheme) =>
 			paddingHorizontal: 12,
 			fontSize: 16,
 			backgroundColor: theme.colors.card,
-			color: theme.colors.primary,
+			color: theme.colors.text,
 			justifyContent: "center",
 		},
 		labelFont: {

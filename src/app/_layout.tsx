@@ -40,13 +40,6 @@ function LayoutContent() {
 	});
 
 	useEffect(() => {
-		if (closeWs) {
-			wsClose();
-			setCloseWs(false);
-		}
-	}, [closeWs]);
-
-	useEffect(() => {
 		if (loaded || error) {
 			SplashScreen.hideAsync();
 		}

@@ -11,6 +11,7 @@ const fallbackResources = {
 			available_servers: "Available servers",
 			cancel: "Cancel",
 			select: "Select",
+			connect: "Connect",
 			disconnect: "Disconnect",
 
 			settings_title: "Settings",
@@ -44,6 +45,7 @@ const fallbackResources = {
 			available_servers: "Доступные сервера",
 			cancel: "Отмена",
 			select: "Выбрать",
+			connect: "Подключится",
 			disconnect: "Отключиться",
 
 			settings_title: "Настройки",
