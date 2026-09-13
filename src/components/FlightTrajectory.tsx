@@ -1,9 +1,18 @@
 import { extend, ThreeElement, useFrame } from "@react-three/fiber/native";
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
-import { RefObject, useRef } from "react";
+import { RefObject, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 extend({ MeshLineGeometry, MeshLineMaterial });
+
+const dummyGlobal = new THREE.Object3D();
+const worldCurrentPoint = new THREE.Vector3();
+const worldNextPoint = new THREE.Vector3();
+const worldQuat = new THREE.Quaternion();
+const inverseEarthQuat = new THREE.Quaternion();
+const currentPoint = new THREE.Vector3();
+const nextPoint = new THREE.Vector3();
+const cameraTargetPos = new THREE.Vector3();
 
 declare module "@react-three/fiber" {
 	interface ThreeElements {
@@ -20,6 +29,7 @@ interface FlightTrajectoryProps {
 	minAircraftScale: number;
 	maxAircraftScale: number;
 	segments?: number;
+	onAnimationStateChange?: (isCameraBusy: boolean) => void;
 }
 
 export default function FlightTrajectory({
@@ -30,78 +40,152 @@ export default function FlightTrajectory({
 	minAircraftScale,
 	maxAircraftScale,
 	segments = 50,
+	onAnimationStateChange,
 }: FlightTrajectoryProps) {
-	const midX = (A.x + B.x) / 2;
-	const midZ = (A.z + B.z) / 2;
+	const curve = useMemo(() => {
+		const midX = (A.x + B.x) / 2;
+		const midZ = (A.z + B.z) / 2;
+		const maxBaseY = Math.max(A.y, B.y);
+		const midY = maxBaseY + height;
 
-	const maxBaseY = Math.max(A.y, B.y);
-	const midY = maxBaseY + height;
+		const middle = new THREE.Vector3(midX, midY, midZ);
+		return new THREE.QuadraticBezierCurve3(A, middle, B);
+	}, [A, B, height]);
 
-	const middle = new THREE.Vector3(midX, midY, midZ);
+	const points = useMemo(() => {
+		return curve.getPoints(segments);
+	}, [curve, segments]);
 
-	const curve = new THREE.QuadraticBezierCurve3(A, middle, B);
+	const flatPoints = useMemo(() => {
+		return points.flatMap((p) => [p.x, p.y, p.z]);
+	}, [points]);
 
-	const points = curve.getPoints(segments);
+	const initialPoints = useMemo(() => {
+		const arr = [];
+		for (let i = 0; i < segments; i++) {
+			arr.push(A.x, A.y, A.z);
+		}
+		return arr;
+	}, [A, segments]);
 
-	const lineGeom = useRef<MeshLineGeometry>(null);
-	let i = 0;
-
-	const initialPoints = [];
-	for (let k = 0; k < points.length; k++) {
-		initialPoints.push(points[i].x, points[i].y, points[i].z);
-	}
-
-	const currentIndexRef = useRef(0);
-	const timeAccumulatorRef = useRef(0);
+	const lineGeom = useRef<any>(null);
 	const trajectoryDrawn = useRef(false);
+	const flightProgressRef = useRef(0);
+	const drawProgressRef = useRef(0);
+	const initialCameraPos = useRef<THREE.Vector3 | null>(null);
+	const isCameraReturning = useRef(false);
 
-	const INTERVAL = 0.018;
+	const CAMERA_FOLLOW_SPEED = 0.05;
+	const CAMERA_RETURN_SPEED = 0.03;
+	const DRAW_SPEED = 0.2;
+	const FLIGHT_SPEED = 0.15;
+
+	useEffect(() => {
+		if (lineGeom.current) {
+			lineGeom.current.setPoints(initialPoints);
+		}
+		trajectoryDrawn.current = false;
+		drawProgressRef.current = 0;
+		flightProgressRef.current = 0;
+		if (aircraftRef.current) {
+			aircraftRef.current.visible = false;
+		}
+		onAnimationStateChange?.(false);
+	}, [A, B, initialPoints]);
 
 	useFrame((state, delta) => {
-		timeAccumulatorRef.current += delta;
+		if (!trajectoryDrawn.current) {
+			if (aircraftRef.current) aircraftRef.current.visible = false;
 
-		if (timeAccumulatorRef.current >= INTERVAL) {
-			timeAccumulatorRef.current = 0;
+			if (drawProgressRef.current < 1.0 && lineGeom.current) {
+				drawProgressRef.current += delta * DRAW_SPEED;
+				const p = Math.min(drawProgressRef.current, 1.0);
 
-			const currentIndex = currentIndexRef.current;
-			const currentPoint = points[currentIndex];
+				const easedProgress = Math.sin((p * Math.PI) / 2);
 
-			if (
-				currentIndex < points.length &&
-				lineGeom.current &&
-				!trajectoryDrawn.current
-			) {
-				lineGeom.current.advance(currentPoint);
+				const targetPointIndex = Math.floor(easedProgress * (segments - 1));
+				const sliceEnd = (targetPointIndex + 1) * 3;
 
-				currentIndexRef.current += 1;
-			} else if (currentIndex >= points.length) {
+				const visibleChunk = flatPoints.slice(0, sliceEnd);
+
+				const lastX = flatPoints[sliceEnd - 3];
+				const lastY = flatPoints[sliceEnd - 2];
+				const lastZ = flatPoints[sliceEnd - 1];
+
+				const remainingCount = segments - (targetPointIndex + 1);
+				for (let i = 0; i < remainingCount; i++) {
+					visibleChunk.push(lastX, lastY, lastZ);
+				}
+
+				lineGeom.current.setPoints(visibleChunk);
+			} else {
 				trajectoryDrawn.current = true;
-				currentIndexRef.current = 0;
+				flightProgressRef.current = 0;
+				onAnimationStateChange?.(true);
 			}
-			if (trajectoryDrawn.current) {
-				if (currentIndex < points.length) {
-					aircraftRef.current?.position.set(
-						currentPoint.x,
-						currentPoint.y,
-						currentPoint.z,
-					);
+		} else if (trajectoryDrawn.current && aircraftRef.current) {
+			const aircraft = aircraftRef.current;
+			const earth = aircraft.parent;
 
-					const nextPoint = points[currentIndex + 1];
-					if (nextPoint) {
-						aircraftRef.current?.lookAt(nextPoint);
-					}
+			if (earth && flightProgressRef.current < 1.0) {
+				aircraft.visible = true;
 
-					const currentHeight = currentPoint.y;
+				if (!initialCameraPos.current) {
+					initialCameraPos.current = state.camera.position.clone();
+				}
 
-					const heightRatio = Math.min(Math.max(currentHeight / height, 0), 1);
+				flightProgressRef.current += delta * FLIGHT_SPEED;
+				const p = Math.min(flightProgressRef.current, 1.0);
 
-					const currentScale =
-						minAircraftScale +
-						(maxAircraftScale - minAircraftScale) * heightRatio;
+				curve.getPointAt(p, currentPoint);
+				const nextP = Math.min(p + 0.01, 1.0);
+				curve.getPointAt(nextP, nextPoint);
 
-					aircraftRef.current?.scale.setScalar(currentScale);
+				worldCurrentPoint.copy(currentPoint);
+				worldNextPoint.copy(nextPoint);
+				earth.localToWorld(worldCurrentPoint);
+				earth.localToWorld(worldNextPoint);
 
-					currentIndexRef.current += 1;
+				dummyGlobal.position.copy(worldCurrentPoint);
+
+				const worldUp = new THREE.Vector3()
+					.subVectors(worldCurrentPoint, earth.position)
+					.normalize();
+				dummyGlobal.up.copy(worldUp);
+
+				if (p < 1.0) {
+					dummyGlobal.lookAt(worldNextPoint);
+				}
+
+				aircraft.position.copy(currentPoint);
+
+				dummyGlobal.getWorldQuaternion(worldQuat);
+				earth.getWorldQuaternion(inverseEarthQuat).invert();
+				aircraft.quaternion.copy(inverseEarthQuat).multiply(worldQuat);
+
+				const cameraOffsetDistance = 6.0;
+				cameraTargetPos
+					.copy(worldUp)
+					.multiplyScalar(cameraOffsetDistance)
+					.add(worldCurrentPoint);
+
+				state.camera.position.lerp(cameraTargetPos, CAMERA_FOLLOW_SPEED);
+
+				state.camera.lookAt(worldCurrentPoint);
+			} else if (flightProgressRef.current >= 1.0 && initialCameraPos.current) {
+				const aircraft = aircraftRef.current;
+				aircraft.visible = false;
+
+				state.camera.position.lerp(
+					initialCameraPos.current,
+					CAMERA_RETURN_SPEED,
+				);
+				state.camera.lookAt(0, 0, 0);
+
+				if (state.camera.position.distanceTo(initialCameraPos.current) < 0.05) {
+					state.camera.position.copy(initialCameraPos.current);
+					initialCameraPos.current = null;
+					onAnimationStateChange?.(false);
 				}
 			}
 		}

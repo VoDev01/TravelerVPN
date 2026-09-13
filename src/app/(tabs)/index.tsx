@@ -12,15 +12,9 @@ import { appEmitter } from "@/utility/emitter";
 import * as Crypto from "expo-crypto";
 import { Link } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-	ActivityIndicator,
-	StyleSheet,
-	Text,
-	TouchableOpacity,
-	View,
-} from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ServerEntity } from "../../../db/schema/servers";
 
 const enum ServerConnection {
@@ -33,19 +27,6 @@ type ServerEntityConnection = {
 	connectionState: ServerConnection;
 	entity: ServerEntity | null;
 };
-
-function Loader() {
-	const theme = useAppTheme();
-
-	return (
-		<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-			<ActivityIndicator size="large" color="#fff" />
-			<Text style={{ color: theme.colors.text, marginTop: 10 }}>
-				Загрузка карты...
-			</Text>
-		</View>
-	);
-}
 
 export default function MainScreen() {
 	const { time, start, stop, formatTime, reset } = useDurationWatch();
@@ -132,11 +113,9 @@ export default function MainScreen() {
 				</View>
 			</View>
 
-			<Suspense fallback={<Loader />}>
-				<View style={styles.mapContainer}>
-					<InteractiveServerMap />
-				</View>
-			</Suspense>
+			<View style={styles.mapContainer}>
+				<InteractiveServerMap />
+			</View>
 
 			{server.connectionState === ServerConnection.CONNECTED ||
 			server.connectionState === ServerConnection.CONNECTING ? (
@@ -223,10 +202,11 @@ const createStyles = (theme: CustomTheme) =>
 			fontFamily: "CustomFont-Regular",
 		},
 		mapContainer: {
+			width: "100%",
+			aspectRatio: 1,
+			justifyContent: "center",
 			alignItems: "center",
-			marginBottom: 24,
-			width: 350,
-			height: 350,
+			overflow: "hidden",
 		},
 		locationData: {
 			flexDirection: "row",

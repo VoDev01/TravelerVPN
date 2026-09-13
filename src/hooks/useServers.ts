@@ -12,7 +12,7 @@ export function useServers() {
 			} else {
 				const response = await getSubscription(userId);
 
-				if (!response) {
+				if (!response || !response.response) {
 					throw new Error("Server didn't return any response.");
 				}
 
