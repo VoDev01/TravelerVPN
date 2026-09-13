@@ -1,11 +1,11 @@
 import { GeoLocation, useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
 import { useAppTheme } from "@/ThemeContext";
-import { OrbitControls } from "@react-three/drei/native";
+import { OrbitControls, useProgress } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 import { useIsFocused } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { RefObject, useEffect, useRef, useState } from "react";
+import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import * as THREE from "three";
 import FlightTrajectory from "./FlightTrajectory";
@@ -24,31 +24,43 @@ export function Animate({ ref }: { ref: RefObject<THREE.Object3D | null> }) {
 	return null;
 }
 
+function Loader() {
+	const theme = useAppTheme();
+	return (
+		<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+			<ActivityIndicator size="large" color="#fff" />
+			<Text style={{ color: theme.colors.text, marginTop: 10 }}>
+				Загрузка карты...
+			</Text>
+		</View>
+	);
+}
+
 export default function InteractiveServerMap() {
 	const aircraftRef = useRef<THREE.Object3D>(null);
 	const earthRef = useRef<THREE.Group>(null);
 
 	const isActive = useIsFocused();
+	const { progress, active } = useProgress();
+	const isLoaded = !active && progress === 100;
 
 	const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
 	const [isReady, setIsReady] = useState(true);
+	const [isCameraMoving, setIsCameraMoving] = useState(false);
 	const [userGeo, setUserGeo] = useState<GeoLocation | null>(null);
 
 	const { getUserLastGeo } = useBackendClient();
 	const { fetchServers } = useServers();
 	const { getSubscription } = useBackendClient();
 
-	const theme = useAppTheme();
-
 	useEffect(() => {
-		if (!isActive) {
-			aircraftRef.current?.clear();
-			earthRef.current?.clear();
-			aircraftRef.current = null;
-			earthRef.current = null;
-			setActiveLocationId(null);
-			setIsReady(false);
+		if (aircraftRef.current) {
+			aircraftRef.current.visible = isActive;
 		}
+		if (earthRef.current) {
+			earthRef.current.visible = isActive;
+		}
+		setIsReady(isActive);
 	}, [isActive]);
 
 	useEffect(() => {
@@ -63,7 +75,7 @@ export default function InteractiveServerMap() {
 					});
 			}
 		});
-	}, []);
+	}, [userGeo]);
 
 	const serverData: ServerLocation[] = [
 		{ id: "nl", lat: 52.3676, lon: 4.9041, name: "Нидерланды" },
@@ -90,20 +102,17 @@ export default function InteractiveServerMap() {
 		);
 	}
 
-	if (!isReady) {
-		return (
-			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-				<ActivityIndicator size="large" color="#fff" />
-				<Text style={{ color: theme.colors.text, marginTop: 10 }}>
-					Загрузка серверов...
-				</Text>
-			</View>
-		);
-	}
+	const optimalSegments = useMemo(() => {
+		const distance = A.distanceTo(B);
+
+		const calculated = Math.floor(distance * 40);
+
+		return Math.min(Math.max(calculated, 40), 150);
+	}, [A, B]);
 
 	return (
 		<View style={styles.content}>
-			<Canvas camera={{ position: [-14, 0, 0], fov: 65 }}>
+			<Canvas camera={{ position: [-16, 0, 0], fov: 65 }}>
 				<ambientLight intensity={0.7} />
 				<directionalLight color="white" position={[0, 14, 0]} intensity={3} />
 				<Animate ref={earthRef} />
@@ -128,7 +137,7 @@ export default function InteractiveServerMap() {
 						ref={aircraftRef}
 						model={"aircraft"}
 						props={{
-							scale: 0.02,
+							scale: 0.04,
 						}}
 					/>
 					{A && B && (
@@ -139,12 +148,18 @@ export default function InteractiveServerMap() {
 							aircraftRef={aircraftRef}
 							minAircraftScale={0.02}
 							maxAircraftScale={0.05}
-							segments={50}
+							segments={optimalSegments}
+							onAnimationStateChange={setIsCameraMoving}
 						/>
 					)}
 				</group>
-				<OrbitControls enableRotate={true} enableZoom={true} />
+				<OrbitControls enableRotate={!isCameraMoving} enableZoom={false} />
 			</Canvas>
+			{!isLoaded && (
+				<View style={StyleSheet.absoluteFill} pointerEvents="none">
+					<Loader />
+				</View>
+			)}
 		</View>
 	);
 }

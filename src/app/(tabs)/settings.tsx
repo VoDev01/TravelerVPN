@@ -172,7 +172,6 @@ export default function SettingsScreen() {
 						<View style={styles.settingLabelRow}>
 							<Text style={styles.settingLabelFrag}>{t("server_hopping")}</Text>
 							<View style={styles.settingContainerInput}>
-								<Text style={styles.settingLabelFrag}>{t("every")}</Text>
 								<TextInput
 									value={
 										settings.serverHoppingInterval === null
@@ -211,6 +210,7 @@ const createStyles = (theme: CustomTheme) =>
 		header: {
 			flexDirection: "row",
 			alignItems: "center",
+			marginTop: 30,
 			marginBottom: 30,
 		},
 		backButton: {

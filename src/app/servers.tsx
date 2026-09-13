@@ -20,6 +20,7 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function ServersScreenContent({
 	wsProcessData,
@@ -153,14 +154,16 @@ export default function ServersScreen() {
 
 	const theme = useAppTheme();
 	const styles = createStyles(theme);
+	const insets = useSafeAreaInsets();
 
 	const { wsConnect } = useWebSocketClient();
 
 	const headerHeight = useHeaderHeight();
 	const paddingTop = headerHeight + 16;
+	const paddingBottom = insets.bottom;
 
 	return (
-		<View style={[styles.container, { paddingTop }]}>
+		<View style={[styles.container, { paddingTop, paddingBottom }]}>
 			<Text style={styles.title}>{t("available_servers")}</Text>
 
 			<ServersScreenContent wsProcessData={(servers) => wsConnect(servers)} />
