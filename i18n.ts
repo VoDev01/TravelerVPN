@@ -11,6 +11,7 @@ const fallbackResources = {
 			available_servers: "Available servers",
 			cancel: "Cancel",
 			select: "Select",
+			connect: "Connect",
 			disconnect: "Disconnect",
 
 			settings_title: "Settings",
@@ -19,6 +20,7 @@ const fallbackResources = {
 			section_privacy: "Privacy",
 			section_language: "Language",
 
+			theme: "Theme",
 			choose_language: "Choose Language",
 			show_connection_speed: "Show connection speed",
 			show_region: "Show region",
@@ -43,6 +45,7 @@ const fallbackResources = {
 			available_servers: "Доступные сервера",
 			cancel: "Отмена",
 			select: "Выбрать",
+			connect: "Подключится",
 			disconnect: "Отключиться",
 
 			settings_title: "Настройки",
@@ -51,6 +54,7 @@ const fallbackResources = {
 			section_privacy: "Приватность",
 			section_language: "Язык",
 
+			theme: "Тема",
 			choose_language: "Локализация",
 			show_connection_speed: "Показывать скорость соединения",
 			show_region: "Показывать регион",

@@ -1,31 +1,48 @@
-import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { useEffect, useState } from "react";
 import { ServerRepository } from "../../db/repository/ServerRepository";
+import { ServerEntity } from "../../db/schema/servers";
+import { useBackendClient } from "./useBackendClient";
 
 export function useServers() {
-	const { data: servers, error } = useLiveQuery(
-		ServerRepository.getServersQuery(),
-	);
-	const [isSyncing, setIsSyncing] = useState(false);
+	const fetchServers = async (userId: string): Promise<ServerEntity[]> => {
+		const { getSubscription } = useBackendClient();
+		try {
+			const localServers = await ServerRepository.getAll();
+			if (localServers && localServers.length > 0) {
+				return localServers;
+			} else {
+				const response = await getSubscription(userId);
 
-	useEffect(() => {
-		async function initFetch() {
-			setIsSyncing(true);
-			try {
-			} catch (e) {
-				// Обработка ошибки сети
-			} finally {
-				setIsSyncing(false);
+				if (!response) {
+					throw new Error("Server didn't return any response.");
+				}
+
+				(response.response as any[]).forEach((r) => {
+					ServerRepository.add({
+						connectionLink: r.connectionLink,
+						remark: r.inbound.remark,
+						contryTag: r.inbound.tag,
+					});
+				});
+
+				return await ServerRepository.getAll();
 			}
+		} catch (e) {
+			console.error(e);
+			return [];
 		}
-		initFetch();
-	}, []);
+	};
+
+	const refreshServers = async () => {
+		try {
+			await ServerRepository.deleteAll();
+		} catch (e) {
+			console.error(e);
+		}
+	};
 
 	return {
-		servers: servers ?? [],
-		isLoading: !servers && !error,
-		isSyncing,
-		error: error?.message ?? null,
+		fetchServers,
+		refreshServers,
 		deleteServer: ServerRepository.delete,
 		addServer: ServerRepository.add,
 		getServerById: ServerRepository.getById,

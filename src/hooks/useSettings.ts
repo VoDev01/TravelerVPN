@@ -2,21 +2,25 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 
 export interface SettingsState {
+	theme: string;
 	localization: string;
 	connectionAlerts: boolean;
 	dataUsageAlerts: boolean;
 	securityWarnings: boolean;
 	killSwitch: boolean;
 	serverHoppingInterval: number;
+	clientUuid: string;
 }
 
 const DEFAULT_SETTINGS: SettingsState = {
+	theme: "dark",
 	localization: "en",
 	connectionAlerts: false,
 	dataUsageAlerts: false,
 	securityWarnings: false,
 	killSwitch: false,
 	serverHoppingInterval: 0,
+	clientUuid: "",
 };
 
 const STORAGE_KEY = "@user_settings";
@@ -40,7 +44,7 @@ export const useSettings = () => {
 		};
 
 		loadSettings();
-	}, []);
+	});
 
 	const updateSetting = async <K extends keyof SettingsState>(
 		key: K,
@@ -49,11 +53,9 @@ export const useSettings = () => {
 		try {
 			const updatedSettings = { ...settings, [key]: value };
 
-			// Сначала обновляем стейт для быстрого отклика UI
 			setSettings(updatedSettings);
 
-			// Затем сохраняем весь объект в AsyncStorage
-			await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
+			AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
 		} catch (e) {
 			console.log(`Error saving setting [${key}]: ${e}`);
 		}

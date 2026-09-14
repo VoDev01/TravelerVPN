@@ -1,12 +1,16 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const serversTable = sqliteTable("servers", {
-	id: int().primaryKey({ autoIncrement: true }),
-	locationCity: text(),
-	locationCountry: text().notNull(),
-	ipv4: text().notNull(),
-	ipv6: text().notNull(),
+	id: integer("id").primaryKey({ autoIncrement: true }),
+	flag: text(),
+	remark: text().notNull(),
+	contryTag: text("country_tag").notNull(),
+	connectionLink: text().notNull(),
+	inboundId: integer("inbound_id"),
+	type: text("type", { enum: ["traveler_vpn", "user_defined"] }).default(
+		"traveler_vpn",
+	),
 });
 
 export type ServerEntity = InferSelectModel<typeof serversTable>;
