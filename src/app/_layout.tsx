@@ -1,16 +1,16 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { useColorScheme } from "react-native";
-
+import LeftArrowWhite from "@/assets/images/line-md_arrow-left-white.svg";
+import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
-
-import AppLayout from "@/components/AppLayout";
-import { StyleSheet } from "react-native";
-
+import { useSettings } from "@/hooks/useSettings";
+import { useWebSocketClient } from "@/hooks/useWebSocketClient";
+import { ThemeProvider, useAppTheme } from "@/ThemeContext";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
-import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
-import { LogBox } from "react-native";
-import { db, expoDb, seedDatabase } from "../../db/client";
+import { useFonts } from "expo-font";
+import { Stack, useRouter } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect, useState } from "react";
+import { LogBox, TouchableOpacity } from "react-native";
+import { db } from "../../db/client";
 import migrations from "../../drizzle/migrations";
 import "../../i18n";
 
@@ -20,38 +20,93 @@ LogBox.ignoreLogs([
 
 SplashScreen.preventAutoHideAsync();
 
-export default function Layout() {
-	const colorScheme = useColorScheme();
+function LayoutContent() {
+	const theme = useAppTheme();
+	const { settings } = useSettings();
 
-	const { success, error } = useMigrations(db, {
+	const [closeWs, setCloseWs] = useState(false);
+	const { wsClose } = useWebSocketClient();
+
+	useEffect(() => {
+		if (closeWs) {
+			wsClose();
+			setCloseWs(false);
+		}
+	}, [closeWs]);
+
+	const [loaded, error] = useFonts({
+		"CustomFont-Regular": require("@/assets/fonts/Nunito-Regular.ttf"),
+		"CustomFont-Bold": require("@/assets/fonts/Nunito-Bold.ttf"),
+	});
+
+	useEffect(() => {
+		if (loaded || error) {
+			SplashScreen.hideAsync();
+		}
+	}, [loaded, error]);
+
+	if (!loaded && !error) {
+		return null;
+	}
+
+	return (
+		<Stack
+			screenOptions={{
+				headerBackTitle: undefined,
+				title: undefined,
+				headerShadowVisible: false,
+				contentStyle: {
+					flex: 1,
+					backgroundColor: theme.colors.primary,
+					padding: 24,
+				},
+			}}>
+			<Stack.Screen
+				name="(tabs)"
+				options={{
+					headerShown: false,
+				}}
+			/>
+			<Stack.Screen
+				name="servers"
+				options={{
+					headerLeft: () => {
+						const router = useRouter();
+
+						return (
+							<TouchableOpacity
+								onPress={() => {
+									router.back();
+									setCloseWs(true);
+								}}>
+								{settings.theme === "dark" ? (
+									<LeftArrowWhite width={48} height={48} />
+								) : (
+									<LeftArrow width={48} height={48} />
+								)}
+							</TouchableOpacity>
+						);
+					},
+					headerTitle: "",
+					headerTransparent: true,
+				}}
+			/>
+		</Stack>
+	);
+}
+
+export default function Layout() {
+	const { success } = useMigrations(db, {
 		journal: {
 			entries: [],
 		},
 		migrations: migrations.migrations,
 	} as any);
 
-	useDrizzleStudio(expoDb);
-
-	seedDatabase();
-
 	return (
-		<ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+		<ThemeProvider>
 			<AnimatedSplashOverlay />
-			<AppLayout>
-				<Stack
-					screenOptions={{
-						contentStyle: {
-							backgroundColor: "#1a1a1a",
-						},
-						headerShown: false,
-					}}></Stack>
-			</AppLayout>
+			<LayoutContent />
 		</ThemeProvider>
 	);
 }
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-	},
-});
