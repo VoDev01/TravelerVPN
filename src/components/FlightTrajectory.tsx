@@ -26,10 +26,9 @@ interface FlightTrajectoryProps {
 	B: THREE.Vector3;
 	height: number;
 	aircraftRef: RefObject<THREE.Group | THREE.Object3D | null>;
-	minAircraftScale: number;
-	maxAircraftScale: number;
 	segments?: number;
 	onAnimationStateChange?: (isCameraBusy: boolean) => void;
+	onAnimationComplete?: (complete: boolean) => void;
 }
 
 export default function FlightTrajectory({
@@ -37,11 +36,12 @@ export default function FlightTrajectory({
 	B,
 	height,
 	aircraftRef,
-	minAircraftScale,
-	maxAircraftScale,
 	segments = 50,
 	onAnimationStateChange,
+	onAnimationComplete,
 }: FlightTrajectoryProps) {
+	onAnimationComplete?.(false);
+
 	const curve = useMemo(() => {
 		const midX = (A.x + B.x) / 2;
 		const midZ = (A.z + B.z) / 2;
@@ -73,7 +73,6 @@ export default function FlightTrajectory({
 	const flightProgressRef = useRef(0);
 	const drawProgressRef = useRef(0);
 	const initialCameraPos = useRef<THREE.Vector3 | null>(null);
-	const isCameraReturning = useRef(false);
 
 	const CAMERA_FOLLOW_SPEED = 0.05;
 	const CAMERA_RETURN_SPEED = 0.03;
@@ -187,6 +186,7 @@ export default function FlightTrajectory({
 					initialCameraPos.current = null;
 					onAnimationStateChange?.(false);
 				}
+				onAnimationComplete?.(true);
 			}
 		}
 	});

@@ -41,8 +41,6 @@ export const useWebSocketClient = () => {
 			webSocketFactory: () => new SockJS(wsUrl),
 			debug: (str) => console.log("STOMP Log:", str),
 			reconnectDelay: 5000,
-			heartbeatIncoming: 4000,
-			heartbeatOutgoing: 4000,
 		});
 
 		wsClientRef.current.onConnect = (frame) => {

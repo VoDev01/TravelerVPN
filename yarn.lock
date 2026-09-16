@@ -1741,6 +1741,11 @@
   resolved "https://registry.yarnpkg.com/@react-native-masked-view/masked-view/-/masked-view-0.3.2.tgz#7064533a573e3539ec912f59c1f457371bf49dd9"
   integrity sha512-XwuQoW7/GEgWRMovOQtX3A4PrXhyaZm0lVUiY8qJDvdngjLms9Cpdck6SmGAUNqQwcj2EadHC1HwL0bEyoa/SQ==
 
+"@react-native-picker/picker@^2.11.4":
+  version "2.11.4"
+  resolved "https://registry.yarnpkg.com/@react-native-picker/picker/-/picker-2.11.4.tgz#7fb09506ee00a82989125cc03e8495204c8afc01"
+  integrity sha512-Kf8h1AMnBo54b1fdiVylP2P/iFcZqzpMYcglC28EEFB1DEnOjsNr6Ucqc+3R9e91vHxEDnhZFbYDmAe79P2gjA==
+
 "@react-native/assets-registry@0.86.0":
   version "0.86.0"
   resolved "https://registry.yarnpkg.com/@react-native/assets-registry/-/assets-registry-0.86.0.tgz#560e78135969d1198aabfdc4ae74faae336463d0"
@@ -2228,6 +2233,11 @@
   version "23.1.3"
   resolved "https://registry.yarnpkg.com/@tweenjs/tween.js/-/tween.js-23.1.3.tgz#eff0245735c04a928bb19c026b58c2a56460539d"
   integrity sha512-vJmvvwFxYuGnF2axRtPYocag6Clbb5YS7kLL+SO/TeVFzHqDIWrNKYtcsPMibjDx9O+bu+psAy9NKfWklassUA==
+
+"@types/country-list@^2.1.4":
+  version "2.1.4"
+  resolved "https://registry.yarnpkg.com/@types/country-list/-/country-list-2.1.4.tgz#703558392ce6fd8a3a1cd30084cebc11ace247aa"
+  integrity sha512-c4orjm0wT+BRt6Ynf2/QRRL+iMX4SdLT11jAjKqkJ7mQr/DLOmdz7qR8i04j9Y7wFSoP70cXJc18FN4YGNgGaA==
 
 "@types/draco3d@^1.4.0":
   version "1.4.10"
@@ -3093,6 +3103,11 @@ cosmiconfig@^9.0.0:
     js-yaml "^4.1.0"
     parse-json "^5.2.0"
 
+country-list@^2.4.1:
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/country-list/-/country-list-2.4.1.tgz#468b60a91004533133352a629de07a3a9d459899"
+  integrity sha512-KhVV/UfUV3dSNpsWIqHTQxLpYDKPKz1UwkRjadt+YbX2PRhyCEihEoS5XgB7J7AMXpkicvl+tRHvkNI5wbji/g==
+
 cross-env@^7.0.3:
   version "7.0.3"
   resolved "https://registry.yarnpkg.com/cross-env/-/cross-env-7.0.3.tgz#865264b29677dc015ba8418918965dd232fc54cf"
@@ -3316,9 +3331,9 @@ draco3d@^1.4.1:
   integrity sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==
 
 drizzle-kit@^1.0.0-rc.4:
-  version "1.0.0-rc.5-ab785fc"
-  resolved "https://registry.yarnpkg.com/drizzle-kit/-/drizzle-kit-1.0.0-rc.5-ab785fc.tgz#cbdac5984d98fbae2713978f8b5d4702798ea10b"
-  integrity sha512-TSg7sK1finOxdo48O9mDfyMY3lhi/aHCVIil5TFhthyq/H/89H/3nwX5V9Gdp7HYMUGFHyWJD5iowSn98l0elw==
+  version "1.0.0-rc.4"
+  resolved "https://registry.yarnpkg.com/drizzle-kit/-/drizzle-kit-1.0.0-rc.4.tgz#f4edd42f8b52b3eaf284cdeb082375cf3ca8d6d0"
+  integrity sha512-KZCpjRyu+oYHLj/UJogfFlOkWhHVkaEI2EOT1U3NDVXUzLoTyPjqwFxwOrlQxsY6jzRyxcz4EacqboGfhEeYrA==
   dependencies:
     "@drizzle-team/brocli" "^0.12.0"
     "@js-temporal/polyfill" "^0.5.1"
@@ -3327,9 +3342,9 @@ drizzle-kit@^1.0.0-rc.4:
     jiti "^2.6.1"
 
 drizzle-orm@^1.0.0-rc.4:
-  version "1.0.0-rc.5-ab785fc"
-  resolved "https://registry.yarnpkg.com/drizzle-orm/-/drizzle-orm-1.0.0-rc.5-ab785fc.tgz#edb04f8b041abc7d11a4d571c232ed5882bff096"
-  integrity sha512-28PVt0PS/+4kPa8eKr4mqP8y/YcbdOgdVcGUa6LGl2Kd2bykNWuf/WUOFoSCoynagblbcRgMO1zChLvRcWD6Tg==
+  version "1.0.0-rc.4"
+  resolved "https://registry.yarnpkg.com/drizzle-orm/-/drizzle-orm-1.0.0-rc.4.tgz#30335073cc2bc9c6cffb5dcc153fe0b1225325d7"
+  integrity sha512-BT+pf+qoiYHqltoA88Jmf6ilGMXPlpfE0hEJKc2adRtMCAl25Swk/t5gXcWxZNAwdtf3F5gCd2FpeOyP/pT0Hw==
 
 drizzle-seed@^0.3.1:
   version "0.3.1"
@@ -3747,10 +3762,10 @@ expo-splash-screen@~57.0.2:
     "@expo/image-utils" "^0.11.4"
     xml2js "0.6.0"
 
-expo-sqlite@~57.0.0:
-  version "57.0.1"
-  resolved "https://registry.yarnpkg.com/expo-sqlite/-/expo-sqlite-57.0.1.tgz#81a3afedf5e825ecd6d982b4671a7621af82bb40"
-  integrity sha512-I6KoUvfGIiROTKxr5D3H+jRIGA/iEvWEtqHK4XMukAA7tVTinz/YdS8zOz6/DdG6vgrNmvF7gyOcbhLinlfxzQ==
+expo-sqlite@^58.0.3:
+  version "58.0.3"
+  resolved "https://registry.yarnpkg.com/expo-sqlite/-/expo-sqlite-58.0.3.tgz#e0bf0f90d79ca1e3907bbb58513f6dd42eb42566"
+  integrity sha512-q9/giPDcE66JsK6jME1jWAy/xXh7Ws06lT0wM+zvV0TteEesY0zReN5YGs/GA0RvYnuj5g1arJ1jF4gLZtXE6w==
   dependencies:
     await-lock "^2.2.2"
 
@@ -6043,10 +6058,10 @@ react-native-reanimated@4.5.0:
     react-native-is-edge-to-edge "^1.3.1"
     semver "^7.7.3"
 
-react-native-safe-area-context@~5.7.0:
-  version "5.7.0"
-  resolved "https://registry.yarnpkg.com/react-native-safe-area-context/-/react-native-safe-area-context-5.7.0.tgz#035699d5ec17fefb98cc1fa44a9ec852c7d530d0"
-  integrity sha512-/9/MtQz8ODphjsLdZ+GZAIcC/RtoqW9EeShf7Uvnfgm/pzYrJ75y3PV/J1wuAV1T5Dye5ygq4EAW20RoBq0ABQ==
+react-native-safe-area-context@^5.9.1:
+  version "5.9.1"
+  resolved "https://registry.yarnpkg.com/react-native-safe-area-context/-/react-native-safe-area-context-5.9.1.tgz#ee5b2730f0816a22a332352076395c3f48aaa442"
+  integrity sha512-Zpx9Iwg6VhgNarWFpcIM61xK2lUbSfSXemQUmcvOVRpux49lJsUompY1S3E5jKUJbLq233qEpj28DgmXVsgZMQ==
 
 react-native-screens@4.25.2:
   version "4.25.2"

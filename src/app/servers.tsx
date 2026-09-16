@@ -1,20 +1,18 @@
 import { CustomTheme } from "@/constants/theme";
 import { useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
-import {
-	MetricsServerData,
-	useWebSocketClient,
-} from "@/hooks/useWebSocketClient";
+import { MetricsServerData } from "@/hooks/useWebSocketClient";
 import { useAppTheme } from "@/ThemeContext";
 import { appEmitter } from "@/utility/emitter";
+import { useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/build/react-navigation";
 import * as SecureStore from "expo-secure-store";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
-	FlatList,
 	RefreshControl,
+	SectionList,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
@@ -22,42 +20,60 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+interface MetricsServerSection {
+	title: string;
+	data: MetricsServerData[];
+}
+
 function ServersScreenContent({
-	wsProcessData,
+	setSelectedServer,
+	selectedServer,
 }: {
-	wsProcessData: (servers: MetricsServerData[]) => void;
+	setSelectedServer: (id: number) => void;
+	selectedServer: number | undefined;
 }) {
-	const [selectedServer, setSelectedServer] = useState<number>();
+	const [servers, setServers] = useState<MetricsServerSection[]>([]);
+
 	const [isRefreshing, setIsRefreshing] = useState(true);
-	const [servers, setServers] = useState<MetricsServerData[]>([]);
+
 	const { fetchServers, refreshServers } = useServers();
-	const { ws, getSubscription } = useBackendClient();
+	const { getSubscription } = useBackendClient();
 
 	const theme = useAppTheme();
 	const styles = createStyles(theme);
 
-	const wsEstablishConnection = useCallback(() => {
-		const response = ws();
-		response.then((v) => {
-			if (v?.status === "success") {
-				console.info("Ws connection authorized");
-			} else {
-				console.error("Could not establish ws connection");
-			}
-		});
-	}, []);
-
 	const setServersAndMetrics = (userId: string) => {
 		fetchServers(userId).then((data) => {
 			if (data.length > 0) {
-				const renderData: MetricsServerData[] = [];
-				data.forEach((server) => {
-					renderData.push({
-						...server,
-						metrics: null,
+				const appServers = data
+					.filter((server) => server.type !== "user_defined")
+					.map((server) => {
+						return { ...server, metrics: null };
 					});
-				});
-				setServers(renderData);
+
+				const userServers = data
+					.filter((server) => server.type === "user_defined")
+					.map((server) => {
+						return { ...server, metrics: null };
+					});
+
+				const sections: MetricsServerSection[] = [];
+
+				if (appServers.length > 0) {
+					sections.push({
+						title: "App servers",
+						data: appServers,
+					});
+				}
+
+				if (userServers.length > 0) {
+					sections.push({
+						title: "User servers",
+						data: userServers,
+					});
+				}
+				setServers(sections);
+				setIsRefreshing(false);
 			}
 		});
 	};
@@ -68,14 +84,20 @@ function ServersScreenContent({
 		SecureStore.getItemAsync("USER_ID").then((userId) => {
 			if (userId) {
 				setServersAndMetrics(userId);
-				setIsRefreshing(false);
 			}
 		});
 	}, []);
 
 	useEffect(() => {
-		wsEstablishConnection();
-		wsProcessData(servers);
+		appEmitter.addListener("onChooseServerLocation", (id: number) => {
+			setServers(
+				servers.filter((server) => "id" in server && server.id === id),
+			);
+		});
+
+		return () => {
+			appEmitter.removeListener("onChooseServerLocation");
+		};
 	}, []);
 
 	const onRefresh = () => {
@@ -90,8 +112,6 @@ function ServersScreenContent({
 			});
 		} catch (err) {
 			console.error(err);
-		} finally {
-			setIsRefreshing(false);
 		}
 	};
 
@@ -100,10 +120,15 @@ function ServersScreenContent({
 			item.id === selectedServer ? theme.colors.important2 : "#00000000";
 		return (
 			<TouchableOpacity
-				key={item.id}
 				style={[styles.serverRow, { borderColor }]}
 				onPress={() => setSelectedServer(item.id)}>
 				<View style={styles.serverInfo}>
+					<Text style={styles.serverInfoFlag}>
+						{item.countryTag
+							.toUpperCase()
+							.split("")
+							.map((char) => 127397 + char.charCodeAt(0))}
+					</Text>
 					<Text style={styles.serverInfoText}>{item.remark}</Text>
 					{item.metrics && (
 						<Text style={styles.serverInfoText}>{item.metrics.latencyMs}</Text>
@@ -113,24 +138,29 @@ function ServersScreenContent({
 		);
 	};
 
-	if (isRefreshing)
+	const renderSectionHeader = ({
+		section: { title },
+	}: {
+		section: MetricsServerSection;
+	}) => <Text style={styles.serversCategoryTitle}>{title}</Text>;
+
+	if (isRefreshing) {
 		return (
-			<View
-				style={{
-					alignItems: "center",
-				}}>
+			<View style={styles.serversContainer}>
 				<ActivityIndicator size="large" color={theme.colors.background} />
 				<Text style={{ color: theme.colors.text, marginTop: 10 }}>
 					Загрузка серверов...
 				</Text>
 			</View>
 		);
+	}
 
 	return (
-		<FlatList
-			data={servers}
+		<SectionList
+			sections={servers}
 			keyExtractor={(item) => item.id.toString()}
 			renderItem={renderServer}
+			renderSectionHeader={renderSectionHeader}
 			ItemSeparatorComponent={() => <View style={{ height: 24 }} />}
 			refreshControl={
 				<RefreshControl
@@ -151,12 +181,11 @@ function ServersScreenContent({
 export default function ServersScreen() {
 	const [selectedServer, setSelectedServer] = useState<number>();
 	const { t } = useTranslation();
+	const router = useRouter();
 
 	const theme = useAppTheme();
 	const styles = createStyles(theme);
 	const insets = useSafeAreaInsets();
-
-	const { wsConnect } = useWebSocketClient();
 
 	const headerHeight = useHeaderHeight();
 	const paddingTop = headerHeight + 16;
@@ -166,14 +195,19 @@ export default function ServersScreen() {
 		<View style={[styles.container, { paddingTop, paddingBottom }]}>
 			<Text style={styles.title}>{t("available_servers")}</Text>
 
-			<ServersScreenContent wsProcessData={(servers) => wsConnect(servers)} />
+			<ServersScreenContent
+				setSelectedServer={setSelectedServer}
+				selectedServer={selectedServer}
+			/>
 
 			<View style={styles.buttonContainer}>
 				<TouchableOpacity
 					style={[styles.button, styles.submitButton]}
 					onPress={() => {
-						if (selectedServer)
-							appEmitter.emit("onServerConnecting", { id: selectedServer });
+						if (selectedServer) {
+							appEmitter.emit("onServerConnecting", selectedServer);
+							router.navigate("/");
+						} else console.error("No server selected");
 					}}>
 					<Text style={styles.buttonText}>{t("connect")}</Text>
 				</TouchableOpacity>
@@ -195,10 +229,11 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		title: {
 			color: theme.colors.secondary,
-			fontSize: 20,
+			fontSize: 26,
 			fontWeight: "600",
 			textAlign: "center",
 			marginBottom: 24,
+			fontFamily: "CustomFont-Regular",
 		},
 		serverList: {
 			flex: 1,
@@ -228,9 +263,15 @@ const createStyles = (theme: CustomTheme) =>
 			backgroundColor: theme.colors.important2,
 		},
 		buttonText: {
-			color: "#000",
-			fontSize: 16,
+			color: theme.colors.background,
+			fontSize: 24,
 			fontFamily: "CustomFont-Regular",
+		},
+		serversContainer: {
+			flex: 1,
+			justifyContent: "center",
+			alignItems: "center",
+			rowGap: 24,
 		},
 		serverRow: {
 			alignItems: "center",
@@ -246,9 +287,20 @@ const createStyles = (theme: CustomTheme) =>
 			flexDirection: "row",
 			justifyContent: "space-between",
 		},
+		serverInfoFlag: {
+			fontSize: 16,
+		},
 		serverInfoText: {
 			color: theme.colors.text,
 			fontSize: 16,
+			fontFamily: "CustomFont-Regular",
+			overflow: "hidden",
+			textOverflow: "ellipsis",
+		},
+		serversCategoryTitle: {
+			color: theme.colors.text,
+			fontSize: 20,
+			marginBottom: 24,
 			fontFamily: "CustomFont-Regular",
 		},
 		emptyContainer: {
