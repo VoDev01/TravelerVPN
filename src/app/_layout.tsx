@@ -2,9 +2,8 @@ import LeftArrowWhite from "@/assets/images/line-md_arrow-left-white.svg";
 import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { useSettings } from "@/hooks/useSettings";
-import { useWebSocketClient } from "@/hooks/useWebSocketClient";
 import { ThemeProvider, useAppTheme } from "@/ThemeContext";
-import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
+import { migrate } from "drizzle-orm/expo-sqlite/migrator";
 import { useFonts } from "expo-font";
 import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -23,16 +22,6 @@ SplashScreen.preventAutoHideAsync();
 function LayoutContent() {
 	const theme = useAppTheme();
 	const { settings } = useSettings();
-
-	const [closeWs, setCloseWs] = useState(false);
-	const { wsClose } = useWebSocketClient();
-
-	useEffect(() => {
-		if (closeWs) {
-			wsClose();
-			setCloseWs(false);
-		}
-	}, [closeWs]);
 
 	const [loaded, error] = useFonts({
 		"CustomFont-Regular": require("@/assets/fonts/Nunito-Regular.ttf"),
@@ -77,7 +66,6 @@ function LayoutContent() {
 							<TouchableOpacity
 								onPress={() => {
 									router.back();
-									setCloseWs(true);
 								}}>
 								{settings.theme === "dark" ? (
 									<LeftArrowWhite width={48} height={48} />
@@ -96,12 +84,24 @@ function LayoutContent() {
 }
 
 export default function Layout() {
-	const { success } = useMigrations(db, {
-		journal: {
-			entries: [],
-		},
-		migrations: migrations.migrations,
-	} as any);
+	const [isMigrationReady, setIsMigrationReady] = useState(false);
+
+	useEffect(() => {
+		async function runMigration() {
+			try {
+				await migrate(db, migrations as any);
+				setIsMigrationReady(true);
+			} catch (error) {
+				console.error("Drizzle Migration Failed: ", error);
+			}
+		}
+
+		runMigration();
+	}, []);
+
+	if (!isMigrationReady) {
+		return <AnimatedSplashOverlay />;
+	}
 
 	return (
 		<ThemeProvider>

@@ -34,6 +34,8 @@ export default function MainScreen() {
 		connectionState: ServerConnection.DISCONNECTED,
 		entity: null,
 	});
+	const [isConnecting, setIsConnecting] = useState<boolean>(false);
+	const [isServersLoaded, setIsServersLoaded] = useState<boolean>(false);
 	const { getServerById } = useServers();
 
 	const { t } = useTranslation();
@@ -41,7 +43,7 @@ export default function MainScreen() {
 	const styles = createStyles(theme);
 
 	const [userId, setUserId] = useState("");
-	const { runXray, stopXray } = useLibxray();
+	const { runXray, testXray, stopXray } = useLibxray();
 
 	useEffect(() => {
 		const userIdStorage = SecureStore.getItemAsync("USER_ID");
@@ -57,30 +59,67 @@ export default function MainScreen() {
 	}, []);
 
 	useEffect(() => {
-		appEmitter.addListener("onServerConnecting", (id: number) => {
-			getServerById(id).then((server: ServerEntity) => {
-				setServer({
-					connectionState: ServerConnection.CONNECTING,
-					entity: server,
-				});
-				runXray(server.connectionLink)
-					.then(() => {
-						reset();
-						start();
-						setServer({
-							connectionState: ServerConnection.CONNECTED,
-							entity: server,
-						});
-					})
-					.catch((e) => {
-						console.error(e);
-						setServer({
-							connectionState: ServerConnection.DISCONNECTED,
-							entity: server,
-						});
-					});
-			});
+		appEmitter.addListener("onServersLoaded", (loaded: boolean) => {
+			setIsServersLoaded(loaded);
 		});
+
+		appEmitter.addListener("onServerConnecting", (id: number) => {
+			if (isConnecting) return;
+			getServerById(id)
+				.then((selectedServer: ServerEntity | undefined) => {
+					if (!selectedServer) {
+						console.error(`Server with id ${id} is not found`);
+						setIsConnecting(false);
+						return;
+					}
+
+					setIsConnecting(true);
+
+					setServer({
+						connectionState: ServerConnection.CONNECTING,
+						entity: selectedServer,
+					});
+
+					testXray(selectedServer.connectionLink)
+						.then((result) => {
+							if (result.success) {
+								runXray(selectedServer.connectionLink).then(() => {
+									reset();
+									start();
+									setServer({
+										connectionState: ServerConnection.CONNECTED,
+										entity: selectedServer,
+									});
+									appEmitter.emit("onServerConnected", {
+										id: selectedServer.id,
+									});
+								});
+							} else throw new Error(result.error);
+						})
+						.catch((e) => {
+							setServer({
+								connectionState: ServerConnection.DISCONNECTED,
+								entity: null,
+							});
+							setIsConnecting(false);
+							console.error(e);
+						});
+				})
+				.catch((e) => {
+					setServer({
+						connectionState: ServerConnection.DISCONNECTED,
+						entity: null,
+					});
+					setIsConnecting(false);
+					console.error(e);
+				});
+		});
+
+		return () => {
+			setIsConnecting(false);
+			appEmitter.removeListener("onServerConnecting");
+			appEmitter.removeListener("onServersLoaded");
+		};
 	}, []);
 
 	return (

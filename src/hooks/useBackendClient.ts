@@ -15,14 +15,15 @@ export interface GeoLocation {
 	country: string;
 	city: string;
 	latitude: number;
-	longtitude: number;
+	longitude: number;
 }
 
 export const useBackendClient = () => {
-	const getSubscription = async (userId: string | undefined) => {
+	const getSubscription = async (userId: string, tgId: bigint) => {
 		try {
 			return (await makeRequest("/api/user/subscription", "POST", {
 				userId,
+				tgId,
 			})) as VpnResponse;
 		} catch (error) {
 			console.error("Error fetching subscription:", error);
@@ -92,10 +93,21 @@ export const useBackendClient = () => {
 		}
 	};
 
-	const getUserLastGeo = async (email: string) => {
+	const getGeoFromIp = async (userId: string, ip: string) => {
 		try {
-			return (await makeRequest("/api/user/geo", "POST", {
-				email,
+			return (await makeRequest("/api/ip/geo", "POST", {
+				userId,
+				ip,
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error attaching inbounds:", error);
+		}
+	};
+
+	const getUserGeoFromIp = async (userId: string) => {
+		try {
+			return (await makeRequest("/api/ip/user/geo", "POST", {
+				email: userId,
 			})) as VpnResponse;
 		} catch (error) {
 			console.error("Error attaching inbounds:", error);
@@ -132,7 +144,8 @@ export const useBackendClient = () => {
 		getSubscription,
 		getUser,
 		getUserTraffic,
-		getUserLastGeo,
+		getGeoFromIp,
+		getUserGeoFromIp,
 		metrics,
 		testNode,
 		updateUser,

@@ -1,3 +1,5 @@
+import { Alert } from "react-native";
+
 const baseUrl = process.env.EXPO_PUBLIC_BACKEND_BASEURL;
 
 type BodyParams = Record<string, any>;
@@ -6,43 +8,36 @@ const makeRequest = async (
 	url: string,
 	method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
 	data?: BodyParams,
-	headers: HeadersInit = {
-		Accept: "application/json",
-	},
+	headers?: HeadersInit,
 ) => {
 	try {
-		const urlEncoded = new URLSearchParams(method === "GET" ? data : undefined);
+		const urlEncoded = new URLSearchParams(data);
 
-		if (data) {
-			Object.entries(data).forEach(([k, v]) => {
-				if (v !== undefined && v !== null) {
-					urlEncoded.append(k, v.toString());
-				}
-			});
-		}
+		const queryString = urlEncoded.toString();
+		const getUrl = queryString
+			? `${baseUrl}${url}${url.includes("?") ? "&" : "?"}${queryString}`
+			: `${baseUrl}${url}`;
 
-		const getUrl = baseUrl + url + `?${urlEncoded}`;
-
-		const options: RequestInit = {
+		const options = {
 			method,
-			headers:
-				method === "GET"
-					? headers
-					: {
-							...headers,
-							"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-						},
+			headers: {
+				Accept: "application/json",
+				...headers,
+			},
 			body: method === "GET" ? undefined : urlEncoded,
 		};
 
-		const response = await fetch(
-			method === "GET" ? getUrl : baseUrl + url,
-			options,
-		);
+		const response = await fetch(getUrl, options);
 		const json = await response.json();
 		return json;
 	} catch (error) {
-		console.error("Error making request:", error);
+		Alert.alert(
+			"Unable to reach servers.",
+			"Unable to establish connection with TravelerVPN servers. Check your internet connection or report this issue.",
+			[{ text: "OK", style: "cancel" }],
+			{ cancelable: true },
+		);
+		console.error("Error making request to a backend server:", error);
 	}
 };
 

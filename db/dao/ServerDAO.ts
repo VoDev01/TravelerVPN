@@ -7,12 +7,14 @@ export const ServerDAO = {
 		return db.select().from(serversTable).all();
 	},
 
-	async getById(id: number): Promise<ServerEntity> {
+	async getById(id: number): Promise<ServerEntity | undefined> {
 		const result = await db
 			.select()
 			.from(serversTable)
-			.where(eq(serversTable.id, id));
-		return result[0];
+			.where(eq(serversTable.id, id))
+			.get();
+
+		return result;
 	},
 
 	async add(server: NewServer) {

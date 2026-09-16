@@ -29,20 +29,20 @@ export interface ActiveLabel extends ServerLocation {
 
 interface GlobeMarkerProps {
 	lat: number;
-	lng: number;
-	id: string;
-	activeId: string | null;
-	onSelect: (id: string) => void;
+	lon: number;
+	id: number;
+	activeId: number | null;
+	onSelect: (id: number) => void;
 }
 
 export default function GlobeMarker({
 	lat,
-	lng,
+	lon,
 	id,
 	onSelect,
 	activeId,
 }: GlobeMarkerProps) {
-	const position = geodeticToECEF(lat, lng, 7.22);
+	const position = geodeticToECEF(lat, lon, 7.22);
 	const isActive = id === activeId;
 
 	return (
@@ -53,7 +53,7 @@ export default function GlobeMarker({
 				onSelect(id);
 			}}>
 			<sphereGeometry args={[0.13, 16, 16]} />
-			<meshBasicMaterial color={"#ff0000"} />
+			<meshBasicMaterial color={isActive ? "#00ff00" : "#ff0000"} />
 		</mesh>
 	);
 }
