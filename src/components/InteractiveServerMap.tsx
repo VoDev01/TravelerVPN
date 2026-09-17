@@ -32,7 +32,11 @@ interface ServerGeoLocation {
 	location: GeoLocation;
 }
 
-export default function InteractiveServerMap() {
+export default function InteractiveServerMap({
+	onSelectLocation,
+}: {
+	onSelectLocation: (location: string) => void;
+}) {
 	const aircraftRef = useRef<THREE.Object3D>(null);
 	const earthRef = useRef<THREE.Group>(null);
 
@@ -41,7 +45,7 @@ export default function InteractiveServerMap() {
 	const isLoaded = progress === 100;
 	const [isServersLoaded, setIsServersLoaded] = useState(false);
 
-	const [activeLocationId, setActiveLocationId] = useState<number | null>(null);
+	const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
 	const [isCameraMoving, setIsCameraMoving] = useState(false);
 	const [isFlightPathDefined, setIsFlightPathDefined] = useState(false);
 
@@ -90,18 +94,24 @@ export default function InteractiveServerMap() {
 										},
 									);
 								}
-								setServersLocations([
-									...serversLocations.filter((item) => item.id !== server.id),
-									{
-										id: server.id,
-										location: {
-											country: server.country,
-											city: server.city,
-											latitude: server.latitude,
-											longitude: server.longitude,
+								setServersLocations((prevLocations) => {
+									const filtered = prevLocations.filter(
+										(item) => item.location.city !== server.city,
+									);
+
+									return [
+										...filtered,
+										{
+											id: server.id,
+											location: {
+												country: server.country,
+												city: server.city,
+												latitude: server.latitude,
+												longitude: server.longitude,
+											},
 										},
-									},
-								]);
+									];
+								});
 							});
 							setIsServersLoaded(true);
 						}
@@ -153,13 +163,13 @@ export default function InteractiveServerMap() {
 			return (
 				<GlobeMarker
 					key={serverGeo.id}
-					id={serverGeo.id}
+					id={serverGeo.location.city}
 					lat={serverGeo.location.latitude}
 					lon={serverGeo.location.longitude}
 					activeId={activeLocationId}
-					onSelect={(id: number) => {
-						setActiveLocationId(id);
-						appEmitter.emit("onChooseServerLocation", id);
+					onSelect={(city: string) => {
+						setActiveLocationId(city);
+						onSelectLocation(city);
 					}}
 				/>
 			);
@@ -172,7 +182,9 @@ export default function InteractiveServerMap() {
 
 	return (
 		<View style={styles.content}>
-			<Canvas camera={{ position: [-16, 0, 0], fov: 65 }}>
+			<Canvas
+				gl={{ antialias: true, powerPreference: "high-performance" }}
+				camera={{ position: [-16, 0, 0], fov: 65 }}>
 				<ambientLight intensity={3} />
 				<Animate ref={earthRef} />
 				<group ref={earthRef}>

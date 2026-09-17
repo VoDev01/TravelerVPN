@@ -1,4 +1,4 @@
-import { useAppTheme } from "@/ThemeContext";
+import { useAppTheme } from "@/context/ThemeContext";
 import { ActivityIndicator, Text, View } from "react-native";
 
 export function Loader({ loaderText }: { loaderText: string }) {

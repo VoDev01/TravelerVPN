@@ -4,7 +4,7 @@ import ChevronUp from "@/assets/images/chevron_up.svg";
 import MoonIcon from "@/assets/images/tabler_moon-filled.svg";
 import { Locales } from "@/constants/locales";
 import { CustomTheme } from "@/constants/theme";
-import { useAppTheme, useAppThemeToggle } from "@/ThemeContext";
+import { useAppTheme, useAppThemeToggle } from "@/context/ThemeContext";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {

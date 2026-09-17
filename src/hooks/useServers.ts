@@ -2,6 +2,7 @@ import { getCode } from "country-list";
 import { ServerRepository } from "../../db/repository/ServerRepository";
 import { ServerEntity } from "../../db/schema/servers";
 import { useBackendClient } from "./useBackendClient";
+import { useLibxray } from "./useLibxray";
 
 export function useServers() {
 	const fetchServers = async (
@@ -9,6 +10,8 @@ export function useServers() {
 		tgId?: bigint,
 	): Promise<ServerEntity[]> => {
 		const { getSubscription, getGeoFromIp } = useBackendClient();
+		const { convertShareLinksToJson } = useLibxray();
+
 		try {
 			const localServers = await ServerRepository.getAll();
 			if (
@@ -25,19 +28,26 @@ export function useServers() {
 				}
 
 				(response.response as any[]).forEach((r) => {
-					getGeoFromIp(userId, r.inbound.shareAddr)
-						.then((geo) => {
-							ServerRepository.add({
-								connectionLink: r.connectionLink,
-								remark: r.inbound.remark,
-								countryTag: getCode(geo?.response.country) ?? "US",
-								inboundId: r.inbound.id,
-								address: r.inbound.shareAddr,
-								country: geo?.response.country,
-								city: geo?.response.city,
-								latitude: geo?.response.latitude,
-								longitude: geo?.response.longitude,
-							});
+					convertShareLinksToJson(r.connectionLink)
+						.then((linkJson) => {
+							const linkObj = JSON.parse(linkJson);
+							getGeoFromIp(userId, linkObj.data.outbounds[0].settings.address)
+								.then((geo) => {
+									ServerRepository.add({
+										connectionLink: r.connectionLink,
+										remark: r.inbound.remark,
+										countryTag: getCode(geo?.response.country) ?? "US",
+										inboundId: r.inbound.id,
+										address: linkObj.data.outbounds[0].settings.address,
+										country: geo?.response.country,
+										city: geo?.response.city,
+										latitude: geo?.response.latitude,
+										longitude: geo?.response.longitude,
+									});
+								})
+								.catch((e) => {
+									console.error(e);
+								});
 						})
 						.catch((e) => {
 							console.error(e);

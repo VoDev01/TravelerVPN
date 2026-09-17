@@ -46,7 +46,7 @@ export const DarkTheme = {
 		primary: "#1a1a1a",
 		background: "#000",
 		secondary: "#fff",
-		tretiary: "#575757",
+		tretiary: "#414141",
 		card: "#272727",
 		important1: "#C40000",
 		important2: "#00E50F",
