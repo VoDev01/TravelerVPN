@@ -1,7 +1,7 @@
 import PlusIcon from "@/assets/images/akar-icons_plus.svg";
 import HomeIcon from "@/assets/images/Home.svg";
 import GearIcon from "@/assets/images/mdi_gear.svg";
-import { useAppTheme } from "@/ThemeContext";
+import { useAppTheme } from "@/context/ThemeContext";
 import { createBottomTabNavigator } from "expo-router/build/react-navigation/bottom-tabs";
 import MainScreen from ".";
 import AddServers from "./addServers";

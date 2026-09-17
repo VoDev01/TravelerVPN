@@ -1,10 +1,9 @@
 import { CustomTheme } from "@/constants/theme";
+import { useAppTheme } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
 import { MetricsServerData } from "@/hooks/useWebSocketClient";
-import { useAppTheme } from "@/ThemeContext";
-import { appEmitter } from "@/utility/emitter";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/build/react-navigation";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
@@ -88,18 +87,6 @@ function ServersScreenContent({
 		});
 	}, []);
 
-	useEffect(() => {
-		appEmitter.addListener("onChooseServerLocation", (id: number) => {
-			setServers(
-				servers.filter((server) => "id" in server && server.id === id),
-			);
-		});
-
-		return () => {
-			appEmitter.removeListener("onChooseServerLocation");
-		};
-	}, []);
-
 	const onRefresh = () => {
 		setIsRefreshing(true);
 		try {
@@ -124,15 +111,25 @@ function ServersScreenContent({
 				onPress={() => setSelectedServer(item.id)}>
 				<View style={styles.serverInfo}>
 					<Text style={styles.serverInfoFlag}>
-						{item.countryTag
-							.toUpperCase()
-							.split("")
-							.map((char) => 127397 + char.charCodeAt(0))}
+						{String.fromCodePoint(
+							...item.countryTag
+								.toUpperCase()
+								.split("")
+								.map((char) => 127397 + char.charCodeAt(0)),
+						)}
 					</Text>
-					<Text style={styles.serverInfoText}>{item.remark}</Text>
-					{item.metrics && (
-						<Text style={styles.serverInfoText}>{item.metrics.latencyMs}</Text>
-					)}
+
+					<View style={styles.serverInfoTextContainer}>
+						<Text
+							style={styles.serverInfoText}
+							numberOfLines={1}
+							ellipsizeMode="tail">
+							{item.remark}
+						</Text>
+						<Text style={[styles.serverInfoText, { flexShrink: 0 }]}>
+							{item.metrics ? item.metrics.latencyMs : "?"} ms
+						</Text>
+					</View>
 				</View>
 			</TouchableOpacity>
 		);
@@ -155,9 +152,19 @@ function ServersScreenContent({
 		);
 	}
 
+	const { city } = useLocalSearchParams<{ city?: string }>();
+	const visibleServers = city
+		? servers
+				.map((section) => ({
+					...section,
+					data: section.data.filter((server) => server.city === city),
+				}))
+				.filter((section) => section.data.length > 0)
+		: servers;
+
 	return (
 		<SectionList
-			sections={servers}
+			sections={visibleServers}
 			keyExtractor={(item) => item.id.toString()}
 			renderItem={renderServer}
 			renderSectionHeader={renderSectionHeader}
@@ -205,8 +212,10 @@ export default function ServersScreen() {
 					style={[styles.button, styles.submitButton]}
 					onPress={() => {
 						if (selectedServer) {
-							appEmitter.emit("onServerConnecting", selectedServer);
-							router.navigate("/");
+							router.navigate({
+								pathname: "/",
+								params: { selectedServerId: `${selectedServer}` },
+							});
 						} else console.error("No server selected");
 					}}>
 					<Text style={styles.buttonText}>{t("connect")}</Text>
@@ -283,19 +292,25 @@ const createStyles = (theme: CustomTheme) =>
 			borderWidth: 2,
 		},
 		serverInfo: {
-			flex: 1,
 			flexDirection: "row",
+			alignItems: "center",
 			justifyContent: "space-between",
+			paddingHorizontal: 16,
 		},
 		serverInfoFlag: {
-			fontSize: 16,
+			fontSize: 20,
+			flex: 1,
+		},
+		serverInfoTextContainer: {
+			flexDirection: "row",
+			alignItems: "center",
+			justifyContent: "space-around",
+			flex: 4,
 		},
 		serverInfoText: {
 			color: theme.colors.text,
 			fontSize: 16,
 			fontFamily: "CustomFont-Regular",
-			overflow: "hidden",
-			textOverflow: "ellipsis",
 		},
 		serversCategoryTitle: {
 			color: theme.colors.text,

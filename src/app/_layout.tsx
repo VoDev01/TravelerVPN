@@ -1,14 +1,20 @@
 import LeftArrowWhite from "@/assets/images/line-md_arrow-left-white.svg";
 import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { ThemeProvider, useAppTheme } from "@/context/ThemeContext";
 import { useSettings } from "@/hooks/useSettings";
-import { ThemeProvider, useAppTheme } from "@/ThemeContext";
-import { migrate } from "drizzle-orm/expo-sqlite/migrator";
+import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { useFonts } from "expo-font";
 import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
-import { LogBox, TouchableOpacity } from "react-native";
+import { useEffect } from "react";
+import {
+	ActivityIndicator,
+	LogBox,
+	Text,
+	TouchableOpacity,
+	View,
+} from "react-native";
 import { db } from "../../db/client";
 import migrations from "../../drizzle/migrations";
 import "../../i18n";
@@ -84,23 +90,42 @@ function LayoutContent() {
 }
 
 export default function Layout() {
-	const [isMigrationReady, setIsMigrationReady] = useState(false);
+	const { success, error } = useMigrations(db, migrations);
 
-	useEffect(() => {
-		async function runMigration() {
-			try {
-				await migrate(db, migrations as any);
-				setIsMigrationReady(true);
-			} catch (error) {
-				console.error("Drizzle Migration Failed: ", error);
-			}
-		}
+	if (error) {
+		console.error(error);
+		return (
+			<View
+				style={{
+					flex: 1,
+					justifyContent: "center",
+					alignItems: "center",
+					padding: 12,
+				}}>
+				<Text style={{ color: "red", fontSize: 16 }}>
+					Db error: {error.message}
+				</Text>
+			</View>
+		);
+	}
 
-		runMigration();
-	}, []);
-
-	if (!isMigrationReady) {
-		return <AnimatedSplashOverlay />;
+	if (!success) {
+		return (
+			<ThemeProvider>
+				<View
+					style={{
+						flex: 1,
+						justifyContent: "center",
+						alignItems: "center",
+						padding: 12,
+					}}>
+					<Text style={{ fontSize: 20, marginBottom: 10 }}>
+						Loading Database
+					</Text>
+					<ActivityIndicator size="large" />
+				</View>
+			</ThemeProvider>
+		);
 	}
 
 	return (

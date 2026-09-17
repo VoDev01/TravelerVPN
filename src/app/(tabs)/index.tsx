@@ -4,13 +4,12 @@ import UpArrowIcon from "@/assets/images/line-md_arrow-up.svg";
 import GasPumpIcon from "@/assets/images/osmic_fuel-14.svg";
 import InteractiveServerMap from "@/components/InteractiveServerMap";
 import { CustomTheme } from "@/constants/theme";
+import { useAppTheme } from "@/context/ThemeContext";
 import { useDurationWatch } from "@/hooks/useDurationWatch";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
-import { useAppTheme } from "@/ThemeContext";
-import { appEmitter } from "@/utility/emitter";
 import * as Crypto from "expo-crypto";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,8 +33,9 @@ export default function MainScreen() {
 		connectionState: ServerConnection.DISCONNECTED,
 		entity: null,
 	});
-	const [isConnecting, setIsConnecting] = useState<boolean>(false);
-	const [isServersLoaded, setIsServersLoaded] = useState<boolean>(false);
+	const [serversFilterLocation, setServersFilterLocation] = useState<
+		string | null
+	>();
 	const { getServerById } = useServers();
 
 	const { t } = useTranslation();
@@ -58,68 +58,48 @@ export default function MainScreen() {
 		});
 	}, []);
 
+	const { selectedServerId } = useLocalSearchParams<{
+		selectedServerId?: string;
+	}>();
+
 	useEffect(() => {
-		appEmitter.addListener("onServersLoaded", (loaded: boolean) => {
-			setIsServersLoaded(loaded);
-		});
+		if (!selectedServerId) return;
+		getServerById(+selectedServerId)
+			.then((selectedServer: ServerEntity | undefined) => {
+				if (!selectedServer) {
+					console.error(`Server with id ${selectedServerId} is not found`);
+					return;
+				}
 
-		appEmitter.addListener("onServerConnecting", (id: number) => {
-			if (isConnecting) return;
-			getServerById(id)
-				.then((selectedServer: ServerEntity | undefined) => {
-					if (!selectedServer) {
-						console.error(`Server with id ${id} is not found`);
-						setIsConnecting(false);
-						return;
-					}
-
-					setIsConnecting(true);
-
-					setServer({
-						connectionState: ServerConnection.CONNECTING,
-						entity: selectedServer,
-					});
-
-					testXray(selectedServer.connectionLink)
-						.then((result) => {
-							if (result.success) {
-								runXray(selectedServer.connectionLink).then(() => {
-									reset();
-									start();
-									setServer({
-										connectionState: ServerConnection.CONNECTED,
-										entity: selectedServer,
-									});
-									appEmitter.emit("onServerConnected", {
-										id: selectedServer.id,
-									});
-								});
-							} else throw new Error(result.error);
-						})
-						.catch((e) => {
-							setServer({
-								connectionState: ServerConnection.DISCONNECTED,
-								entity: null,
-							});
-							setIsConnecting(false);
-							console.error(e);
-						});
-				})
-				.catch((e) => {
-					setServer({
-						connectionState: ServerConnection.DISCONNECTED,
-						entity: null,
-					});
-					setIsConnecting(false);
-					console.error(e);
+				setServer({
+					connectionState: ServerConnection.CONNECTING,
+					entity: selectedServer,
 				});
-		});
 
-		return () => {
-			setIsConnecting(false);
-			appEmitter.removeListener("onServerConnecting");
-			appEmitter.removeListener("onServersLoaded");
-		};
+				runXray(selectedServer.connectionLink)
+					.then(() => {
+						reset();
+						start();
+						setServer({
+							connectionState: ServerConnection.CONNECTED,
+							entity: selectedServer,
+						});
+					})
+					.catch((e) => {
+						setServer({
+							connectionState: ServerConnection.DISCONNECTED,
+							entity: null,
+						});
+						console.error(e);
+					});
+			})
+			.catch((e) => {
+				setServer({
+					connectionState: ServerConnection.DISCONNECTED,
+					entity: null,
+				});
+				console.error(e);
+			});
 	}, []);
 
 	return (
@@ -153,7 +133,7 @@ export default function MainScreen() {
 			</View>
 
 			<View style={styles.mapContainer}>
-				<InteractiveServerMap />
+				<InteractiveServerMap onSelectLocation={setServersFilterLocation} />
 			</View>
 
 			{server.connectionState === ServerConnection.CONNECTED ||
@@ -172,7 +152,12 @@ export default function MainScreen() {
 					<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>
 				</TouchableOpacity>
 			) : (
-				<Link href="/servers" asChild>
+				<Link
+					href={{
+						pathname: "/servers",
+						params: { city: serversFilterLocation },
+					}}
+					asChild>
 					<TouchableOpacity
 						style={styles.chooseServerButton}
 						onPress={() => {}}>
