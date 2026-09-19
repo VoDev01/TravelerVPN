@@ -48,7 +48,7 @@ export default function GlobeMarker({
 }: GlobeMarkerProps) {
 	const font = useFont(nunitoFont as any);
 
-	const position = useMemo(() => geodeticToECEF(lat, lon, 7.22), []);
+	const position = useMemo(() => geodeticToECEF(lat, lon, 7.22), [lat, lon]);
 	const isActive = id === activeId;
 
 	return (
@@ -62,19 +62,21 @@ export default function GlobeMarker({
 				<meshBasicMaterial color={isActive ? "#00ff00" : "#ff0000"} />
 			</mesh>
 
-			<Billboard position={[0, 1, 0]} visible={isActive}>
-				<Center cacheKey={activeId}>
-					<Text3D font={font.data} size={0.5} height={0} bevelEnabled={false}>
-						{activeId}
-						<meshStandardMaterial
-							color="#fff"
-							metalness={0}
-							roughness={1}
-							depthTest={false}
-						/>
-					</Text3D>
-				</Center>
-			</Billboard>
+			{isActive && (
+				<Billboard position={[0, 1.6, 0]}>
+					<Center>
+						<Text3D font={font.data} size={0.5} height={0} bevelEnabled={false}>
+							{id}
+							<meshStandardMaterial
+								color="#fff"
+								metalness={0}
+								roughness={1}
+								polygonOffset={true}
+							/>
+						</Text3D>
+					</Center>
+				</Billboard>
+			)}
 		</group>
 	);
 }

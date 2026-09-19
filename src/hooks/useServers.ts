@@ -21,7 +21,7 @@ export function useServers() {
 			) {
 				return localServers;
 			} else {
-				const response = await getSubscription(userId, tgId ?? 0n);
+				const response = await getSubscription(tgId ?? 0n);
 
 				if (!response || !response.response) {
 					throw new Error("Server didn't return any response.");
@@ -31,7 +31,7 @@ export function useServers() {
 					convertShareLinksToJson(r.connectionLink)
 						.then((linkJson) => {
 							const linkObj = JSON.parse(linkJson);
-							getGeoFromIp(userId, linkObj.data.outbounds[0].settings.address)
+							getGeoFromIp(linkObj.data.outbounds[0].settings.address)
 								.then((geo) => {
 									ServerRepository.add({
 										connectionLink: r.connectionLink,
