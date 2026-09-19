@@ -1,5 +1,4 @@
 import { ActivationState, Client } from "@stomp/stompjs";
-import * as SecureStore from "expo-secure-store";
 import { useRef, useState } from "react";
 import SockJS from "sockjs-client";
 import { ServerEntity } from "../../db/schema/servers";
@@ -68,14 +67,12 @@ export const useWebSocketClient = () => {
 				}
 			});
 
-			SecureStore.getItemAsync("USER_ID").then((userId) => {
-				wsClientRef.current?.publish({
-					destination: "/app/metrics",
-					body: JSON.stringify({
-						type: "client_creds",
-						data: { userId },
-					}),
-				});
+			wsClientRef.current?.publish({
+				destination: "/app/metrics",
+				body: JSON.stringify({
+					type: "client_creds",
+					data: {},
+				}),
 			});
 		};
 

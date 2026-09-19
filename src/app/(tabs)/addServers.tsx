@@ -3,7 +3,6 @@ import { useAppTheme } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
-import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import {
 	Alert,
@@ -55,23 +54,18 @@ export default function AddServers() {
 			})
 			.catch((e) => console.error(e));
 
-		SecureStore.getItemAsync("USER_ID")
-			.then((userId) => {
-				if (!userId) throw new Error("User id is not defined");
-				getGeoFromIp(userId, address)
-					.then((geo) => {
-						addServer({
-							remark,
-							countryTag,
-							connectionLink,
-							type: "user_defined",
-							city: geo?.response.city,
-							country: geo?.response.country,
-							latitude: geo?.response.latitude,
-							longitude: geo?.response.longitude,
-						});
-					})
-					.catch((e) => console.error(e));
+		getGeoFromIp(address)
+			.then((geo) => {
+				addServer({
+					remark,
+					countryTag,
+					connectionLink,
+					type: "user_defined",
+					city: geo?.response.city,
+					country: geo?.response.country,
+					latitude: geo?.response.latitude,
+					longitude: geo?.response.longitude,
+				});
 			})
 			.catch((e) => console.error(e));
 

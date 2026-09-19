@@ -31,7 +31,7 @@
 		"expo-gl": "~57.0.2",
 		"expo-glass-effect": "~57.0.3",
 		"expo-image": "~57.0.5",
-		"expo-libxray": "^1.1.0",
+		"expo-libxray": "^1.2.2",
 		"expo-linking": "~57.0.10",
 		"expo-localization": "~57.0.2",
 		"expo-router": "~57.0.21",
@@ -73,6 +73,7 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-react-native": "^5.0.0",
 		"i18next-cli": "^1.65.0",
+		"postinstall": "patch-package",
 		"react-native-svg-transformer": "^1.5.3",
 		"typescript": "~6.0.3"
 	},

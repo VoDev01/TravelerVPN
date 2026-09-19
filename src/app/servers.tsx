@@ -33,6 +33,7 @@ function ServersScreenContent({
 }) {
 	const [servers, setServers] = useState<MetricsServerSection[]>([]);
 
+	const [userId, setUserId] = useState("");
 	const [isRefreshing, setIsRefreshing] = useState(true);
 
 	const { fetchServers, refreshServers } = useServers();
@@ -78,28 +79,27 @@ function ServersScreenContent({
 	};
 
 	useEffect(() => {
-		setIsRefreshing(true);
-
 		SecureStore.getItemAsync("USER_ID").then((userId) => {
 			if (userId) {
-				setServersAndMetrics(userId);
+				setUserId(userId);
 			}
 		});
 	}, []);
 
+	useEffect(() => {
+		setIsRefreshing(true);
+		if (userId !== "") setServersAndMetrics(userId);
+	}, [userId]);
+
 	const onRefresh = () => {
 		setIsRefreshing(true);
-		try {
-			refreshServers().then(() => {
-				SecureStore.getItemAsync("USER_ID").then((userId) => {
-					if (userId) {
-						setServersAndMetrics(userId);
-					}
-				});
+		refreshServers()
+			.then(() => {
+				setServersAndMetrics(userId);
+			})
+			.catch((e) => {
+				console.error(e);
 			});
-		} catch (err) {
-			console.error(err);
-		}
 	};
 
 	const renderServer = ({ item }: { item: MetricsServerData }) => {
@@ -169,6 +169,7 @@ function ServersScreenContent({
 			renderItem={renderServer}
 			renderSectionHeader={renderSectionHeader}
 			ItemSeparatorComponent={() => <View style={{ height: 24 }} />}
+			SectionSeparatorComponent={() => <View style={{ height: 24 }} />}
 			refreshControl={
 				<RefreshControl
 					refreshing={isRefreshing}
@@ -261,7 +262,7 @@ const createStyles = (theme: CustomTheme) =>
 			paddingHorizontal: 24,
 			paddingVertical: 12,
 			borderRadius: 12,
-			width: "50%",
+			width: "65%",
 			justifyContent: "center",
 			alignItems: "center",
 		},
@@ -315,7 +316,6 @@ const createStyles = (theme: CustomTheme) =>
 		serversCategoryTitle: {
 			color: theme.colors.text,
 			fontSize: 20,
-			marginBottom: 24,
 			fontFamily: "CustomFont-Regular",
 		},
 		emptyContainer: {

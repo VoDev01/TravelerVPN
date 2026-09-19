@@ -1,10 +1,15 @@
 import { Paths } from "expo-file-system";
-import * as Xray from "expo-libxray";
+import ExpoLibxray, {
+	LibxrayConfigBuilder,
+	RunXrayRequest,
+	RunXrayResponse,
+	TimeUnit,
+} from "expo-libxray";
 
 const config = (initialConfig: string) => {
 	const appFilesDir = Paths.document;
-	return new Xray.LibxrayConfigBuilder(JSON.parse(initialConfig).data)
-		.setLogging("debug")
+	return new LibxrayConfigBuilder(JSON.parse(initialConfig).data)
+		.setLogging("warn")
 		.setEnv(appFilesDir.uri.replace("file://", ""))
 		.setInbounds([
 			{
@@ -73,21 +78,9 @@ const config = (initialConfig: string) => {
 				},
 				{
 					type: "field",
-					domain: ["geosite:category-ads-all"],
-					inboundTag: ["SOCKS LOCAL"],
-					outboundTag: "block",
-				},
-				{
-					type: "field",
 					outboundTag: "direct",
 					inboundTag: ["SOCKS LOCAL"],
 					protocol: ["bittorrent"],
-				},
-				{
-					type: "field",
-					domain: ["geosite:ru-available-only-inside"],
-					inboundTag: ["SOCKS LOCAL"],
-					outboundTag: "direct",
 				},
 			],
 			"AsIs",
@@ -97,15 +90,14 @@ const config = (initialConfig: string) => {
 
 export const useLibxray = () => {
 	const initialConfig = (shareLink: string) =>
-		Xray.default.convertShareLinksToXrayJson(shareLink);
+		ExpoLibxray.convertShareLinksToXrayJson(shareLink);
 
-	const runXray: (
-		request: Xray.RunXrayRequest,
-	) => Promise<Xray.RunXrayResponse> = Xray.default.runXray;
+	const runXray: (request: RunXrayRequest) => Promise<RunXrayResponse> =
+		ExpoLibxray.runXray;
 
-	const testXray = (shareLink: string) => Xray.default.testXray(shareLink);
+	const testXray = (shareLink: string) => ExpoLibxray.testXray(shareLink);
 
-	const stopXray = () => Xray.default.stopXray;
+	const stopXray = () => ExpoLibxray.stopXray;
 
 	const startXray = async (shareLink: string) => {
 		initialConfig(shareLink).then((output) => {
@@ -115,10 +107,18 @@ export const useLibxray = () => {
 					geoIpUrl: undefined,
 					geoSiteUrl: undefined,
 					downloadEvery: "1",
-					timeUnit: Xray.TimeUnit.HOURS,
+					timeUnit: TimeUnit.HOURS,
 					maxGeoAgeMillis: undefined,
+					appsSplitTunneling: undefined,
 					vpnServiceErrorLocalized: "Vpn permission is rejected.",
 					notificationErrorLocalized: "Vpn permission is rejected.",
+					vpnServiceNotificationTitle: "Vpn status",
+					vpnServiceNotificationContent: "Status:",
+					vpnServiceNotificationStatus: {
+						connected: "Connected!",
+						waiting: "Waiting...",
+						error: "Internal Service Error",
+					},
 				});
 				result.then((r) => {
 					if (!r.success) throw new Error(r.error);
@@ -130,7 +130,7 @@ export const useLibxray = () => {
 		});
 	};
 
-	const convertShareLinksToJson = Xray.default.convertShareLinksToXrayJson;
+	const convertShareLinksToJson = ExpoLibxray.convertShareLinksToXrayJson;
 
 	return {
 		runXray: startXray,

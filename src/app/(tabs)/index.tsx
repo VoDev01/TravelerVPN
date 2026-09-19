@@ -1,4 +1,3 @@
-import GermanyIcon from "@/assets/images/emojione_flag-for-germany.svg";
 import DownArrowIcon from "@/assets/images/line-md_arrow-down.svg";
 import UpArrowIcon from "@/assets/images/line-md_arrow-up.svg";
 import GasPumpIcon from "@/assets/images/osmic_fuel-14.svg";
@@ -9,6 +8,8 @@ import { useDurationWatch } from "@/hooks/useDurationWatch";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import * as Crypto from "expo-crypto";
+import ExpoLibxray from "expo-libxray";
+import { VpnStatusEvent } from "expo-libxray/build/ExpoLibxrayModule";
 import { Link, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
@@ -16,23 +17,10 @@ import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ServerEntity } from "../../../db/schema/servers";
 
-const enum ServerConnection {
-	DISCONNECTED,
-	CONNECTING,
-	CONNECTED,
-}
-
-type ServerEntityConnection = {
-	connectionState: ServerConnection;
-	entity: ServerEntity | null;
-};
-
 export default function MainScreen() {
 	const { time, start, stop, formatTime, reset } = useDurationWatch();
-	const [server, setServer] = useState<ServerEntityConnection>({
-		connectionState: ServerConnection.DISCONNECTED,
-		entity: null,
-	});
+
+	const [server, setServer] = useState<ServerEntity | null>(null);
 	const [serversFilterLocation, setServersFilterLocation] = useState<
 		string | null
 	>();
@@ -43,19 +31,31 @@ export default function MainScreen() {
 	const styles = createStyles(theme);
 
 	const [userId, setUserId] = useState("");
+
+	const [connectionState, setConnectionState] = useState("");
 	const { runXray, testXray, stopXray } = useLibxray();
 
 	useEffect(() => {
-		const userIdStorage = SecureStore.getItemAsync("USER_ID");
-		userIdStorage.then((id) => {
-			if (!id) {
-				let generated = Crypto.randomUUID();
-				SecureStore.setItemAsync("USER_ID", generated);
-				setUserId(generated);
-			} else {
-				if (id != userId) setUserId(id);
-			}
-		});
+		const id = SecureStore.getItem("USER_ID");
+		if (!id) {
+			let generated = Crypto.randomUUID();
+			SecureStore.setItem("USER_ID", generated);
+			setUserId(generated);
+		} else {
+			if (id != userId) setUserId(id);
+		}
+
+		const subscription = ExpoLibxray.addListener(
+			"onVpnStatusChange",
+			(event: VpnStatusEvent) => {
+				setConnectionState(event.status);
+				if (event.error) console.error(event.error);
+			},
+		);
+
+		return () => {
+			subscription.remove();
+		};
 	}, []);
 
 	const { selectedServerId } = useLocalSearchParams<{
@@ -63,7 +63,10 @@ export default function MainScreen() {
 	}>();
 
 	useEffect(() => {
-		if (!selectedServerId) return;
+		if (!selectedServerId) {
+			stopXray();
+			return;
+		}
 		getServerById(+selectedServerId)
 			.then((selectedServer: ServerEntity | undefined) => {
 				if (!selectedServer) {
@@ -71,36 +74,27 @@ export default function MainScreen() {
 					return;
 				}
 
-				setServer({
-					connectionState: ServerConnection.CONNECTING,
-					entity: selectedServer,
+				runXray(selectedServer.connectionLink).catch((e) => {
+					console.error(e);
 				});
 
-				runXray(selectedServer.connectionLink)
-					.then(() => {
-						reset();
-						start();
-						setServer({
-							connectionState: ServerConnection.CONNECTED,
-							entity: selectedServer,
-						});
-					})
-					.catch((e) => {
-						setServer({
-							connectionState: ServerConnection.DISCONNECTED,
-							entity: null,
-						});
-						console.error(e);
-					});
+				setServer(selectedServer);
 			})
 			.catch((e) => {
-				setServer({
-					connectionState: ServerConnection.DISCONNECTED,
-					entity: null,
-				});
 				console.error(e);
 			});
-	}, []);
+	}, [selectedServerId]);
+
+	useEffect(() => {
+		if (connectionState === "DISCONNECTED") {
+			reset();
+			stop();
+			stopXray();
+		} else if (connectionState === "CONNECTED") {
+			reset();
+			start();
+		}
+	}, [connectionState]);
 
 	return (
 		<View style={styles.container}>
@@ -120,34 +114,36 @@ export default function MainScreen() {
 				<Text style={styles.connectionDurationText}>{formatTime(time)}</Text>
 				<View style={styles.locationData}>
 					<Text style={styles.locationText}>
-						{server.connectionState === ServerConnection.DISCONNECTED
+						{connectionState === "DISCONNECTED"
 							? t("not_connected")
-							: server.entity?.remark}
+							: server?.remark}
 					</Text>
-					{server.connectionState === ServerConnection.DISCONNECTED ? (
-						<></>
-					) : (
-						<GermanyIcon width={32} height={32} />
+					{connectionState !== "DISCONNECTED" && server && (
+						<Text style={styles.locationFlag}>
+							{String.fromCodePoint(
+								...server.countryTag
+									.toUpperCase()
+									.split("")
+									.map((char) => 127397 + char.charCodeAt(0)),
+							)}
+						</Text>
 					)}
 				</View>
 			</View>
 
 			<View style={styles.mapContainer}>
-				<InteractiveServerMap onSelectLocation={setServersFilterLocation} />
+				<InteractiveServerMap
+					onSelectLocation={setServersFilterLocation}
+					onServerConnectingId={server?.id}
+				/>
 			</View>
 
-			{server.connectionState === ServerConnection.CONNECTED ||
-			server.connectionState === ServerConnection.CONNECTING ? (
+			{connectionState === "CONNECTING" || connectionState === "CONNECTED" ? (
 				<TouchableOpacity
 					style={styles.disconnectButton}
 					onPress={() => {
-						reset();
-						stop();
-						setServer({
-							connectionState: ServerConnection.DISCONNECTED,
-							entity: server.entity,
-						});
-						stopXray();
+						setServer(null);
+						setConnectionState("DISCONNECTED");
 					}}>
 					<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>
 				</TouchableOpacity>
@@ -219,12 +215,6 @@ const createStyles = (theme: CustomTheme) =>
 			marginTop: 4,
 			fontFamily: "CustomFont-Regular",
 		},
-		locationText: {
-			color: theme.colors.text,
-			fontSize: 18,
-			marginTop: 4,
-			fontFamily: "CustomFont-Regular",
-		},
 		mapContainer: {
 			width: "100%",
 			aspectRatio: 1,
@@ -235,6 +225,17 @@ const createStyles = (theme: CustomTheme) =>
 		locationData: {
 			flexDirection: "row",
 			columnGap: 24,
+			justifyContent: "center",
+			alignItems: "center",
+		},
+		locationText: {
+			color: theme.colors.text,
+			fontSize: 18,
+			marginTop: 4,
+			fontFamily: "CustomFont-Regular",
+		},
+		locationFlag: {
+			fontSize: 24,
 		},
 		mapImage: {
 			width: 150,
