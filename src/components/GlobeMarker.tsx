@@ -62,7 +62,7 @@ export default function GlobeMarker({
 				<meshBasicMaterial color={isActive ? "#00ff00" : "#ff0000"} />
 			</mesh>
 
-			{isActive && (
+			<group visible={isActive}>
 				<Billboard position={[0, 1.6, 0]}>
 					<Center>
 						<Text3D font={font.data} size={0.5} height={0} bevelEnabled={false}>
@@ -76,7 +76,7 @@ export default function GlobeMarker({
 						</Text3D>
 					</Center>
 				</Billboard>
-			)}
+			</group>
 		</group>
 	);
 }

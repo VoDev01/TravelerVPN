@@ -1,4 +1,4 @@
-import { Alert } from "react-native";
+import { showToast } from "./toast";
 
 const baseUrl = process.env.EXPO_PUBLIC_BACKEND_BASEURL;
 
@@ -31,11 +31,8 @@ const makeRequest = async (
 		const json = await response.json();
 		return json;
 	} catch (error) {
-		Alert.alert(
-			"Unable to reach servers.",
-			"Unable to establish connection with TravelerVPN servers. Check your internet connection or report this issue.",
-			[{ text: "OK", style: "cancel" }],
-			{ cancelable: true },
+		showToast(
+			"Unable to reach TravelerVPN servers. Check your internet connection.",
 		);
 		console.error("Error making request to a backend server:", error);
 	}

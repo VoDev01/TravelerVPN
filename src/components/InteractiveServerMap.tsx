@@ -1,5 +1,6 @@
 import { GeoLocation, useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
+import { getOrCreateUserId } from "@/utility/userId";
 import { OrbitControls, useProgress } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 import { useIsFocused } from "expo-router";
@@ -31,9 +32,11 @@ interface ServerGeoLocation {
 function InteractiveServerMap({
 	onSelectLocation,
 	onServerConnectingId,
+	isVpnConnecting,
 }: {
 	onSelectLocation: (location: string) => void;
 	onServerConnectingId: number | undefined;
+	isVpnConnecting: boolean;
 }) {
 	const aircraftRef = useRef<THREE.Object3D>(null);
 	const earthRef = useRef<THREE.Group>(null);
@@ -58,6 +61,11 @@ function InteractiveServerMap({
 	const { fetchServers } = useServers();
 
 	useEffect(() => {
+		getOrCreateUserId().then(setUserId).catch(console.error);
+	}, []);
+
+	useEffect(() => {
+		if (!userId) return;
 		getUserGeoFromIp()
 			.then((response) => {
 				setUserGeo(response?.response);
@@ -117,8 +125,8 @@ function InteractiveServerMap({
 			}
 		};
 
-		onServerConnecting(onServerConnectingId);
-	}, [onServerConnectingId]);
+		if (isVpnConnecting) onServerConnecting(onServerConnectingId);
+	}, [isVpnConnecting]);
 
 	const renderServerLocation = (serverGeo: ServerGeoLocation) => {
 		if (serverGeo.location) {
@@ -146,7 +154,11 @@ function InteractiveServerMap({
 		<View style={styles.content}>
 			<Canvas
 				frameloop={isActive ? "always" : "never"}
-				gl={{ antialias: false, powerPreference: "high-performance" }}
+				gl={{
+					antialias: false,
+					powerPreference: "high-performance",
+					failIfMajorPerformanceCaveat: true,
+				}}
 				camera={{ position: [-16, 0, 0], fov: 65 }}>
 				<ambientLight intensity={3} />
 				<Animate ref={earthRef} />
@@ -173,7 +185,7 @@ function InteractiveServerMap({
 							aircraftRef={aircraftRef}
 							segments={optimalSegments}
 							onAnimationStateChange={setIsCameraMoving}
-							onAnimationComplete={setIsFlightPathDefined}
+							animationVisible={setIsFlightPathDefined}
 						/>
 					)}
 				</group>

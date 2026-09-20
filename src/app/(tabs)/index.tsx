@@ -7,11 +7,10 @@ import { useAppTheme } from "@/context/ThemeContext";
 import { useDurationWatch } from "@/hooks/useDurationWatch";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
-import * as Crypto from "expo-crypto";
+import { getOrCreateUserId } from "@/utility/userId";
 import ExpoLibxray from "expo-libxray";
 import { VpnStatusEvent } from "expo-libxray/build/ExpoLibxrayModule";
 import { Link, useLocalSearchParams } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -36,14 +35,7 @@ export default function MainScreen() {
 	const { runXray, testXray, stopXray } = useLibxray();
 
 	useEffect(() => {
-		const id = SecureStore.getItem("USER_ID");
-		if (!id) {
-			let generated = Crypto.randomUUID();
-			SecureStore.setItem("USER_ID", generated);
-			setUserId(generated);
-		} else {
-			if (id != userId) setUserId(id);
-		}
+		getOrCreateUserId().then(setUserId).catch(console.error);
 
 		const subscription = ExpoLibxray.addListener(
 			"onVpnStatusChange",
@@ -64,7 +56,6 @@ export default function MainScreen() {
 
 	useEffect(() => {
 		if (!selectedServerId) {
-			stopXray();
 			return;
 		}
 		getServerById(+selectedServerId)
@@ -86,10 +77,10 @@ export default function MainScreen() {
 	}, [selectedServerId]);
 
 	useEffect(() => {
+		stopXray();
 		if (connectionState === "DISCONNECTED") {
 			reset();
 			stop();
-			stopXray();
 		} else if (connectionState === "CONNECTED") {
 			reset();
 			start();
@@ -135,6 +126,7 @@ export default function MainScreen() {
 				<InteractiveServerMap
 					onSelectLocation={setServersFilterLocation}
 					onServerConnectingId={server?.id}
+					isVpnConnecting={connectionState === "CONNECTING"}
 				/>
 			</View>
 
@@ -183,6 +175,7 @@ const createStyles = (theme: CustomTheme) =>
 			flex: 1,
 			rowGap: 12,
 			paddingVertical: 24,
+			justifyContent: "space-between",
 		},
 		speedContainer: {
 			flexDirection: "row",
@@ -207,7 +200,6 @@ const createStyles = (theme: CustomTheme) =>
 		connectionStatus: {
 			alignItems: "center",
 			rowGap: 24,
-			marginBottom: 24,
 		},
 		connectionDurationText: {
 			color: theme.colors.text,

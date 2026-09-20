@@ -27,32 +27,29 @@ export function useServers() {
 					throw new Error("Server didn't return any response.");
 				}
 
-				(response.response as any[]).forEach((r) => {
-					convertShareLinksToJson(r.connectionLink)
-						.then((linkJson) => {
+				await Promise.all(
+					(response.response as any[]).map(async (r) => {
+						try {
+							const linkJson = await convertShareLinksToJson(r.connectionLink);
 							const linkObj = JSON.parse(linkJson);
-							getGeoFromIp(linkObj.data.outbounds[0].settings.address)
-								.then((geo) => {
-									ServerRepository.add({
-										connectionLink: r.connectionLink,
-										remark: r.inbound.remark,
-										countryTag: getCode(geo?.response.country) ?? "US",
-										inboundId: r.inbound.id,
-										address: linkObj.data.outbounds[0].settings.address,
-										country: geo?.response.country,
-										city: geo?.response.city,
-										latitude: geo?.response.latitude,
-										longitude: geo?.response.longitude,
-									});
-								})
-								.catch((e) => {
-									console.error(e);
-								});
-						})
-						.catch((e) => {
-							console.error(e);
-						});
-				});
+							const address = linkObj.data.outbounds[0].settings.address;
+							const geo = await getGeoFromIp(address);
+							await ServerRepository.add({
+								connectionLink: r.connectionLink,
+								remark: r.inbound.remark,
+								countryTag: getCode(geo?.response.country) ?? "US",
+								inboundId: r.inbound.id,
+								address,
+								country: geo?.response.country,
+								city: geo?.response.city,
+								latitude: geo?.response.latitude,
+								longitude: geo?.response.longitude,
+							});
+						} catch (error) {
+							console.error(error);
+						}
+					}),
+				);
 
 				return await ServerRepository.getAll();
 			}
@@ -63,18 +60,16 @@ export function useServers() {
 	};
 
 	const refreshServers = async () => {
-		try {
-			await ServerRepository.deleteAll();
-		} catch (e) {
-			console.error(e);
-		}
+		await ServerRepository.deleteManaged();
 	};
 
 	return {
 		fetchServers,
 		refreshServers,
 		deleteServer: ServerRepository.delete,
+		deleteUserServers: ServerRepository.deleteUserDefined,
 		addServer: ServerRepository.add,
 		getServerById: ServerRepository.getById,
+		updateServer: ServerRepository.update,
 	};
 }

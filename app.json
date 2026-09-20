@@ -44,7 +44,13 @@
 				}
 			],
 			"expo-sqlite",
-			"expo-secure-store",
+			[
+				"expo-secure-store",
+				{
+					"configureAndroidBackup": true
+				}
+			],
+			"./plugins/withAndroidUserIdBackup.ts",
 			"./plugins/withAndroidPlugin.ts",
 			"./plugins/withAndroidAbiFilters.ts",
 			"expo-font",

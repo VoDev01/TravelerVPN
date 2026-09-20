@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../client";
 import { NewServer, ServerEntity, serversTable } from "../schema/servers";
 
@@ -27,6 +27,24 @@ export const ServerDAO = {
 
 	async deleteAll() {
 		await db.delete(serversTable);
+	},
+
+	async deleteManaged() {
+		await db
+			.delete(serversTable)
+			.where(eq(serversTable.type, "traveler_vpn"));
+	},
+
+	async deleteUserDefined(ids: number[]) {
+		if (ids.length === 0) return;
+		await db
+			.delete(serversTable)
+			.where(
+				and(
+					eq(serversTable.type, "user_defined"),
+					inArray(serversTable.id, ids),
+				),
+			);
 	},
 
 	async update(server: ServerEntity) {

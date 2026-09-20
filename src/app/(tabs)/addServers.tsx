@@ -157,7 +157,7 @@ const createStyles = (theme: CustomTheme) =>
 			minHeight: 48,
 			borderWidth: 1,
 			borderColor: "#ccc",
-			borderRadius: 8,
+			borderRadius: 12,
 			paddingHorizontal: 12,
 			fontSize: 16,
 			backgroundColor: theme.colors.card,

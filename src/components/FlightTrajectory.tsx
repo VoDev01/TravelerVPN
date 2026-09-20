@@ -28,7 +28,7 @@ interface FlightTrajectoryProps {
 	aircraftRef: RefObject<THREE.Group | THREE.Object3D | null>;
 	segments?: number;
 	onAnimationStateChange?: (isCameraBusy: boolean) => void;
-	onAnimationComplete?: (complete: boolean) => void;
+	animationVisible?: (complete: boolean) => void;
 }
 
 export default function FlightTrajectory({
@@ -38,10 +38,8 @@ export default function FlightTrajectory({
 	aircraftRef,
 	segments = 50,
 	onAnimationStateChange,
-	onAnimationComplete,
+	animationVisible,
 }: FlightTrajectoryProps) {
-	onAnimationComplete?.(false);
-
 	const curve = useMemo(() => {
 		const midX = (A.x + B.x) / 2;
 		const midZ = (A.z + B.z) / 2;
@@ -186,7 +184,7 @@ export default function FlightTrajectory({
 					initialCameraPos.current = null;
 					onAnimationStateChange?.(false);
 				}
-				onAnimationComplete?.(true);
+				animationVisible?.(false);
 			}
 		}
 	});
