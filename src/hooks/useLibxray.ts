@@ -78,7 +78,7 @@ const config = (initialConfig: string) => {
 				},
 				{
 					type: "field",
-					outboundTag: "direct",
+					outboundTag: "block",
 					inboundTag: ["SOCKS LOCAL"],
 					protocol: ["bittorrent"],
 				},
@@ -104,11 +104,6 @@ export const useLibxray = () => {
 			try {
 				const result = runXray({
 					xrayJson: config(output),
-					geoIpUrl: undefined,
-					geoSiteUrl: undefined,
-					downloadEvery: "1",
-					timeUnit: TimeUnit.HOURS,
-					maxGeoAgeMillis: undefined,
 					appsSplitTunneling: undefined,
 					vpnServiceErrorLocalized: "Vpn permission is rejected.",
 					notificationErrorLocalized: "Vpn permission is rejected.",

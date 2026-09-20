@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store";
+import { getOrCreateUserId } from "@/utility/userId";
 import makeRequest from "../utility/api";
 
 export interface VpnResponse {
@@ -22,7 +22,7 @@ export interface GeoLocation {
 export const useBackendClient = () => {
 	const getSubscription = async (tgId: bigint) => {
 		try {
-			const userId = await SecureStore.getItemAsync("USER_ID");
+			const userId = await getOrCreateUserId();
 			return (await makeRequest("/api/user/subscription", "POST", {
 				userId,
 				tgId,
@@ -32,9 +32,25 @@ export const useBackendClient = () => {
 		}
 	};
 
+	const renewSubscription = async (
+		planId: string,
+		paymentReference: string,
+	) => {
+		try {
+			const userId = await getOrCreateUserId();
+			return (await makeRequest("/api/user/subscription/renew", "POST", {
+				userId,
+				planId,
+				paymentReference,
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error renewing subscription:", error);
+		}
+	};
+
 	const getUser = async () => {
 		try {
-			const userId = await SecureStore.getItemAsync("USER_ID");
+			const userId = await getOrCreateUserId();
 			return (await makeRequest(`/api/user`, "GET", { userId })) as VpnResponse;
 		} catch (error) {
 			console.error("Error fetching user:", error);
@@ -43,7 +59,7 @@ export const useBackendClient = () => {
 
 	const updateUser = async (client: any) => {
 		try {
-			const userId = await SecureStore.getItemAsync("USER_ID");
+			const userId = await getOrCreateUserId();
 			return (await makeRequest(`/api/user/update`, "PUT", {
 				userId,
 				client,
@@ -55,7 +71,7 @@ export const useBackendClient = () => {
 
 	const getUserTraffic = async () => {
 		try {
-			const userId = await SecureStore.getItemAsync("USER_ID");
+			const userId = await getOrCreateUserId();
 			return (await makeRequest(`/api/user/traffic`, "GET", {
 				userId,
 			})) as VpnResponse;
@@ -78,7 +94,7 @@ export const useBackendClient = () => {
 
 	const detachInbounds = async (inbounds: number[]) => {
 		try {
-			const userId = await SecureStore.getItemAsync("USER_ID");
+			const userId = await getOrCreateUserId();
 			return (await makeRequest("/api/user/inbounds/detach", "POST", {
 				userId,
 				inbounds,
@@ -90,7 +106,7 @@ export const useBackendClient = () => {
 
 	const attachInbounds = async (inbounds: number[]) => {
 		try {
-			const userId = await SecureStore.getItemAsync("USER_ID");
+			const userId = await getOrCreateUserId();
 			return (await makeRequest("/api/node/inbounds/attach", "POST", {
 				userId,
 				inbounds,
@@ -102,7 +118,7 @@ export const useBackendClient = () => {
 
 	const getGeoFromIp = async (ip: string) => {
 		try {
-			const userId = await SecureStore.getItemAsync("USER_ID");
+			const userId = await getOrCreateUserId();
 			return (await makeRequest("/api/ip/geo", "POST", {
 				userId,
 				ip,
@@ -114,7 +130,7 @@ export const useBackendClient = () => {
 
 	const getUserGeoFromIp = async () => {
 		try {
-			const userId = await SecureStore.getItemAsync("USER_ID");
+			const userId = await getOrCreateUserId();
 			return (await makeRequest("/api/ip/user/geo", "POST", {
 				userId,
 			})) as VpnResponse;
@@ -156,6 +172,7 @@ export const useBackendClient = () => {
 		getGeoFromIp,
 		getUserGeoFromIp,
 		metrics,
+		renewSubscription,
 		testNode,
 		updateUser,
 		ws,

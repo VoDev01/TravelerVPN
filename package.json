@@ -31,7 +31,7 @@
 		"expo-gl": "~57.0.2",
 		"expo-glass-effect": "~57.0.3",
 		"expo-image": "~57.0.5",
-		"expo-libxray": "^1.2.2",
+		"expo-libxray": "^1.3.0",
 		"expo-linking": "~57.0.10",
 		"expo-localization": "~57.0.2",
 		"expo-router": "~57.0.21",

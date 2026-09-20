@@ -1,6 +1,8 @@
 import LeftArrowWhite from "@/assets/images/line-md_arrow-left-white.svg";
 import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { ToastHost } from "@/components/ToastHost";
+import { ModelProvider } from "@/context/ModelContext";
 import { ThemeProvider, useAppTheme } from "@/context/ThemeContext";
 import { useSettings } from "@/hooks/useSettings";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
@@ -85,6 +87,13 @@ function LayoutContent() {
 					headerTransparent: true,
 				}}
 			/>
+			<Stack.Screen
+				name="server-edit"
+				options={{
+					headerTitle: "",
+					headerTransparent: true,
+				}}
+			/>
 		</Stack>
 	);
 }
@@ -103,7 +112,7 @@ export default function Layout() {
 					padding: 12,
 				}}>
 				<Text style={{ color: "red", fontSize: 16 }}>
-					Db error: {error.message}
+					Unable to load app due to database error
 				</Text>
 			</View>
 		);
@@ -130,8 +139,11 @@ export default function Layout() {
 
 	return (
 		<ThemeProvider>
-			<AnimatedSplashOverlay />
-			<LayoutContent />
+			<ModelProvider>
+				<AnimatedSplashOverlay />
+				<LayoutContent />
+				<ToastHost />
+			</ModelProvider>
 		</ThemeProvider>
 	);
 }
