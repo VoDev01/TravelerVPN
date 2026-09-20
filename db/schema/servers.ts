@@ -5,7 +5,11 @@ export const serversTable = sqliteTable("servers", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
 	address: text(),
 	remark: text().notNull(),
-	contryTag: text("country_tag").notNull(),
+	countryTag: text("country_tag").notNull(),
+	country: text().notNull().default(""),
+	city: text().notNull().default(""),
+	latitude: integer().notNull().default(0),
+	longitude: integer().notNull().default(0),
 	connectionLink: text().notNull(),
 	inboundId: integer("inbound_id"),
 	type: text("type", { enum: ["traveler_vpn", "user_defined"] }).default(

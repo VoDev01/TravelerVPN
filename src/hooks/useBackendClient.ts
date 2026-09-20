@@ -1,3 +1,4 @@
+import { getOrCreateUserId } from "@/utility/userId";
 import makeRequest from "../utility/api";
 
 export interface VpnResponse {
@@ -15,30 +16,50 @@ export interface GeoLocation {
 	country: string;
 	city: string;
 	latitude: number;
-	longtitude: number;
+	longitude: number;
 }
 
 export const useBackendClient = () => {
-	const getSubscription = async (userId: string | undefined) => {
+	const getSubscription = async (tgId: bigint) => {
 		try {
+			const userId = await getOrCreateUserId();
 			return (await makeRequest("/api/user/subscription", "POST", {
 				userId,
+				tgId,
 			})) as VpnResponse;
 		} catch (error) {
 			console.error("Error fetching subscription:", error);
 		}
 	};
 
-	const getUser = async (userId: string) => {
+	const renewSubscription = async (
+		planId: string,
+		paymentReference: string,
+	) => {
 		try {
+			const userId = await getOrCreateUserId();
+			return (await makeRequest("/api/user/subscription/renew", "POST", {
+				userId,
+				planId,
+				paymentReference,
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error renewing subscription:", error);
+		}
+	};
+
+	const getUser = async () => {
+		try {
+			const userId = await getOrCreateUserId();
 			return (await makeRequest(`/api/user`, "GET", { userId })) as VpnResponse;
 		} catch (error) {
 			console.error("Error fetching user:", error);
 		}
 	};
 
-	const updateUser = async (userId: string, client: any) => {
+	const updateUser = async (client: any) => {
 		try {
+			const userId = await getOrCreateUserId();
 			return (await makeRequest(`/api/user/update`, "PUT", {
 				userId,
 				client,
@@ -48,8 +69,9 @@ export const useBackendClient = () => {
 		}
 	};
 
-	const getUserTraffic = async (userId: string) => {
+	const getUserTraffic = async () => {
 		try {
+			const userId = await getOrCreateUserId();
 			return (await makeRequest(`/api/user/traffic`, "GET", {
 				userId,
 			})) as VpnResponse;
@@ -70,8 +92,9 @@ export const useBackendClient = () => {
 		}
 	};
 
-	const detachInbounds = async (userId: string, inbounds: number[]) => {
+	const detachInbounds = async (inbounds: number[]) => {
 		try {
+			const userId = await getOrCreateUserId();
 			return (await makeRequest("/api/user/inbounds/detach", "POST", {
 				userId,
 				inbounds,
@@ -81,8 +104,9 @@ export const useBackendClient = () => {
 		}
 	};
 
-	const attachInbounds = async (userId: string, inbounds: number[]) => {
+	const attachInbounds = async (inbounds: number[]) => {
 		try {
+			const userId = await getOrCreateUserId();
 			return (await makeRequest("/api/node/inbounds/attach", "POST", {
 				userId,
 				inbounds,
@@ -92,10 +116,23 @@ export const useBackendClient = () => {
 		}
 	};
 
-	const getUserLastGeo = async (email: string) => {
+	const getGeoFromIp = async (ip: string) => {
 		try {
-			return (await makeRequest("/api/user/geo", "POST", {
-				email,
+			const userId = await getOrCreateUserId();
+			return (await makeRequest("/api/ip/geo", "POST", {
+				userId,
+				ip,
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error attaching inbounds:", error);
+		}
+	};
+
+	const getUserGeoFromIp = async () => {
+		try {
+			const userId = await getOrCreateUserId();
+			return (await makeRequest("/api/ip/user/geo", "POST", {
+				userId,
 			})) as VpnResponse;
 		} catch (error) {
 			console.error("Error attaching inbounds:", error);
@@ -132,8 +169,10 @@ export const useBackendClient = () => {
 		getSubscription,
 		getUser,
 		getUserTraffic,
-		getUserLastGeo,
+		getGeoFromIp,
+		getUserGeoFromIp,
 		metrics,
+		renewSubscription,
 		testNode,
 		updateUser,
 		ws,
