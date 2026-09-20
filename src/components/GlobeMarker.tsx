@@ -1,3 +1,7 @@
+import nunitoFont from "@/assets/fonts/Nunito_Regular.json";
+import { Billboard, Center, Text3D, useFont } from "@react-three/drei/native";
+import { useMemo } from "react";
+
 export function geodeticToECEF(
 	lat: number,
 	lon: number,
@@ -29,7 +33,7 @@ export interface ActiveLabel extends ServerLocation {
 
 interface GlobeMarkerProps {
 	lat: number;
-	lng: number;
+	lon: number;
 	id: string;
 	activeId: string | null;
 	onSelect: (id: string) => void;
@@ -37,23 +41,42 @@ interface GlobeMarkerProps {
 
 export default function GlobeMarker({
 	lat,
-	lng,
+	lon,
 	id,
 	onSelect,
 	activeId,
 }: GlobeMarkerProps) {
-	const position = geodeticToECEF(lat, lng, 7.22);
+	const font = useFont(nunitoFont as any);
+
+	const position = useMemo(() => geodeticToECEF(lat, lon, 7.22), [lat, lon]);
 	const isActive = id === activeId;
 
 	return (
-		<mesh
-			position={position}
-			onClick={(e) => {
-				e.stopPropagation();
-				onSelect(id);
-			}}>
-			<sphereGeometry args={[0.13, 16, 16]} />
-			<meshBasicMaterial color={"#ff0000"} />
-		</mesh>
+		<group position={position}>
+			<mesh
+				onClick={(e) => {
+					e.stopPropagation();
+					onSelect(id);
+				}}>
+				<sphereGeometry args={[0.2, 16, 16]} />
+				<meshBasicMaterial color={isActive ? "#00ff00" : "#ff0000"} />
+			</mesh>
+
+			<group visible={isActive}>
+				<Billboard position={[0, 1.6, 0]}>
+					<Center>
+						<Text3D font={font.data} size={0.5} height={0} bevelEnabled={false}>
+							{id}
+							<meshStandardMaterial
+								color="#fff"
+								metalness={0}
+								roughness={1}
+								polygonOffset={true}
+							/>
+						</Text3D>
+					</Center>
+				</Billboard>
+			</group>
+		</group>
 	);
 }

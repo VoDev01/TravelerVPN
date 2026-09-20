@@ -1,39 +1,28 @@
-import GermanyIcon from "@/assets/images/emojione_flag-for-germany.svg";
 import DownArrowIcon from "@/assets/images/line-md_arrow-down.svg";
 import UpArrowIcon from "@/assets/images/line-md_arrow-up.svg";
 import GasPumpIcon from "@/assets/images/osmic_fuel-14.svg";
 import InteractiveServerMap from "@/components/InteractiveServerMap";
 import { CustomTheme } from "@/constants/theme";
+import { useAppTheme } from "@/context/ThemeContext";
 import { useDurationWatch } from "@/hooks/useDurationWatch";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
-import { useAppTheme } from "@/ThemeContext";
-import { appEmitter } from "@/utility/emitter";
-import * as Crypto from "expo-crypto";
-import { Link } from "expo-router";
-import * as SecureStore from "expo-secure-store";
+import { getOrCreateUserId } from "@/utility/userId";
+import ExpoLibxray from "expo-libxray";
+import { VpnStatusEvent } from "expo-libxray/build/ExpoLibxrayModule";
+import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ServerEntity } from "../../../db/schema/servers";
 
-const enum ServerConnection {
-	DISCONNECTED,
-	CONNECTING,
-	CONNECTED,
-}
-
-type ServerEntityConnection = {
-	connectionState: ServerConnection;
-	entity: ServerEntity | null;
-};
-
 export default function MainScreen() {
 	const { time, start, stop, formatTime, reset } = useDurationWatch();
-	const [server, setServer] = useState<ServerEntityConnection>({
-		connectionState: ServerConnection.DISCONNECTED,
-		entity: null,
-	});
+
+	const [server, setServer] = useState<ServerEntity | null>(null);
+	const [serversFilterLocation, setServersFilterLocation] = useState<
+		string | null
+	>();
 	const { getServerById } = useServers();
 
 	const { t } = useTranslation();
@@ -41,47 +30,62 @@ export default function MainScreen() {
 	const styles = createStyles(theme);
 
 	const [userId, setUserId] = useState("");
-	const { runXray, stopXray } = useLibxray();
+
+	const [connectionState, setConnectionState] = useState("");
+	const { runXray, testXray, stopXray } = useLibxray();
 
 	useEffect(() => {
-		const userIdStorage = SecureStore.getItemAsync("USER_ID");
-		userIdStorage.then((id) => {
-			if (!id) {
-				let generated = Crypto.randomUUID();
-				SecureStore.setItemAsync("USER_ID", generated);
-				setUserId(generated);
-			} else {
-				if (id != userId) setUserId(id);
-			}
-		});
+		getOrCreateUserId().then(setUserId).catch(console.error);
+
+		const subscription = ExpoLibxray.addListener(
+			"onVpnStatusChange",
+			(event: VpnStatusEvent) => {
+				setConnectionState(event.status);
+				if (event.error) console.error(event.error);
+			},
+		);
+
+		return () => {
+			subscription.remove();
+		};
 	}, []);
 
+	const { selectedServerId } = useLocalSearchParams<{
+		selectedServerId?: string;
+	}>();
+
 	useEffect(() => {
-		appEmitter.addListener("onServerConnecting", (id: number) => {
-			getServerById(id).then((server: ServerEntity) => {
-				setServer({
-					connectionState: ServerConnection.CONNECTING,
-					entity: server,
+		if (!selectedServerId) {
+			return;
+		}
+		getServerById(+selectedServerId)
+			.then((selectedServer: ServerEntity | undefined) => {
+				if (!selectedServer) {
+					console.error(`Server with id ${selectedServerId} is not found`);
+					return;
+				}
+
+				runXray(selectedServer.connectionLink).catch((e) => {
+					console.error(e);
 				});
-				runXray(server.connectionLink)
-					.then(() => {
-						reset();
-						start();
-						setServer({
-							connectionState: ServerConnection.CONNECTED,
-							entity: server,
-						});
-					})
-					.catch((e) => {
-						console.error(e);
-						setServer({
-							connectionState: ServerConnection.DISCONNECTED,
-							entity: server,
-						});
-					});
+
+				setServer(selectedServer);
+			})
+			.catch((e) => {
+				console.error(e);
 			});
-		});
-	}, []);
+	}, [selectedServerId]);
+
+	useEffect(() => {
+		stopXray();
+		if (connectionState === "DISCONNECTED") {
+			reset();
+			stop();
+		} else if (connectionState === "CONNECTED") {
+			reset();
+			start();
+		}
+	}, [connectionState]);
 
 	return (
 		<View style={styles.container}>
@@ -101,39 +105,47 @@ export default function MainScreen() {
 				<Text style={styles.connectionDurationText}>{formatTime(time)}</Text>
 				<View style={styles.locationData}>
 					<Text style={styles.locationText}>
-						{server.connectionState === ServerConnection.DISCONNECTED
+						{connectionState === "DISCONNECTED"
 							? t("not_connected")
-							: server.entity?.remark}
+							: server?.remark}
 					</Text>
-					{server.connectionState === ServerConnection.DISCONNECTED ? (
-						<></>
-					) : (
-						<GermanyIcon width={32} height={32} />
+					{connectionState !== "DISCONNECTED" && server && (
+						<Text style={styles.locationFlag}>
+							{String.fromCodePoint(
+								...server.countryTag
+									.toUpperCase()
+									.split("")
+									.map((char) => 127397 + char.charCodeAt(0)),
+							)}
+						</Text>
 					)}
 				</View>
 			</View>
 
 			<View style={styles.mapContainer}>
-				<InteractiveServerMap />
+				<InteractiveServerMap
+					onSelectLocation={setServersFilterLocation}
+					onServerConnectingId={server?.id}
+					isVpnConnecting={connectionState === "CONNECTING"}
+				/>
 			</View>
 
-			{server.connectionState === ServerConnection.CONNECTED ||
-			server.connectionState === ServerConnection.CONNECTING ? (
+			{connectionState === "CONNECTING" || connectionState === "CONNECTED" ? (
 				<TouchableOpacity
 					style={styles.disconnectButton}
 					onPress={() => {
-						reset();
-						stop();
-						setServer({
-							connectionState: ServerConnection.DISCONNECTED,
-							entity: server.entity,
-						});
-						stopXray();
+						setServer(null);
+						setConnectionState("DISCONNECTED");
 					}}>
 					<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>
 				</TouchableOpacity>
 			) : (
-				<Link href="/servers" asChild>
+				<Link
+					href={{
+						pathname: "/servers",
+						params: { city: serversFilterLocation },
+					}}
+					asChild>
 					<TouchableOpacity
 						style={styles.chooseServerButton}
 						onPress={() => {}}>
@@ -163,6 +175,7 @@ const createStyles = (theme: CustomTheme) =>
 			flex: 1,
 			rowGap: 12,
 			paddingVertical: 24,
+			justifyContent: "space-between",
 		},
 		speedContainer: {
 			flexDirection: "row",
@@ -187,15 +200,8 @@ const createStyles = (theme: CustomTheme) =>
 		connectionStatus: {
 			alignItems: "center",
 			rowGap: 24,
-			marginBottom: 24,
 		},
 		connectionDurationText: {
-			color: theme.colors.text,
-			fontSize: 18,
-			marginTop: 4,
-			fontFamily: "CustomFont-Regular",
-		},
-		locationText: {
 			color: theme.colors.text,
 			fontSize: 18,
 			marginTop: 4,
@@ -211,6 +217,17 @@ const createStyles = (theme: CustomTheme) =>
 		locationData: {
 			flexDirection: "row",
 			columnGap: 24,
+			justifyContent: "center",
+			alignItems: "center",
+		},
+		locationText: {
+			color: theme.colors.text,
+			fontSize: 18,
+			marginTop: 4,
+			fontFamily: "CustomFont-Regular",
+		},
+		locationFlag: {
+			fontSize: 24,
 		},
 		mapImage: {
 			width: 150,

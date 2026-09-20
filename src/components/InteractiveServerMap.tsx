@@ -1,15 +1,15 @@
 import { GeoLocation, useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
-import { useAppTheme } from "@/ThemeContext";
+import { getOrCreateUserId } from "@/utility/userId";
 import { OrbitControls, useProgress } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 import { useIsFocused } from "expo-router";
-import * as SecureStore from "expo-secure-store";
-import { RefObject, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { memo, RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import * as THREE from "three";
 import FlightTrajectory from "./FlightTrajectory";
-import GlobeMarker, { geodeticToECEF, ServerLocation } from "./GlobeMarker";
+import GlobeMarker, { geodeticToECEF } from "./GlobeMarker";
+import { Loader } from "./Loader";
 import { Model } from "./Model";
 
 export function Animate({ ref }: { ref: RefObject<THREE.Object3D | null> }) {
@@ -24,97 +24,143 @@ export function Animate({ ref }: { ref: RefObject<THREE.Object3D | null> }) {
 	return null;
 }
 
-function Loader() {
-	const theme = useAppTheme();
-	return (
-		<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-			<ActivityIndicator size="large" color="#fff" />
-			<Text style={{ color: theme.colors.text, marginTop: 10 }}>
-				Загрузка карты...
-			</Text>
-		</View>
-	);
+interface ServerGeoLocation {
+	id: number;
+	location: GeoLocation;
 }
 
-export default function InteractiveServerMap() {
+function InteractiveServerMap({
+	onSelectLocation,
+	onServerConnectingId,
+	isVpnConnecting,
+}: {
+	onSelectLocation: (location: string) => void;
+	onServerConnectingId: number | undefined;
+	isVpnConnecting: boolean;
+}) {
 	const aircraftRef = useRef<THREE.Object3D>(null);
 	const earthRef = useRef<THREE.Group>(null);
 
 	const isActive = useIsFocused();
-	const { progress, active } = useProgress();
-	const isLoaded = !active && progress === 100;
+	const { progress } = useProgress();
+	const isLoaded = progress === 100;
+	const [isServersLoaded, setIsServersLoaded] = useState(false);
 
 	const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
-	const [isReady, setIsReady] = useState(true);
 	const [isCameraMoving, setIsCameraMoving] = useState(false);
+	const [isFlightPathDefined, setIsFlightPathDefined] = useState(false);
+
+	const [serversLocations, setServersLocations] = useState<ServerGeoLocation[]>(
+		[],
+	);
+
 	const [userGeo, setUserGeo] = useState<GeoLocation | null>(null);
+	const [userId, setUserId] = useState("");
 
-	const { getUserLastGeo } = useBackendClient();
+	const { getUserGeoFromIp } = useBackendClient();
 	const { fetchServers } = useServers();
-	const { getSubscription } = useBackendClient();
 
 	useEffect(() => {
-		if (aircraftRef.current) {
-			aircraftRef.current.visible = isActive;
-		}
-		if (earthRef.current) {
-			earthRef.current.visible = isActive;
-		}
-		setIsReady(isActive);
-	}, [isActive]);
+		getOrCreateUserId().then(setUserId).catch(console.error);
+	}, []);
 
 	useEffect(() => {
-		SecureStore.getItemAsync("USER_ID").then((userId) => {
-			if (userId) {
-				getUserLastGeo(userId)
-					.then((response) => {
-						setUserGeo(response?.response);
-					})
-					.catch((e) => {
-						console.error(e);
+		if (!userId) return;
+		getUserGeoFromIp()
+			.then((response) => {
+				setUserGeo(response?.response);
+			})
+			.catch((e) => {
+				console.error(e);
+			});
+		fetchServers(userId)
+			.then((servers) => {
+				if (servers.length > 0) {
+					const locationsByCity = new Map<string, ServerGeoLocation>();
+					servers.forEach((server) => {
+						locationsByCity.set(server.city, {
+							id: server.id,
+							location: {
+								country: server.country,
+								city: server.city,
+								latitude: server.latitude,
+								longitude: server.longitude,
+							},
+						});
 					});
-			}
-		});
-	}, [userGeo]);
+					setServersLocations([...locationsByCity.values()]);
+					setIsServersLoaded(true);
+				}
+			})
+			.catch((e) => {
+				console.error(`Unable to load servers for InteractiveMap: ${e}`);
+				setIsServersLoaded(false);
+			});
+	}, [userId]);
 
-	const serverData: ServerLocation[] = [
-		{ id: "nl", lat: 52.3676, lon: 4.9041, name: "Нидерланды" },
-		{ id: "de", lat: 52.52, lon: 13.405, name: "Германия" },
-		{ id: "rs", lat: 44.7866, lon: 20.4489, name: "Сербия" },
-		{ id: "us", lat: 40.6892, lon: -74.0445, name: "US" },
-	];
+	const A = useMemo(() => new THREE.Vector3(), []);
+	const B = useMemo(() => new THREE.Vector3(), []);
 
-	let A = null;
-	let B = null;
-	if (userGeo) {
-		A = new THREE.Vector3(
-			...geodeticToECEF(userGeo.latitude, userGeo.longtitude, 7.22),
-		);
-		B = new THREE.Vector3(
-			...geodeticToECEF(serverData[3].lat, serverData[3].lon, 7.22),
-		);
-	} else {
-		A = new THREE.Vector3(
-			...geodeticToECEF(serverData[0].lat, serverData[0].lon, 7.22),
-		);
-		B = new THREE.Vector3(
-			...geodeticToECEF(serverData[3].lat, serverData[3].lon, 7.22),
-		);
-	}
-
-	const optimalSegments = useMemo(() => {
+	const optimalSegments = (() => {
 		const distance = A.distanceTo(B);
-
 		const calculated = Math.floor(distance * 40);
-
 		return Math.min(Math.max(calculated, 40), 150);
-	}, [A, B]);
+	})();
+
+	useEffect(() => {
+		const onServerConnecting = (id: number | undefined) => {
+			if (serversLocations.length > 0 && id) {
+				const server = serversLocations.find((server) => server.id === id);
+				if (server && userGeo) {
+					A.set(...geodeticToECEF(userGeo.latitude, userGeo.longitude, 7.22));
+					B.set(
+						...geodeticToECEF(
+							server.location?.latitude,
+							server.location?.longitude,
+							7.22,
+						),
+					);
+					setIsFlightPathDefined(true);
+				}
+			}
+		};
+
+		if (isVpnConnecting) onServerConnecting(onServerConnectingId);
+	}, [isVpnConnecting]);
+
+	const renderServerLocation = (serverGeo: ServerGeoLocation) => {
+		if (serverGeo.location) {
+			return (
+				<GlobeMarker
+					key={serverGeo.id}
+					id={serverGeo.location.city}
+					lat={serverGeo.location.latitude}
+					lon={serverGeo.location.longitude}
+					activeId={activeLocationId}
+					onSelect={(city: string) => {
+						setActiveLocationId(city);
+						onSelectLocation(city);
+					}}
+				/>
+			);
+		}
+	};
+
+	if (!isServersLoaded) {
+		<Loader loaderText="Загрузка серверов..." />;
+	}
 
 	return (
 		<View style={styles.content}>
-			<Canvas camera={{ position: [-16, 0, 0], fov: 65 }}>
-				<ambientLight intensity={0.7} />
-				<directionalLight color="white" position={[0, 14, 0]} intensity={3} />
+			<Canvas
+				frameloop={isActive ? "always" : "never"}
+				gl={{
+					antialias: false,
+					powerPreference: "high-performance",
+					failIfMajorPerformanceCaveat: true,
+				}}
+				camera={{ position: [-16, 0, 0], fov: 65 }}>
+				<ambientLight intensity={3} />
 				<Animate ref={earthRef} />
 				<group ref={earthRef}>
 					<Model
@@ -123,16 +169,7 @@ export default function InteractiveServerMap() {
 							position: [0, 0, 0],
 						}}
 					/>
-					{serverData.map((loc) => (
-						<GlobeMarker
-							key={loc.id}
-							id={loc.id}
-							lat={loc.lat}
-							lng={loc.lon}
-							activeId={activeLocationId}
-							onSelect={setActiveLocationId}
-						/>
-					))}
+					{serversLocations.map((serverGeo) => renderServerLocation(serverGeo))}
 					<Model
 						ref={aircraftRef}
 						model={"aircraft"}
@@ -140,16 +177,15 @@ export default function InteractiveServerMap() {
 							scale: 0.04,
 						}}
 					/>
-					{A && B && (
+					{isFlightPathDefined && (
 						<FlightTrajectory
 							A={A}
 							B={B}
 							height={2.5}
 							aircraftRef={aircraftRef}
-							minAircraftScale={0.02}
-							maxAircraftScale={0.05}
 							segments={optimalSegments}
 							onAnimationStateChange={setIsCameraMoving}
+							animationVisible={setIsFlightPathDefined}
 						/>
 					)}
 				</group>
@@ -157,12 +193,14 @@ export default function InteractiveServerMap() {
 			</Canvas>
 			{!isLoaded && (
 				<View style={StyleSheet.absoluteFill} pointerEvents="none">
-					<Loader />
+					<Loader loaderText="Загрузка карты..." />
 				</View>
 			)}
 		</View>
 	);
 }
+
+export default memo(InteractiveServerMap);
 
 export const styles = StyleSheet.create({
 	content: {

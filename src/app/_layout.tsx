@@ -1,15 +1,22 @@
 import LeftArrowWhite from "@/assets/images/line-md_arrow-left-white.svg";
 import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { ToastHost } from "@/components/ToastHost";
+import { ModelProvider } from "@/context/ModelContext";
+import { ThemeProvider, useAppTheme } from "@/context/ThemeContext";
 import { useSettings } from "@/hooks/useSettings";
-import { useWebSocketClient } from "@/hooks/useWebSocketClient";
-import { ThemeProvider, useAppTheme } from "@/ThemeContext";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { useFonts } from "expo-font";
 import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
-import { LogBox, TouchableOpacity } from "react-native";
+import { useEffect } from "react";
+import {
+	ActivityIndicator,
+	LogBox,
+	Text,
+	TouchableOpacity,
+	View,
+} from "react-native";
 import { db } from "../../db/client";
 import migrations from "../../drizzle/migrations";
 import "../../i18n";
@@ -23,16 +30,6 @@ SplashScreen.preventAutoHideAsync();
 function LayoutContent() {
 	const theme = useAppTheme();
 	const { settings } = useSettings();
-
-	const [closeWs, setCloseWs] = useState(false);
-	const { wsClose } = useWebSocketClient();
-
-	useEffect(() => {
-		if (closeWs) {
-			wsClose();
-			setCloseWs(false);
-		}
-	}, [closeWs]);
 
 	const [loaded, error] = useFonts({
 		"CustomFont-Regular": require("@/assets/fonts/Nunito-Regular.ttf"),
@@ -77,7 +74,6 @@ function LayoutContent() {
 							<TouchableOpacity
 								onPress={() => {
 									router.back();
-									setCloseWs(true);
 								}}>
 								{settings.theme === "dark" ? (
 									<LeftArrowWhite width={48} height={48} />
@@ -91,22 +87,63 @@ function LayoutContent() {
 					headerTransparent: true,
 				}}
 			/>
+			<Stack.Screen
+				name="server-edit"
+				options={{
+					headerTitle: "",
+					headerTransparent: true,
+				}}
+			/>
 		</Stack>
 	);
 }
 
 export default function Layout() {
-	const { success } = useMigrations(db, {
-		journal: {
-			entries: [],
-		},
-		migrations: migrations.migrations,
-	} as any);
+	const { success, error } = useMigrations(db, migrations);
+
+	if (error) {
+		console.error(error);
+		return (
+			<View
+				style={{
+					flex: 1,
+					justifyContent: "center",
+					alignItems: "center",
+					padding: 12,
+				}}>
+				<Text style={{ color: "red", fontSize: 16 }}>
+					Unable to load app due to database error
+				</Text>
+			</View>
+		);
+	}
+
+	if (!success) {
+		return (
+			<ThemeProvider>
+				<View
+					style={{
+						flex: 1,
+						justifyContent: "center",
+						alignItems: "center",
+						padding: 12,
+					}}>
+					<Text style={{ fontSize: 20, marginBottom: 10 }}>
+						Loading Database
+					</Text>
+					<ActivityIndicator size="large" />
+				</View>
+			</ThemeProvider>
+		);
+	}
 
 	return (
 		<ThemeProvider>
-			<AnimatedSplashOverlay />
-			<LayoutContent />
+			<ModelProvider>
+				<AnimatedSplashOverlay />
+				<LayoutContent />
+				<ToastHost />
+			</ModelProvider>
 		</ThemeProvider>
 	);
 }
