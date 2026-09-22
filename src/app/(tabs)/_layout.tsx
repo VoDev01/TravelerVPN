@@ -21,7 +21,6 @@ export default function TabLayout() {
 
 				sceneStyle: {
 					backgroundColor: theme.colors.primary,
-					margin: 12,
 				},
 
 				tabBarStyle: {

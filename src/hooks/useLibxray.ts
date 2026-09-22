@@ -3,7 +3,6 @@ import ExpoLibxray, {
 	LibxrayConfigBuilder,
 	RunXrayRequest,
 	RunXrayResponse,
-	TimeUnit,
 } from "expo-libxray";
 
 const config = (initialConfig: string) => {
@@ -97,7 +96,9 @@ export const useLibxray = () => {
 
 	const testXray = (shareLink: string) => ExpoLibxray.testXray(shareLink);
 
-	const stopXray = () => ExpoLibxray.stopXray;
+	const stopXray = ExpoLibxray.stopXray;
+
+	const pingBatch = ExpoLibxray.pingBatch;
 
 	const startXray = async (shareLink: string) => {
 		initialConfig(shareLink).then((output) => {
@@ -131,6 +132,7 @@ export const useLibxray = () => {
 		runXray: startXray,
 		testXray,
 		stopXray,
+		pingBatch,
 		convertShareLinksToJson,
 	};
 };

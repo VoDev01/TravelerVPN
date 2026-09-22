@@ -1,7 +1,8 @@
 import LeftArrowWhite from "@/assets/images/line-md_arrow-left-white.svg";
 import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
-import { ToastHost } from "@/components/ToastHost";
+import { toastConfig } from "@/components/config/toastConfig";
+import { Loader } from "@/components/Loader";
 import { ModelProvider } from "@/context/ModelContext";
 import { ThemeProvider, useAppTheme } from "@/context/ThemeContext";
 import { useSettings } from "@/hooks/useSettings";
@@ -17,6 +18,12 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
+import {
+	initialWindowMetrics,
+	SafeAreaProvider,
+	useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import { db } from "../../db/client";
 import migrations from "../../drizzle/migrations";
 import "../../i18n";
@@ -36,65 +43,97 @@ function LayoutContent() {
 		"CustomFont-Bold": require("@/assets/fonts/Nunito-Bold.ttf"),
 	});
 
+	const insets = useSafeAreaInsets();
+
 	useEffect(() => {
 		if (loaded || error) {
 			SplashScreen.hideAsync();
 		}
 	}, [loaded, error]);
 
+	const bottomInset = insets?.bottom ?? 0;
+
+	const BASE_OFFSET = 16;
+	const safeBottomOffset = bottomInset + BASE_OFFSET;
+
 	if (!loaded && !error) {
-		return null;
+		return <Loader loaderText="Loading fonts.." />;
 	}
 
 	return (
-		<Stack
-			screenOptions={{
-				headerBackTitle: undefined,
-				title: undefined,
-				headerShadowVisible: false,
-				contentStyle: {
-					flex: 1,
-					backgroundColor: theme.colors.primary,
-					padding: 24,
-				},
-			}}>
-			<Stack.Screen
-				name="(tabs)"
-				options={{
-					headerShown: false,
-				}}
-			/>
-			<Stack.Screen
-				name="servers"
-				options={{
-					headerLeft: () => {
-						const router = useRouter();
-
-						return (
-							<TouchableOpacity
-								onPress={() => {
-									router.back();
-								}}>
-								{settings.theme === "dark" ? (
-									<LeftArrowWhite width={48} height={48} />
-								) : (
-									<LeftArrow width={48} height={48} />
-								)}
-							</TouchableOpacity>
-						);
+		<>
+			<Stack
+				screenOptions={{
+					headerBackTitle: undefined,
+					title: undefined,
+					headerShadowVisible: false,
+					contentStyle: {
+						flex: 1,
+						backgroundColor: theme.colors.primary,
+						padding: 24,
 					},
-					headerTitle: "",
-					headerTransparent: true,
-				}}
+				}}>
+				<Stack.Screen
+					name="(tabs)"
+					options={{
+						headerShown: false,
+					}}
+				/>
+				<Stack.Screen
+					name="servers"
+					options={{
+						headerLeft: () => {
+							const router = useRouter();
+
+							return (
+								<TouchableOpacity
+									onPress={() => {
+										router.back();
+									}}>
+									{settings.theme === "dark" ? (
+										<LeftArrowWhite width={48} height={48} />
+									) : (
+										<LeftArrow width={48} height={48} />
+									)}
+								</TouchableOpacity>
+							);
+						},
+						headerTitle: "",
+						headerTransparent: true,
+					}}
+				/>
+				<Stack.Screen
+					name="server-edit"
+					options={{
+						headerTitle: "",
+						headerTransparent: true,
+					}}
+				/>
+			</Stack>
+			<Toast
+				config={toastConfig}
+				position="bottom"
+				bottomOffset={safeBottomOffset}
 			/>
-			<Stack.Screen
-				name="server-edit"
-				options={{
-					headerTitle: "",
-					headerTransparent: true,
-				}}
-			/>
-		</Stack>
+		</>
+	);
+}
+
+function LoadingDatabase() {
+	const theme = useAppTheme();
+
+	return (
+		<View
+			style={{
+				flex: 1,
+				justifyContent: "center",
+				alignItems: "center",
+				padding: 12,
+				backgroundColor: theme.colors.primary,
+			}}>
+			<Text style={{ fontSize: 20, marginBottom: 10 }}>Loading Database</Text>
+			<ActivityIndicator size="large" />
+		</View>
 	);
 }
 
@@ -121,18 +160,7 @@ export default function Layout() {
 	if (!success) {
 		return (
 			<ThemeProvider>
-				<View
-					style={{
-						flex: 1,
-						justifyContent: "center",
-						alignItems: "center",
-						padding: 12,
-					}}>
-					<Text style={{ fontSize: 20, marginBottom: 10 }}>
-						Loading Database
-					</Text>
-					<ActivityIndicator size="large" />
-				</View>
+				<LoadingDatabase />
 			</ThemeProvider>
 		);
 	}
@@ -140,9 +168,10 @@ export default function Layout() {
 	return (
 		<ThemeProvider>
 			<ModelProvider>
-				<AnimatedSplashOverlay />
-				<LayoutContent />
-				<ToastHost />
+				<SafeAreaProvider initialMetrics={initialWindowMetrics}>
+					<AnimatedSplashOverlay />
+					<LayoutContent />
+				</SafeAreaProvider>
 			</ModelProvider>
 		</ThemeProvider>
 	);
