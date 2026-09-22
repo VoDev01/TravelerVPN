@@ -2,31 +2,27 @@ import PlusIcon from "@/assets/images/akar-icons_plus.svg";
 import HomeIcon from "@/assets/images/Home.svg";
 import GearIcon from "@/assets/images/mdi_gear.svg";
 import { useAppTheme } from "@/context/ThemeContext";
-import { createBottomTabNavigator } from "expo-router/build/react-navigation/bottom-tabs";
+import { Tabs } from "expo-router";
 import { Text } from "react-native";
-import MainScreen from ".";
-import AddServers from "./addServers";
-import SettingsScreen from "./settings";
-import SubscriptionScreen from "./subscription";
-
-const Tab = createBottomTabNavigator();
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
 	const theme = useAppTheme();
+	const insets = useSafeAreaInsets();
 
 	return (
-		<Tab.Navigator
+		<Tabs
 			screenOptions={{
 				headerShown: false,
 
 				sceneStyle: {
 					backgroundColor: theme.colors.primary,
+					padding: 24,
 				},
 
 				tabBarStyle: {
 					backgroundColor: theme.colors.card,
-					borderRadius: 12,
-					marginBottom: 24,
+					marginBottom: insets.bottom,
 					borderTopWidth: 0,
 					paddingBottom: 0,
 					overflow: "hidden",
@@ -45,47 +41,39 @@ export default function TabLayout() {
 					justifyContent: "center",
 					alignItems: "center",
 				},
-
-				tabBarItemStyle: {
-					paddingVertical: 8,
-				},
 			}}>
-			<Tab.Screen
-				name="Home"
-				component={MainScreen}
+			<Tabs.Screen
+				name="index"
 				options={{
 					tabBarIcon: ({ color }) => (
 						<HomeIcon color={color} width={36} height={36} />
 					),
 				}}
 			/>
-			<Tab.Screen
-				name="Add servers"
-				component={AddServers}
+			<Tabs.Screen
+				name="addServers"
 				options={{
 					tabBarIcon: ({ color }) => (
 						<PlusIcon color={color} width={36} height={36} />
 					),
 				}}
 			/>
-			<Tab.Screen
-				name="Subscription"
-				component={SubscriptionScreen}
+			<Tabs.Screen
+				name="subscription"
 				options={{
 					tabBarIcon: ({ color }) => (
 						<Text style={{ color, fontSize: 30, fontWeight: "700" }}>$</Text>
 					),
 				}}
 			/>
-			<Tab.Screen
-				name="Settings"
-				component={SettingsScreen}
+			<Tabs.Screen
+				name="settings"
 				options={{
 					tabBarIcon: ({ color }) => (
 						<GearIcon color={color} width={36} height={36} />
 					),
 				}}
 			/>
-		</Tab.Navigator>
+		</Tabs>
 	);
 }
