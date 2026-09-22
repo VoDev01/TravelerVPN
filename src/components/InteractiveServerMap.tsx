@@ -4,6 +4,7 @@ import { OrbitControls, useProgress } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 import { useIsFocused } from "expo-router";
 import { RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import * as THREE from "three";
 import FlightTrajectory from "./FlightTrajectory";
@@ -37,6 +38,8 @@ export default function InteractiveServerMap({
 	onServerConnectingId: number | undefined;
 	isVpnConnecting: boolean;
 }) {
+	const { t } = useTranslation();
+
 	const aircraftRef = useRef<THREE.Object3D>(null);
 	const earthRef = useRef<THREE.Group>(null);
 
@@ -47,6 +50,7 @@ export default function InteractiveServerMap({
 	const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
 	const [isCameraMoving, setIsCameraMoving] = useState(false);
 	const [isFlightPathDefined, setIsFlightPathDefined] = useState(false);
+	const initialCameraPos = useRef<THREE.Vector3 | null>(null);
 
 	const [serversLocations, setServersLocations] = useState<ServerGeoLocation[]>(
 		[],
@@ -163,7 +167,7 @@ export default function InteractiveServerMap({
 						powerPreference: "high-performance",
 						failIfMajorPerformanceCaveat: true,
 					}}
-					camera={{ position: [-15, 0, 0], fov: 65 }}>
+					camera={{ position: [-15.2, 0, 0], fov: 65 }}>
 					<ambientLight intensity={3} />
 					<Animate ref={earthRef} />
 					<group ref={earthRef}>
@@ -193,22 +197,25 @@ export default function InteractiveServerMap({
 								segments={optimalSegments}
 								onAnimationStateChange={setIsCameraMoving}
 								animationVisible={setIsFlightPathDefined}
+								initialCameraPosRef={initialCameraPos}
 							/>
 						)}
 					</group>
-					<OrbitControls enableRotate={!isCameraMoving} enableZoom={false} />
+					<OrbitControls
+						enableRotate={!isCameraMoving}
+						enableZoom={false}
+						enablePan={false}
+					/>
 				</Canvas>
 			)}
 			{!isLoaded && (
 				<View style={StyleSheet.absoluteFill} pointerEvents="none">
-					<Loader loaderText="Загрузка карты..." />
+					<Loader loaderText={t("loader_map")} />
 				</View>
 			)}
 		</View>
 	);
 }
-
-// memo(InteractiveServerMap);
 
 export const styles = StyleSheet.create({
 	content: {

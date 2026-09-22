@@ -1,4 +1,5 @@
 import { getCode } from "country-list";
+import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 import { ServerRepository } from "../../db/repository/ServerRepository";
 import { ServerEntity } from "../../db/schema/servers";
@@ -6,6 +7,7 @@ import { useBackendClient } from "./useBackendClient";
 import { useLibxray } from "./useLibxray";
 
 export function useServers() {
+	const { t } = useTranslation();
 	const fetchServers = async (tgId?: bigint): Promise<ServerEntity[]> => {
 		const { getSubscription, getGeoFromIp } = useBackendClient();
 		const { convertShareLinksToJson } = useLibxray();
@@ -20,8 +22,8 @@ export function useServers() {
 				if (response && response.status === "denied") {
 					Toast.show({
 						type: "info",
-						text1: "Denied access to servers",
-						text2: "Start using TravelerVPN servers by buying a subcription",
+						text1: t("toast_subscription_denied_text1"),
+						text2: t("toast_subscription_denied_text2"),
 					});
 					return [];
 				} else if (!response || !response.response) {
@@ -61,8 +63,8 @@ export function useServers() {
 
 			Toast.show({
 				type: "error",
-				text1: "Unable to reach TravelerVPN servers",
-				text2: "Check your internet connection or report this issue.",
+				text1: t("toast_servers_error_text1"),
+				text2: t("toast_servers_error_text2"),
 			});
 			return [];
 		}

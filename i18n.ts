@@ -9,10 +9,20 @@ const fallbackResources = {
 			not_connected: "Not connected",
 			choose_server: "Choose server",
 			available_servers: "Available servers",
+			no_available_servers: "No available servers found",
+			section_subscription_servers: "Subscription servers",
+			section_user_servers: "User servers",
+
 			cancel: "Cancel",
 			select: "Select",
 			connect: "Connect",
 			disconnect: "Disconnect",
+			save: "Save",
+
+			loader_fonts: "Loading fonts...",
+			loader_servers: "Loading servers...",
+			loader_map: "Loading map...",
+			loader_assets: "Loading 3d assets",
 
 			settings_title: "Settings",
 			section_ui: "UI",
@@ -58,6 +68,19 @@ const fallbackResources = {
 			simulate_payment_success: "Simulate successful payment",
 			subscription_renewed: "Subscription renewed",
 			subscription_renewal_failed: "Unable to renew subscription",
+
+			add_servers_title: "Add your own servers",
+			add_servers_country_label: "Choose country",
+			add_servers_name_label: "Name of your server",
+			add_servers_link_label: "Paste connection link",
+
+			toast_subscription_denied_text1: "Denied access to servers",
+			toast_subscription_denied_text2:
+				"Start using TravelerVPN servers by buying a subcription",
+
+			toast_servers_error_text1: "Unable to reach servers",
+			toast_servers_error_text2:
+				"Check your internet connection or report this issue",
 		},
 	},
 	ru: {
@@ -65,10 +88,20 @@ const fallbackResources = {
 			not_connected: "Не подключено",
 			choose_server: "Список серверов",
 			available_servers: "Доступные сервера",
+			no_available_servers: "Не найдено доступных серверов",
+			section_subscription_servers: "Сервера подписки",
+			section_user_servers: "Сервера пользователя",
+
 			cancel: "Отмена",
 			select: "Выбрать",
 			connect: "Подключится",
 			disconnect: "Отключиться",
+			save: "Сохранить",
+
+			loader_fonts: "Загрузка шрифтов...",
+			loader_servers: "Загрузка серверов...",
+			loader_map: "Загрузка карты...",
+			loader_assets: "Загрузка 3д ассетов...",
 
 			settings_title: "Настройки",
 			section_ui: "UI",
@@ -114,6 +147,19 @@ const fallbackResources = {
 			simulate_payment_success: "Симулировать успешную оплату",
 			subscription_renewed: "Подписка продлена",
 			subscription_renewal_failed: "Не удалось продлить подписку",
+
+			add_servers_title: "Добавить сервер",
+			add_servers_country_label: "Выберите страну",
+			add_servers_name_label: "Название сервера",
+			add_servers_link_label: "Вставьте строку подключения",
+
+			toast_subscription_denied_text1: "Сервера недоступны",
+			toast_subscription_denied_text2:
+				"Начните использовать сервера TravelerVPN, купив подписку",
+
+			toast_servers_error_text1: "Невозможно подключиться к сервису",
+			toast_servers_error_text2:
+				"Проверьте интернет-соединение или сообщите об этой проблеме",
 		},
 	},
 };

@@ -11,6 +11,7 @@ import { Platform } from "react-native";
 export interface CustomTheme {
 	colors: {
 		text: string;
+		text_input: string;
 		primary: string;
 		background: string;
 		secondary: string;
@@ -27,6 +28,7 @@ export const LightTheme = {
 	colors: {
 		...DefaultTheme.colors,
 		text: "#000000ff",
+		text_input: "#fff",
 		primary: "#fff",
 		background: "#fff",
 		secondary: "#fff",
@@ -43,6 +45,7 @@ export const DarkTheme = {
 	colors: {
 		...DefaultTheme.colors,
 		text: "#fff",
+		text_input: "#fff",
 		primary: "#1a1a1a",
 		background: "#000",
 		secondary: "#fff",

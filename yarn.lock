@@ -3933,9 +3933,9 @@ expo-keep-awake@~57.0.2:
   integrity sha512-GqgH746wtJImmsbyHmCQoi7cOslKuWQBbJHXr53S35Bpf5UvxCAztvnitUEd7D0QvFN2rvkOhylbZpgZZfBLlQ==
 
 expo-libxray@^1.3.1:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/expo-libxray/-/expo-libxray-1.3.1.tgz#89dfe0a0c5e707617f117d82217461c1e81f227d"
-  integrity sha512-QdZsGt2JCxFggZ8rtcN0bGrEC+PJI/LPsOXxB5vBi42DJV875CYnPo1xwL3Zop9rOPk6y8ecXBE4lalivu9NGQ==
+  version "1.3.11"
+  resolved "https://registry.yarnpkg.com/expo-libxray/-/expo-libxray-1.3.11.tgz#b69a7ed10c7b2f9411f927b68a07fa1c163cd716"
+  integrity sha512-VkSbJ+Wg8dUKXfM0NwSUV7aJOz+KENaqmpyWMBVY1Qa0suGA5XfyyzcTHUFYuhGDBjQLIt2SCz28295ealwWkQ==
   dependencies:
     lodash "^4.18.1"
 
@@ -3977,6 +3977,13 @@ expo-modules-jsi@~57.1.0:
   version "57.1.0"
   resolved "https://registry.yarnpkg.com/expo-modules-jsi/-/expo-modules-jsi-57.1.0.tgz#21c1d3df20ea886e937a9ea2930699e34e164867"
   integrity sha512-a5ckeHfnbYfonhcHGkM0EU/a0Keh+/OufXy/HyFS+spr5Ib0N4Oh1ZsSYFQhp5xdOUFkVofKRhfH+VmcccIIpA==
+
+expo-navigation-bar@~57.0.2:
+  version "57.0.2"
+  resolved "https://registry.yarnpkg.com/expo-navigation-bar/-/expo-navigation-bar-57.0.2.tgz#d22ede0b1c9ddb9291417994dbefbd6f21bcf423"
+  integrity sha512-Ufe49dsTZjarA7gMMwwwnNJWpXo+oTyl5Ud0g3lsGVrj2HXjyw9cb9098N8+CoWpjfIa5PghuRYYXrcCrGQIHg==
+  dependencies:
+    debug "^4.3.2"
 
 expo-router@~57.0.21:
   version "57.0.21"
