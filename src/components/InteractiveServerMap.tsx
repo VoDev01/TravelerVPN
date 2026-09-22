@@ -1,10 +1,9 @@
 import { GeoLocation, useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
-import { getOrCreateUserId } from "@/utility/userId";
 import { OrbitControls, useProgress } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 import { useIsFocused } from "expo-router";
-import { memo, RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import * as THREE from "three";
 import FlightTrajectory from "./FlightTrajectory";
@@ -29,7 +28,7 @@ interface ServerGeoLocation {
 	location: GeoLocation;
 }
 
-function InteractiveServerMap({
+export default function InteractiveServerMap({
 	onSelectLocation,
 	onServerConnectingId,
 	isVpnConnecting,
@@ -44,7 +43,6 @@ function InteractiveServerMap({
 	const isActive = useIsFocused();
 	const { progress } = useProgress();
 	const isLoaded = progress === 100;
-	const [isServersLoaded, setIsServersLoaded] = useState(false);
 
 	const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
 	const [isCameraMoving, setIsCameraMoving] = useState(false);
@@ -55,17 +53,11 @@ function InteractiveServerMap({
 	);
 
 	const [userGeo, setUserGeo] = useState<GeoLocation | null>(null);
-	const [userId, setUserId] = useState("");
 
 	const { getUserGeoFromIp } = useBackendClient();
 	const { fetchServers } = useServers();
 
 	useEffect(() => {
-		getOrCreateUserId().then(setUserId).catch(console.error);
-	}, []);
-
-	useEffect(() => {
-		if (!userId) return;
 		getUserGeoFromIp()
 			.then((response) => {
 				setUserGeo(response?.response);
@@ -73,7 +65,7 @@ function InteractiveServerMap({
 			.catch((e) => {
 				console.error(e);
 			});
-		fetchServers(userId)
+		fetchServers()
 			.then((servers) => {
 				if (servers.length > 0) {
 					const locationsByCity = new Map<string, ServerGeoLocation>();
@@ -89,14 +81,12 @@ function InteractiveServerMap({
 						});
 					});
 					setServersLocations([...locationsByCity.values()]);
-					setIsServersLoaded(true);
 				}
 			})
 			.catch((e) => {
 				console.error(`Unable to load servers for InteractiveMap: ${e}`);
-				setIsServersLoaded(false);
 			});
-	}, [userId]);
+	}, [isVpnConnecting, onServerConnectingId]);
 
 	const A = useMemo(() => new THREE.Vector3(), []);
 	const B = useMemo(() => new THREE.Vector3(), []);
@@ -146,51 +136,69 @@ function InteractiveServerMap({
 		}
 	};
 
-	if (!isServersLoaded) {
-		<Loader loaderText="Загрузка серверов..." />;
-	}
+	const renderUserLocation = () => {
+		if (userGeo && isFlightPathDefined) {
+			return (
+				<GlobeMarker
+					key={"user_geo"}
+					id={"user_geo"}
+					lat={userGeo.latitude}
+					lon={userGeo.longitude}
+					activeId={activeLocationId}
+					onSelect={(city: string) => {
+						setActiveLocationId(city);
+						onSelectLocation(city);
+					}}
+				/>
+			);
+		}
+	};
 
 	return (
 		<View style={styles.content}>
-			<Canvas
-				frameloop={isActive ? "always" : "never"}
-				gl={{
-					antialias: false,
-					powerPreference: "high-performance",
-					failIfMajorPerformanceCaveat: true,
-				}}
-				camera={{ position: [-16, 0, 0], fov: 65 }}>
-				<ambientLight intensity={3} />
-				<Animate ref={earthRef} />
-				<group ref={earthRef}>
-					<Model
-						model={"earth"}
-						props={{
-							position: [0, 0, 0],
-						}}
-					/>
-					{serversLocations.map((serverGeo) => renderServerLocation(serverGeo))}
-					<Model
-						ref={aircraftRef}
-						model={"aircraft"}
-						props={{
-							scale: 0.04,
-						}}
-					/>
-					{isFlightPathDefined && (
-						<FlightTrajectory
-							A={A}
-							B={B}
-							height={2.5}
-							aircraftRef={aircraftRef}
-							segments={optimalSegments}
-							onAnimationStateChange={setIsCameraMoving}
-							animationVisible={setIsFlightPathDefined}
+			{isActive && (
+				<Canvas
+					gl={{
+						antialias: false,
+						powerPreference: "high-performance",
+						failIfMajorPerformanceCaveat: true,
+					}}
+					camera={{ position: [-15, 0, 0], fov: 65 }}>
+					<ambientLight intensity={3} />
+					<Animate ref={earthRef} />
+					<group ref={earthRef}>
+						<Model
+							model={"earth"}
+							props={{
+								position: [0, 0, 0],
+							}}
 						/>
-					)}
-				</group>
-				<OrbitControls enableRotate={!isCameraMoving} enableZoom={false} />
-			</Canvas>
+						{serversLocations.map((serverGeo) =>
+							renderServerLocation(serverGeo),
+						)}
+						{renderUserLocation()}
+						<Model
+							ref={aircraftRef}
+							model={"aircraft"}
+							props={{
+								scale: 0.04,
+							}}
+						/>
+						{isFlightPathDefined && (
+							<FlightTrajectory
+								A={A}
+								B={B}
+								height={2.5}
+								aircraftRef={aircraftRef}
+								segments={optimalSegments}
+								onAnimationStateChange={setIsCameraMoving}
+								animationVisible={setIsFlightPathDefined}
+							/>
+						)}
+					</group>
+					<OrbitControls enableRotate={!isCameraMoving} enableZoom={false} />
+				</Canvas>
+			)}
 			{!isLoaded && (
 				<View style={StyleSheet.absoluteFill} pointerEvents="none">
 					<Loader loaderText="Загрузка карты..." />
@@ -200,7 +208,7 @@ function InteractiveServerMap({
 	);
 }
 
-export default memo(InteractiveServerMap);
+// memo(InteractiveServerMap);
 
 export const styles = StyleSheet.create({
 	content: {

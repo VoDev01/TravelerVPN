@@ -5,7 +5,7 @@ export function Loader({ loaderText }: { loaderText: string }) {
 	const theme = useAppTheme();
 	return (
 		<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-			<ActivityIndicator size="large" color="#fff" />
+			<ActivityIndicator size="large" color={theme.colors.text} />
 			<Text style={{ color: theme.colors.text, marginTop: 10 }}>
 				{loaderText}
 			</Text>

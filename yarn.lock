@@ -3932,10 +3932,10 @@ expo-keep-awake@~57.0.2:
   resolved "https://registry.yarnpkg.com/expo-keep-awake/-/expo-keep-awake-57.0.2.tgz#ce266252ad478523bb3431d40f67bd643f86bd9c"
   integrity sha512-GqgH746wtJImmsbyHmCQoi7cOslKuWQBbJHXr53S35Bpf5UvxCAztvnitUEd7D0QvFN2rvkOhylbZpgZZfBLlQ==
 
-expo-libxray@^1.3.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/expo-libxray/-/expo-libxray-1.3.0.tgz#4497185e785bbdc9c016c1aa738f0765531d8c0a"
-  integrity sha512-MmAv8/k5QWZsKzXu/Ng/ufTfKR0Tjdb2JlQFbHCYruEVaIfqajSEf6kWkJ2LwNxstK+RN1kwZbW0mzkuya8I3Q==
+expo-libxray@^1.3.1:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/expo-libxray/-/expo-libxray-1.3.1.tgz#89dfe0a0c5e707617f117d82217461c1e81f227d"
+  integrity sha512-QdZsGt2JCxFggZ8rtcN0bGrEC+PJI/LPsOXxB5vBi42DJV875CYnPo1xwL3Zop9rOPk6y8ecXBE4lalivu9NGQ==
   dependencies:
     lodash "^4.18.1"
 
@@ -6204,6 +6204,11 @@ react-native-svg@15.15.4:
     css-select "^5.1.0"
     css-tree "^1.1.3"
     warn-once "0.1.1"
+
+react-native-toast-message@^2.5.2:
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/react-native-toast-message/-/react-native-toast-message-2.5.2.tgz#8eac4b28f40d69e1c2db991798ec2435d9fe0bc4"
+  integrity sha512-jqCuWO3njXkdKn6Cs+3EI7Wdw1jvg9JCaSgeQ/hrRF83baeElZRicxv5suz3+igjnDPLFYnruUwpluCBYeWO8Q==
 
 react-native-url-polyfill@^4.0.0:
   version "4.0.0"
