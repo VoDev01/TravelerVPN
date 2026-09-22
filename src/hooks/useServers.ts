@@ -1,29 +1,30 @@
 import { getCode } from "country-list";
+import Toast from "react-native-toast-message";
 import { ServerRepository } from "../../db/repository/ServerRepository";
 import { ServerEntity } from "../../db/schema/servers";
 import { useBackendClient } from "./useBackendClient";
 import { useLibxray } from "./useLibxray";
 
 export function useServers() {
-	const fetchServers = async (
-		userId: string,
-		tgId?: bigint,
-	): Promise<ServerEntity[]> => {
+	const fetchServers = async (tgId?: bigint): Promise<ServerEntity[]> => {
 		const { getSubscription, getGeoFromIp } = useBackendClient();
 		const { convertShareLinksToJson } = useLibxray();
 
 		try {
 			const localServers = await ServerRepository.getAll();
-			if (
-				localServers &&
-				localServers.length > 0 &&
-				localServers.filter((s) => s.type == "traveler_vpn").length > 0
-			) {
+			if (localServers && localServers.length > 0) {
 				return localServers;
 			} else {
 				const response = await getSubscription(tgId ?? 0n);
 
-				if (!response || !response.response) {
+				if (response && response.status === "denied") {
+					Toast.show({
+						type: "info",
+						text1: "Denied access to servers",
+						text2: "Start using TravelerVPN servers by buying a subcription",
+					});
+					return [];
+				} else if (!response || !response.response) {
 					throw new Error("Server didn't return any response.");
 				}
 
@@ -34,6 +35,7 @@ export function useServers() {
 							const linkObj = JSON.parse(linkJson);
 							const address = linkObj.data.outbounds[0].settings.address;
 							const geo = await getGeoFromIp(address);
+							console.log(1);
 							await ServerRepository.add({
 								connectionLink: r.connectionLink,
 								remark: r.inbound.remark,
@@ -44,6 +46,7 @@ export function useServers() {
 								city: geo?.response.city,
 								latitude: geo?.response.latitude,
 								longitude: geo?.response.longitude,
+								type: "traveler_vpn",
 							});
 						} catch (error) {
 							console.error(error);
@@ -55,6 +58,12 @@ export function useServers() {
 			}
 		} catch (e) {
 			console.error(e);
+
+			Toast.show({
+				type: "error",
+				text1: "Unable to reach TravelerVPN servers",
+				text2: "Check your internet connection or report this issue.",
+			});
 			return [];
 		}
 	};

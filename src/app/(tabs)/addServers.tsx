@@ -47,6 +47,8 @@ export default function AddServers() {
 	};
 
 	useEffect(() => {
+		if (!serverSubmit) return () => {};
+
 		let address: string = "";
 		convertShareLinksToJson(connectionLink)
 			.then((json) => {

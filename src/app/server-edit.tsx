@@ -3,7 +3,6 @@ import { useAppTheme } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
-import { showToast } from "@/utility/toast";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/build/react-navigation";
 import { useEffect, useState } from "react";
@@ -19,6 +18,7 @@ import CountryPicker, {
 	Country,
 	CountryCode,
 } from "react-native-country-picker-modal";
+import Toast from "react-native-toast-message";
 import { ServerEntity } from "../../db/schema/servers";
 
 export default function EditServerScreen() {
@@ -41,7 +41,6 @@ export default function EditServerScreen() {
 		getServerById(Number(serverId))
 			.then((selected) => {
 				if (!selected || selected.type !== "user_defined") {
-					showToast("User-defined server not found");
 					router.back();
 					return;
 				}
@@ -53,7 +52,6 @@ export default function EditServerScreen() {
 			})
 			.catch((error) => {
 				console.error(error);
-				showToast("Unable to load server");
 				router.back();
 			});
 	}, [serverId]);
@@ -68,7 +66,10 @@ export default function EditServerScreen() {
 	const saveServer = async () => {
 		if (!server) return;
 		if (!remark.trim() || !connectionLink.trim()) {
-			showToast("Server name and connection link are required");
+			Toast.show({
+				type: "error",
+				text1: "Server name and connection link are required",
+			});
 			return;
 		}
 
@@ -80,7 +81,8 @@ export default function EditServerScreen() {
 				const linkJson = await convertShareLinksToJson(nextConnectionLink);
 				const address = JSON.parse(linkJson).data.outbounds[0].settings.address;
 				const geo = await getGeoFromIp(address);
-				if (!geo?.response) throw new Error("Unable to resolve server location");
+				if (!geo?.response)
+					throw new Error("Unable to resolve server location");
 				endpoint = {
 					address,
 					city: geo.response.city,
@@ -96,11 +98,9 @@ export default function EditServerScreen() {
 				country: countryName,
 				connectionLink: nextConnectionLink,
 			});
-			showToast("Server updated");
 			router.back();
 		} catch (error) {
 			console.error(error);
-			showToast("Unable to update server");
 		} finally {
 			setIsSaving(false);
 		}
@@ -130,9 +130,7 @@ export default function EditServerScreen() {
 						onBackgroundTextColor: theme.colors.text,
 					}}
 					renderFlagButton={(props) => (
-						<TouchableOpacity
-							style={styles.input}
-							onPress={props.onOpen}>
+						<TouchableOpacity style={styles.input} onPress={props.onOpen}>
 							<Text style={styles.inputText}>{countryName || countryTag}</Text>
 						</TouchableOpacity>
 					)}
@@ -140,7 +138,11 @@ export default function EditServerScreen() {
 			</View>
 			<View>
 				<Text style={styles.label}>Server name</Text>
-				<TextInput style={styles.input} value={remark} onChangeText={setRemark} />
+				<TextInput
+					style={styles.input}
+					value={remark}
+					onChangeText={setRemark}
+				/>
 			</View>
 			<View>
 				<Text style={styles.label}>Connection link</Text>
