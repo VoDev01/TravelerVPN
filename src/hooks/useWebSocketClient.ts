@@ -1,3 +1,4 @@
+import { getOrCreateUserId } from "@/utility/userId";
 import { ActivationState, Client } from "@stomp/stompjs";
 import { useRef, useState } from "react";
 import SockJS from "sockjs-client";
@@ -9,15 +10,18 @@ export type MetricsServerData = ServerEntity & {
 };
 
 export const useWebSocketClient = () => {
-	const { wsLogout } = useBackendClient();
+	const { ws, wsLogout } = useBackendClient();
+
+	const [wsLoggedin, setWsLoggedin] = useState(false);
 
 	const wsClientRef = useRef<Client | null>(null);
 	const [wsUrl] = useState(
-		process.env.EXPO_PUBLIC_BACKEND_WSURL ??
-			"http://10.0.2.2:8080/ws" + "/data/metrics",
+		process.env.EXPO_PUBLIC_BACKEND_WSURL ?? "http://10.0.2.2:8080/ws",
 	);
 
 	const wsClose = () => {
+		if (!wsLoggedin) return;
+
 		const response = wsLogout();
 		response.then((v) => {
 			try {
@@ -33,8 +37,20 @@ export const useWebSocketClient = () => {
 		wsClientRef.current = null;
 	};
 
-	const wsConnect = (servers: MetricsServerData[]) => {
-		if (wsClientRef.current?.state === ActivationState.ACTIVE) return;
+	const clientTraffic = async (servers: MetricsServerData[]) => {
+		if (!wsLoggedin) {
+			ws()
+				.then((response) => {
+					setWsLoggedin(response?.status === "success");
+				})
+				.catch((e) => console.error(e));
+		}
+
+		if (
+			wsClientRef.current?.state === ActivationState.ACTIVE ||
+			wsClientRef.current?.state === ActivationState.DEACTIVATING
+		)
+			return;
 
 		wsClientRef.current = new Client({
 			webSocketFactory: () => new SockJS(wsUrl),
@@ -42,10 +58,12 @@ export const useWebSocketClient = () => {
 			reconnectDelay: 5000,
 		});
 
+		const userId = await getOrCreateUserId();
+
 		wsClientRef.current.onConnect = (frame) => {
 			console.info("Ws connection opened");
 
-			wsClientRef.current?.subscribe("/data/metrics", (message) => {
+			wsClientRef.current?.subscribe("/data/client/traffic", (message) => {
 				try {
 					const data = JSON.parse(message.body);
 					if (data.type === "client_traffic") {
@@ -68,10 +86,10 @@ export const useWebSocketClient = () => {
 			});
 
 			wsClientRef.current?.publish({
-				destination: "/app/metrics",
+				destination: "/data/client/traffic",
 				body: JSON.stringify({
 					type: "client_creds",
-					data: {},
+					data: userId,
 				}),
 			});
 		};
@@ -89,15 +107,10 @@ export const useWebSocketClient = () => {
 		};
 
 		wsClientRef.current.activate();
-
-		return () => {
-			wsClientRef.current?.deactivate();
-			wsClientRef.current = null;
-		};
 	};
 
 	return {
-		wsConnect,
+		clientTraffic,
 		wsClose,
 	};
 };

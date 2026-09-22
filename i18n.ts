@@ -37,7 +37,7 @@ const fallbackResources = {
 			every: "Every",
 			minutes: "minutes",
 
-			subscription_premium: "Premium access",
+			subscription_business: "Business class",
 			subscription_title: "Choose your plan",
 			subscription_subtitle:
 				"Keep every location unlocked and renew your access in seconds.",
@@ -49,7 +49,8 @@ const fallbackResources = {
 			plan_per_year: "per year",
 			plan_popular: "Popular",
 			plan_best_value: "Best value",
-			subscription_benefits: "All servers - Unlimited traffic - Priority access",
+			subscription_benefits:
+				"All servers - Unlimited traffic - Priority access",
 			continue_to_payment: "Continue to payment",
 			payment_placeholder_title: "Payment gateway placeholder",
 			payment_placeholder_description:
@@ -92,7 +93,7 @@ const fallbackResources = {
 			every: "Каждые",
 			minutes: "минут",
 
-			subscription_premium: "Премиум доступ",
+			subscription_business: "Бизнесс класс",
 			subscription_title: "Выберите тариф",
 			subscription_subtitle:
 				"Откройте все локации и продлите доступ за несколько секунд.",
@@ -104,7 +105,8 @@ const fallbackResources = {
 			plan_per_year: "в год",
 			plan_popular: "Популярный",
 			plan_best_value: "Выгодно",
-			subscription_benefits: "Все серверы - Безлимитный трафик - Приоритетный доступ",
+			subscription_benefits:
+				"Все серверы - Безлимитный трафик - Приоритетный доступ",
 			continue_to_payment: "Перейти к оплате",
 			payment_placeholder_title: "Заглушка платежного шлюза",
 			payment_placeholder_description:

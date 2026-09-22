@@ -1,7 +1,6 @@
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
-import { showToast } from "@/utility/toast";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,11 +12,9 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
-type PlanId =
-	| "premium_monthly"
-	| "premium_quarterly"
-	| "premium_yearly";
+type PlanId = "business_monthly" | "business_quarterly" | "business_yearly";
 
 interface SubscriptionPlan {
 	id: PlanId;
@@ -29,30 +26,30 @@ interface SubscriptionPlan {
 
 const plans: SubscriptionPlan[] = [
 	{
-		id: "premium_monthly",
+		id: "business_monthly",
 		nameKey: "plan_monthly",
 		periodKey: "plan_per_month",
-		price: "$4.99",
+		price: "4.99$",
 	},
 	{
-		id: "premium_quarterly",
+		id: "business_quarterly",
 		nameKey: "plan_quarterly",
 		periodKey: "plan_every_three_months",
-		price: "$12.99",
+		price: "12.99$",
 		badgeKey: "plan_popular",
 	},
 	{
-		id: "premium_yearly",
+		id: "business_yearly",
 		nameKey: "plan_yearly",
 		periodKey: "plan_per_year",
-		price: "$39.99",
+		price: "39.99$",
 		badgeKey: "plan_best_value",
 	},
 ];
 
 export default function SubscriptionScreen() {
 	const [selectedPlanId, setSelectedPlanId] =
-		useState<PlanId>("premium_quarterly");
+		useState<PlanId>("business_quarterly");
 	const [paymentVisible, setPaymentVisible] = useState(false);
 	const [isRenewing, setIsRenewing] = useState(false);
 	const { renewSubscription } = useBackendClient();
@@ -76,12 +73,19 @@ export default function SubscriptionScreen() {
 				throw new Error(result?.message ?? "Unable to renew subscription");
 			}
 			setPaymentVisible(false);
-			showToast(t("subscription_renewed"));
+			Toast.show({
+				type: "success",
+				text1: t("subscription_renewed"),
+			});
 		} catch (error) {
 			console.error(error);
-			showToast(
-				error instanceof Error ? error.message : t("subscription_renewal_failed"),
-			);
+			Toast.show({
+				type: "error",
+				text1:
+					error instanceof Error
+						? error.message
+						: t("subscription_renewal_failed"),
+			});
 		} finally {
 			setIsRenewing(false);
 		}
@@ -90,7 +94,7 @@ export default function SubscriptionScreen() {
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
-				<Text style={styles.eyebrow}>{t("subscription_premium")}</Text>
+				<Text style={styles.eyebrow}>{t("subscription_business")}</Text>
 				<Text style={styles.title}>{t("subscription_title")}</Text>
 				<Text style={styles.subtitle}>{t("subscription_subtitle")}</Text>
 			</View>
@@ -129,8 +133,12 @@ export default function SubscriptionScreen() {
 				})}
 			</ScrollView>
 
-			<TouchableOpacity style={styles.continueButton} onPress={openPaymentGateway}>
-				<Text style={styles.continueButtonText}>{t("continue_to_payment")}</Text>
+			<TouchableOpacity
+				style={styles.continueButton}
+				onPress={openPaymentGateway}>
+				<Text style={styles.continueButtonText}>
+					{t("continue_to_payment")}
+				</Text>
 				<Text style={styles.continuePrice}>{selectedPlan.price}</Text>
 			</TouchableOpacity>
 
@@ -142,7 +150,9 @@ export default function SubscriptionScreen() {
 				<View style={styles.modalBackdrop}>
 					<View style={styles.paymentSheet}>
 						<View style={styles.paymentHandle} />
-						<Text style={styles.paymentTitle}>{t("payment_placeholder_title")}</Text>
+						<Text style={styles.paymentTitle}>
+							{t("payment_placeholder_title")}
+						</Text>
 						<Text style={styles.paymentDescription}>
 							{t("payment_placeholder_description")}
 						</Text>
@@ -177,7 +187,11 @@ export default function SubscriptionScreen() {
 
 const createStyles = (theme: CustomTheme) =>
 	StyleSheet.create({
-		container: { flex: 1, paddingHorizontal: 8, paddingTop: 28, paddingBottom: 8 },
+		container: {
+			flex: 1,
+			paddingTop: 28,
+			paddingBottom: 32,
+		},
 		header: { marginBottom: 20 },
 		eyebrow: {
 			alignSelf: "flex-start",
@@ -210,7 +224,7 @@ const createStyles = (theme: CustomTheme) =>
 		planCard: {
 			backgroundColor: theme.colors.card,
 			borderColor: "transparent",
-			borderRadius: 18,
+			borderRadius: 12,
 			borderWidth: 2,
 			padding: 18,
 		},
@@ -267,7 +281,7 @@ const createStyles = (theme: CustomTheme) =>
 		continueButton: {
 			alignItems: "center",
 			backgroundColor: theme.colors.important2,
-			borderRadius: 16,
+			borderRadius: 12,
 			flexDirection: "row",
 			justifyContent: "space-between",
 			paddingHorizontal: 20,

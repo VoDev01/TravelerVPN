@@ -33,14 +33,20 @@ const loadUserId = async () => {
 	}
 
 	const userId = backupId ?? Crypto.randomUUID();
-	await Promise.allSettled([
+	await Promise.all([
 		SecureStore.setItemAsync(USER_ID_KEY, userId),
 		AsyncStorage.setItem(USER_ID_BACKUP_KEY, userId),
-	]);
+	]).catch((error) => console.warn("Failed to persist userId", error));
+
 	return userId;
 };
 
-export const getOrCreateUserId = () => {
-	userIdPromise ??= loadUserId();
+export const getOrCreateUserId = (): Promise<string> => {
+	if (!userIdPromise) {
+		userIdPromise = loadUserId().catch((error) => {
+			userIdPromise = null;
+			throw error;
+		});
+	}
 	return userIdPromise;
 };

@@ -1,13 +1,11 @@
 import DownArrowIcon from "@/assets/images/line-md_arrow-down.svg";
 import UpArrowIcon from "@/assets/images/line-md_arrow-up.svg";
-import GasPumpIcon from "@/assets/images/osmic_fuel-14.svg";
 import InteractiveServerMap from "@/components/InteractiveServerMap";
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
 import { useDurationWatch } from "@/hooks/useDurationWatch";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
-import { getOrCreateUserId } from "@/utility/userId";
 import ExpoLibxray from "expo-libxray";
 import { VpnStatusEvent } from "expo-libxray/build/ExpoLibxrayModule";
 import { Link, useLocalSearchParams } from "expo-router";
@@ -29,14 +27,10 @@ export default function MainScreen() {
 	const theme = useAppTheme();
 	const styles = createStyles(theme);
 
-	const [userId, setUserId] = useState("");
-
 	const [connectionState, setConnectionState] = useState("");
 	const { runXray, testXray, stopXray } = useLibxray();
 
 	useEffect(() => {
-		getOrCreateUserId().then(setUserId).catch(console.error);
-
 		const subscription = ExpoLibxray.addListener(
 			"onVpnStatusChange",
 			(event: VpnStatusEvent) => {
@@ -77,10 +71,18 @@ export default function MainScreen() {
 	}, [selectedServerId]);
 
 	useEffect(() => {
-		stopXray();
 		if (connectionState === "DISCONNECTED") {
-			reset();
-			stop();
+			const timer = setTimeout(async () => {
+				try {
+					reset();
+					stopXray();
+					stop();
+				} catch (e) {
+					console.error("Error while stopping xray:", e);
+				}
+			}, 100);
+
+			return () => clearTimeout(timer);
 		} else if (connectionState === "CONNECTED") {
 			reset();
 			start();
@@ -156,7 +158,7 @@ export default function MainScreen() {
 				</Link>
 			)}
 
-			<View style={styles.trafficContainer}>
+			{/*<View style={styles.trafficContainer}>
 				<View style={styles.trafficStatusData}>
 					<GasPumpIcon width={48} height={48} fill={"#c40"} />
 					<Text style={styles.dataLabel}>4.5/5.0 GB</Text>
@@ -164,7 +166,7 @@ export default function MainScreen() {
 				<View style={styles.trafficStatusBar}>
 					<View style={styles.dataBarFill} />
 				</View>
-			</View>
+			</View> */}
 		</View>
 	);
 }

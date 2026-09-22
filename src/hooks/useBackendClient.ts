@@ -8,7 +8,7 @@ export interface VpnResponse {
 }
 
 export interface ServerMetrics {
-	latencyMs: number;
+	latencyMs: bigint;
 	status: string;
 }
 
@@ -131,9 +131,16 @@ export const useBackendClient = () => {
 	const getUserGeoFromIp = async () => {
 		try {
 			const userId = await getOrCreateUserId();
-			return (await makeRequest("/api/ip/user/geo", "POST", {
-				userId,
-			})) as VpnResponse;
+			return (await makeRequest(
+				"/api/ip/user/geo",
+				"POST",
+				{
+					userId,
+				},
+				{
+					"X-Forwarded-For": "195.20.119.44",
+				},
+			)) as VpnResponse;
 		} catch (error) {
 			console.error("Error attaching inbounds:", error);
 		}

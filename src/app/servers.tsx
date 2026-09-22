@@ -1,20 +1,24 @@
+import CancelIcon from "@/assets/images/at-icons_cross.svg";
+import DeleteIcon from "@/assets/images/bi_trash-fill.svg";
+import EditIcon from "@/assets/images/bxs_pencil.svg";
+import { Loader } from "@/components/Loader";
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
+import { ServerMetrics } from "@/hooks/useBackendClient";
+import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { MetricsServerData } from "@/hooks/useWebSocketClient";
-import { showToast } from "@/utility/toast";
-import { getOrCreateUserId } from "@/utility/userId";
+import { PingBatchItem } from "expo-libxray";
 import {
 	Href,
-	useFocusEffect,
 	useLocalSearchParams,
+	useNavigation,
 	useRouter,
 } from "expo-router";
 import { useHeaderHeight } from "expo-router/build/react-navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-	ActivityIndicator,
 	RefreshControl,
 	SectionList,
 	StyleSheet,
@@ -23,10 +27,20 @@ import {
 	View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 interface MetricsServerSection {
 	title: string;
 	data: MetricsServerData[];
+}
+
+interface ServersScreenContentProps {
+	setSelectedServer: (id: number) => void;
+	selectedServer: number | undefined;
+	deleteMode: boolean;
+	selectedForDeletion: Set<number>;
+	onToggleDelete: (id: number) => void;
+	setIsUserServersEmpty: (empty: boolean) => void;
 }
 
 function ServersScreenContent({
@@ -35,18 +49,12 @@ function ServersScreenContent({
 	deleteMode,
 	selectedForDeletion,
 	onToggleDelete,
-	reloadKey,
-}: {
-	setSelectedServer: (id: number) => void;
-	selectedServer: number | undefined;
-	deleteMode: boolean;
-	selectedForDeletion: Set<number>;
-	onToggleDelete: (id: number) => void;
-	reloadKey: number;
-}) {
+	setIsUserServersEmpty,
+}: ServersScreenContentProps) {
 	const [servers, setServers] = useState<MetricsServerSection[]>([]);
+	const { pingBatch, convertShareLinksToJson } = useLibxray();
+	//const [appServers, setAppServers] = useState<MetricsServerData[]>([]);
 
-	const [userId, setUserId] = useState("");
 	const [isRefreshing, setIsRefreshing] = useState(true);
 
 	const { fetchServers, refreshServers } = useServers();
@@ -55,59 +63,149 @@ function ServersScreenContent({
 	const theme = useAppTheme();
 	const styles = createStyles(theme);
 
-	const setServersAndMetrics = (userId: string) => {
-		fetchServers(userId).then((data) => {
-			const appServers = data
-					.filter((server) => server.type !== "user_defined")
-					.map((server) => {
-						return { ...server, metrics: null };
-					});
+	//const { serversMetrics, wsClose } = useWebSocketClient();
 
-			const userServers = data
-					.filter((server) => server.type === "user_defined")
-					.map((server) => {
-						return { ...server, metrics: null };
-					});
+	const setServersSections = () => {
+		fetchServers().then((data) => {
+			const appServersData = data
+				.filter((server) => server.type !== "user_defined")
+				.map((server) => {
+					return { ...server, metrics: null };
+				});
+
+			//setAppServers([...appServersData]);
+
+			const userServersData = data
+				.filter((server) => server.type === "user_defined")
+				.map((server) => {
+					return { ...server, metrics: null };
+				});
 
 			const sections: MetricsServerSection[] = [];
 
-			if (appServers.length > 0) {
+			if (appServersData.length > 0) {
 				sections.push({
 					title: "App servers",
-					data: appServers,
+					data: appServersData,
 				});
 			}
 
-			if (userServers.length > 0) {
+			if (userServersData.length > 0) {
 				sections.push({
 					title: "User servers",
-					data: userServers,
+					data: userServersData,
 				});
+				setIsUserServersEmpty(false);
+			} else {
+				setIsUserServersEmpty(true);
 			}
 			setServers(sections);
 			setIsRefreshing(false);
 		});
 	};
 
-	useEffect(() => {
-		getOrCreateUserId().then(setUserId).catch(console.error);
-	}, []);
+	const updateServersMetrics = async () => {
+		try {
+			const flatServers = servers.flatMap((v) => v.data);
+
+			const jsonConfigs: string[] = await Promise.all(
+				flatServers.map(async (server) => {
+					return JSON.parse(
+						await convertShareLinksToJson(server.connectionLink),
+					).data;
+				}),
+			);
+
+			const metricsResults: (ServerMetrics | null)[] = new Array(
+				flatServers.length,
+			).fill(null);
+
+			const BATCH_SIZE = 5;
+
+			for (let i = 0; i < jsonConfigs.length; i += BATCH_SIZE) {
+				const batchItems = jsonConfigs.slice(i, i + BATCH_SIZE);
+				const configsPayload: PingBatchItem[] = batchItems.map((config) => {
+					const xrayJsonString =
+						typeof config === "string" ? config : JSON.stringify(config);
+
+					return {
+						xrayJson: xrayJsonString,
+						outboundTag: undefined,
+					};
+				});
+
+				const batchResponse = await pingBatch({
+					configs: configsPayload,
+					timeout: 5000,
+					url: "https://google.com",
+				});
+
+				for (let j = 0; j < batchItems.length; j++) {
+					if (batchResponse.results && batchResponse.results[j]) {
+						const responseItem = batchResponse.results[j];
+
+						if (responseItem && responseItem.success) {
+							metricsResults[i + j] = {
+								latencyMs: responseItem.delay ?? 1000n,
+								status: "success",
+							};
+						} else {
+							metricsResults[i + j] = {
+								latencyMs: responseItem.delay ?? 1000n,
+								status: "timeout",
+							};
+						}
+					}
+				}
+			}
+
+			let globalIndex = 0;
+			const updatedSections: MetricsServerSection[] = servers.map(
+				(section) => ({
+					title: section.title,
+					data: section.data.map((server): MetricsServerData => {
+						const metrics = metricsResults[globalIndex];
+						globalIndex++;
+
+						return {
+							...server,
+							metrics: metrics,
+						};
+					}),
+				}),
+			);
+
+			setServers(updatedSections);
+		} catch (error) {
+			console.error("Error pinging in batches:", error);
+		}
+	};
 
 	useEffect(() => {
-		setIsRefreshing(true);
-		if (userId !== "") setServersAndMetrics(userId);
-	}, [reloadKey, userId]);
+		setServersSections();
+	}, [isRefreshing]);
+
+	// useEffect(() => {
+	// 	if (appServers.length > 0) serversMetrics(appServers);
+
+	// 	return () => {
+	// 		wsClose();
+	// 	};
+	// }, [appServers]);
+
+	useEffect(() => {
+		updateServersMetrics();
+	}, [isRefreshing]);
 
 	const onRefresh = () => {
 		setIsRefreshing(true);
 		refreshServers()
 			.then(() => {
-				setServersAndMetrics(userId);
+				setServersSections();
 			})
 			.catch((e) => {
 				console.error(e);
 				setIsRefreshing(false);
-				showToast("Unable to refresh servers");
 			});
 	};
 
@@ -142,10 +240,14 @@ function ServersScreenContent({
 							style={styles.serverInfoText}
 							numberOfLines={1}
 							ellipsizeMode="tail">
-							{item.remark}
+							{item.remark.length > 25
+								? `${item.remark.slice(0, 25)}...`
+								: item.remark}
 						</Text>
 						<Text style={[styles.serverInfoText, { flexShrink: 0 }]}>
-							{item.metrics ? item.metrics.latencyMs : "?"} ms
+							{!item.metrics || item.metrics.latencyMs > 1000
+								? "? ms"
+								: `${item.metrics.latencyMs} ms`}
 						</Text>
 					</View>
 				</View>
@@ -160,33 +262,24 @@ function ServersScreenContent({
 	}) => <Text style={styles.serversCategoryTitle}>{title}</Text>;
 
 	if (isRefreshing) {
-		return (
-			<View style={styles.serversContainer}>
-				<ActivityIndicator size="large" color={theme.colors.background} />
-				<Text style={{ color: theme.colors.text, marginTop: 10 }}>
-					Загрузка серверов...
-				</Text>
-			</View>
-		);
+		return <Loader loaderText="Загрузка серверов..." />;
 	}
 
 	const visibleServers = deleteMode
 		? servers
 				.map((section) => ({
 					...section,
-					data: section.data.filter(
-						(server) => server.type === "user_defined",
-					),
+					data: section.data.filter((server) => server.type === "user_defined"),
 				}))
 				.filter((section) => section.data.length > 0)
 		: city
-		? servers
-				.map((section) => ({
-					...section,
-					data: section.data.filter((server) => server.city === city),
-				}))
-				.filter((section) => section.data.length > 0)
-		: servers;
+			? servers
+					.map((section) => ({
+						...section,
+						data: section.data.filter((server) => server.city === city),
+					}))
+					.filter((section) => section.data.length > 0)
+			: servers;
 
 	return (
 		<SectionList
@@ -213,14 +306,19 @@ function ServersScreenContent({
 }
 
 export default function ServersScreen() {
+	const navigation = useNavigation();
+
 	const [selectedServer, setSelectedServer] = useState<number>();
 	const [deleteMode, setDeleteMode] = useState(false);
 	const [selectedForDeletion, setSelectedForDeletion] = useState<Set<number>>(
 		new Set(),
 	);
-	const [reloadKey, setReloadKey] = useState(0);
+	const [isUserServersEmpty, setIsUserServersEmpty] = useState(true);
+
 	const [isDeleting, setIsDeleting] = useState(false);
+
 	const { t } = useTranslation();
+
 	const router = useRouter();
 	const { deleteUserServers, getServerById } = useServers();
 
@@ -231,12 +329,6 @@ export default function ServersScreen() {
 	const headerHeight = useHeaderHeight();
 	const paddingTop = headerHeight + 16;
 	const paddingBottom = insets.bottom;
-
-	useFocusEffect(
-		useCallback(() => {
-			setReloadKey((key) => key + 1);
-		}, []),
-	);
 
 	const toggleDeleteSelection = (id: number) => {
 		setSelectedForDeletion((current) => {
@@ -249,13 +341,15 @@ export default function ServersScreen() {
 
 	const editSelectedServer = async () => {
 		if (!selectedServer) {
-			showToast("Select a user-defined server to update");
+			Toast.show({
+				type: "info",
+				text2: "Select a user-defined server to update",
+			});
 			return;
 		}
 		try {
 			const server = await getServerById(selectedServer);
 			if (server?.type !== "user_defined") {
-				showToast("Only user-defined servers can be updated");
 				return;
 			}
 			router.push({
@@ -264,7 +358,6 @@ export default function ServersScreen() {
 			} as unknown as Href);
 		} catch (error) {
 			console.error(error);
-			showToast("Unable to load the selected server");
 		}
 	};
 
@@ -275,7 +368,10 @@ export default function ServersScreen() {
 			return;
 		}
 		if (selectedForDeletion.size === 0) {
-			showToast("Select at least one user-defined server");
+			Toast.show({
+				type: "error",
+				text1: "Select at least one user-defined server",
+			});
 			return;
 		}
 
@@ -285,11 +381,8 @@ export default function ServersScreen() {
 			await deleteUserServers([...selectedForDeletion]);
 			setSelectedForDeletion(new Set());
 			setDeleteMode(false);
-			setReloadKey((key) => key + 1);
-			showToast("Selected servers deleted");
 		} catch (error) {
 			console.error(error);
-			showToast("Unable to delete selected servers");
 		} finally {
 			setIsDeleting(false);
 		}
@@ -300,31 +393,26 @@ export default function ServersScreen() {
 		setDeleteMode(false);
 	};
 
+	useEffect(() => {
+		navigation.setOptions({
+			headerRight: () => {
+				if (!isUserServersEmpty)
+					return (
+						<View style={styles.actions}>
+							{deleteMode ? (
+								<CancelIcon width={32} height={32} onPress={cancelDelete} />
+							) : (
+								<EditIcon width={32} height={32} onPress={editSelectedServer} />
+							)}
+							<DeleteIcon width={32} height={32} onPress={handleDeleteAction} />
+						</View>
+					);
+			},
+		});
+	}, [navigation, selectedServer, deleteMode]);
+
 	return (
 		<View style={[styles.container, { paddingTop, paddingBottom }]}>
-			<View style={styles.actions}>
-				{deleteMode ? (
-					<TouchableOpacity style={styles.actionButton} onPress={cancelDelete}>
-						<Text style={styles.actionText}>Cancel</Text>
-					</TouchableOpacity>
-				) : (
-					<TouchableOpacity style={styles.actionButton} onPress={editSelectedServer}>
-						<Text style={styles.actionText}>Update</Text>
-					</TouchableOpacity>
-				)}
-				<TouchableOpacity
-					disabled={isDeleting}
-					style={[styles.actionButton, styles.deleteAction]}
-					onPress={handleDeleteAction}>
-					<Text style={styles.actionText}>
-						{isDeleting
-							? "Deleting..."
-							: deleteMode
-								? `Delete (${selectedForDeletion.size})`
-								: "Delete"}
-					</Text>
-				</TouchableOpacity>
-			</View>
 			<Text style={styles.title}>
 				{deleteMode
 					? "Select user-defined servers to delete"
@@ -337,7 +425,7 @@ export default function ServersScreen() {
 				deleteMode={deleteMode}
 				selectedForDeletion={selectedForDeletion}
 				onToggleDelete={toggleDeleteSelection}
-				reloadKey={reloadKey}
+				setIsUserServersEmpty={setIsUserServersEmpty}
 			/>
 
 			{!deleteMode && (
@@ -368,7 +456,8 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		actions: {
 			flexDirection: "row",
-			alignSelf: "flex-end",
+			alignItems: "center",
+			justifyContent: "center",
 			columnGap: 8,
 		},
 		actionButton: {
@@ -440,8 +529,7 @@ const createStyles = (theme: CustomTheme) =>
 			alignItems: "center",
 			justifyContent: "space-between",
 			paddingVertical: 14,
-			paddingHorizontal: 16,
-			backgroundColor: theme.colors.tretiary,
+			backgroundColor: theme.colors.card,
 			borderRadius: 12,
 			borderWidth: 2,
 		},
@@ -449,7 +537,7 @@ const createStyles = (theme: CustomTheme) =>
 			flexDirection: "row",
 			alignItems: "center",
 			justifyContent: "space-between",
-			paddingHorizontal: 16,
+			paddingHorizontal: 18,
 		},
 		serverInfoFlag: {
 			fontSize: 20,
@@ -458,12 +546,12 @@ const createStyles = (theme: CustomTheme) =>
 		serverInfoTextContainer: {
 			flexDirection: "row",
 			alignItems: "center",
-			justifyContent: "space-around",
-			flex: 4,
+			justifyContent: "space-between",
+			flex: 6,
 		},
 		serverInfoText: {
 			color: theme.colors.text,
-			fontSize: 16,
+			fontSize: 14,
 			fontFamily: "CustomFont-Regular",
 		},
 		serversCategoryTitle: {
