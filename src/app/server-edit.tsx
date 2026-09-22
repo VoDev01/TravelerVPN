@@ -5,7 +5,7 @@ import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/build/react-navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	ActivityIndicator,
 	StyleSheet,
@@ -28,7 +28,7 @@ export default function EditServerScreen() {
 	const { getGeoFromIp } = useBackendClient();
 	const { convertShareLinksToJson } = useLibxray();
 	const theme = useAppTheme();
-	const styles = createStyles(theme);
+	const styles = useMemo(() => createStyles(theme), [theme]);
 	const headerHeight = useHeaderHeight();
 	const [server, setServer] = useState<ServerEntity | null>(null);
 	const [remark, setRemark] = useState("");
@@ -166,7 +166,7 @@ export default function EditServerScreen() {
 	);
 }
 
-const createStyles = (theme: CustomTheme) =>
+export const createStyles = (theme: CustomTheme) =>
 	StyleSheet.create({
 		container: {
 			flex: 1,

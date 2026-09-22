@@ -27,6 +27,7 @@ interface FlightTrajectoryProps {
 	height: number;
 	aircraftRef: RefObject<THREE.Group | THREE.Object3D | null>;
 	segments?: number;
+	initialCameraPosRef: React.RefObject<THREE.Vector3 | null>;
 	onAnimationStateChange?: (isCameraBusy: boolean) => void;
 	animationVisible?: (complete: boolean) => void;
 }
@@ -37,6 +38,7 @@ export default function FlightTrajectory({
 	height,
 	aircraftRef,
 	segments = 50,
+	initialCameraPosRef,
 	onAnimationStateChange,
 	animationVisible,
 }: FlightTrajectoryProps) {
@@ -70,7 +72,6 @@ export default function FlightTrajectory({
 	const trajectoryDrawn = useRef(false);
 	const flightProgressRef = useRef(0);
 	const drawProgressRef = useRef(0);
-	const initialCameraPos = useRef<THREE.Vector3 | null>(null);
 
 	const CAMERA_FOLLOW_SPEED = 0.05;
 	const CAMERA_RETURN_SPEED = 0.03;
@@ -89,6 +90,10 @@ export default function FlightTrajectory({
 		}
 		onAnimationStateChange?.(false);
 	}, [A, B, initialPoints]);
+
+	useFrame((state) => {
+		initialCameraPosRef.current = state.camera.position.clone();
+	});
 
 	useFrame((state, delta) => {
 		if (!trajectoryDrawn.current) {
@@ -126,10 +131,6 @@ export default function FlightTrajectory({
 
 			if (earth && flightProgressRef.current < 1.0) {
 				aircraft.visible = true;
-
-				if (!initialCameraPos.current) {
-					initialCameraPos.current = state.camera.position.clone();
-				}
 
 				flightProgressRef.current += delta * FLIGHT_SPEED;
 				const p = Math.min(flightProgressRef.current, 1.0);
@@ -169,22 +170,29 @@ export default function FlightTrajectory({
 				state.camera.position.lerp(cameraTargetPos, CAMERA_FOLLOW_SPEED);
 
 				state.camera.lookAt(worldCurrentPoint);
-			} else if (flightProgressRef.current >= 1.0 && initialCameraPos.current) {
+			} else if (
+				flightProgressRef.current >= 1.0 &&
+				initialCameraPosRef.current
+			) {
 				const aircraft = aircraftRef.current;
 				aircraft.visible = false;
 
 				state.camera.position.lerp(
-					initialCameraPos.current,
+					initialCameraPosRef.current,
 					CAMERA_RETURN_SPEED,
 				);
 				state.camera.lookAt(0, 0, 0);
 
-				if (state.camera.position.distanceTo(initialCameraPos.current) < 0.05) {
-					state.camera.position.copy(initialCameraPos.current);
-					initialCameraPos.current = null;
+				if (
+					state.camera.position.distanceTo(initialCameraPosRef.current) <= 0.01
+				) {
+					state.camera.position.copy(initialCameraPosRef.current);
+					state.camera.lookAt(0, 0, 0);
+					initialCameraPosRef.current = null;
+
 					onAnimationStateChange?.(false);
+					animationVisible?.(false);
 				}
-				animationVisible?.(false);
 			}
 		}
 	});

@@ -1,7 +1,7 @@
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
@@ -12,6 +12,7 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 type PlanId = "business_monthly" | "business_quarterly" | "business_yearly";
@@ -52,10 +53,14 @@ export default function SubscriptionScreen() {
 		useState<PlanId>("business_quarterly");
 	const [paymentVisible, setPaymentVisible] = useState(false);
 	const [isRenewing, setIsRenewing] = useState(false);
+
 	const { renewSubscription } = useBackendClient();
+
 	const { t } = useTranslation();
 	const theme = useAppTheme();
-	const styles = createStyles(theme);
+	const styles = useMemo(() => createStyles(theme), [theme]);
+	const insets = useSafeAreaInsets();
+
 	const selectedPlan = plans.find((plan) => plan.id === selectedPlanId)!;
 
 	const openPaymentGateway = () => {
@@ -147,7 +152,7 @@ export default function SubscriptionScreen() {
 				animationType="slide"
 				visible={paymentVisible}
 				onRequestClose={() => !isRenewing && setPaymentVisible(false)}>
-				<View style={styles.modalBackdrop}>
+				<View style={[styles.modalBackdrop, { paddingBottom: insets.bottom }]}>
 					<View style={styles.paymentSheet}>
 						<View style={styles.paymentHandle} />
 						<Text style={styles.paymentTitle}>
@@ -190,7 +195,6 @@ const createStyles = (theme: CustomTheme) =>
 		container: {
 			flex: 1,
 			paddingTop: 28,
-			paddingBottom: 32,
 		},
 		header: { marginBottom: 20 },
 		eyebrow: {

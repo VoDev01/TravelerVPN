@@ -1,6 +1,7 @@
 import { Loader } from "@/components/Loader";
 import { useAssets } from "expo-asset";
 import { createContext, useContext } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ModelContextData {
 	models: Record<string, string>;
@@ -9,6 +10,7 @@ interface ModelContextData {
 const ModelContext = createContext<ModelContextData | undefined>(undefined);
 
 export const ModelProvider = ({ children }: { children: React.ReactNode }) => {
+	const { t } = useTranslation();
 	const [assets, error] = useAssets([
 		require("../../assets/models/earth/earth.glb"),
 		require("../../assets/models/aircraft/aircraft.glb"),
@@ -19,7 +21,7 @@ export const ModelProvider = ({ children }: { children: React.ReactNode }) => {
 		return;
 	}
 
-	if (!assets) return <Loader loaderText="Loading 3d assets..." />;
+	if (!assets) return <Loader loaderText={t("loader_assets")} />;
 
 	return (
 		<ModelContext.Provider
