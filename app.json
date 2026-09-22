@@ -50,6 +50,13 @@
 					"configureAndroidBackup": true
 				}
 			],
+			[
+				"expo-navigation-bar",
+				{
+					"enforceContrast": true,
+					"hidden": false
+				}
+			],
 			"./plugins/withAndroidUserIdBackup.ts",
 			"./plugins/withAndroidPlugin.ts",
 			"./plugins/withAndroidAbiFilters.ts",

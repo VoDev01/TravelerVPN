@@ -1,5 +1,3 @@
-import DownArrowIcon from "@/assets/images/line-md_arrow-down.svg";
-import UpArrowIcon from "@/assets/images/line-md_arrow-up.svg";
 import InteractiveServerMap from "@/components/InteractiveServerMap";
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
@@ -9,7 +7,7 @@ import { useServers } from "@/hooks/useServers";
 import ExpoLibxray from "expo-libxray";
 import { VpnStatusEvent } from "expo-libxray/build/ExpoLibxrayModule";
 import { Link, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ServerEntity } from "../../../db/schema/servers";
@@ -25,9 +23,9 @@ export default function MainScreen() {
 
 	const { t } = useTranslation();
 	const theme = useAppTheme();
-	const styles = createStyles(theme);
+	const styles = useMemo(() => createStyles(theme), [theme]);
 
-	const [connectionState, setConnectionState] = useState("");
+	const [connectionState, setConnectionState] = useState("DISCONNECTED");
 	const { runXray, testXray, stopXray } = useLibxray();
 
 	useEffect(() => {
@@ -92,7 +90,7 @@ export default function MainScreen() {
 	return (
 		<View style={styles.container}>
 			<View style={styles.connectionStatus}>
-				<View style={styles.speedContainer}>
+				{/*<View style={styles.speedContainer}>
 					<View style={styles.statItem}>
 						<Text style={styles.statValue}>0.00 Mbps</Text>
 						<DownArrowIcon width={24} height={24} />
@@ -102,7 +100,7 @@ export default function MainScreen() {
 						<Text style={styles.statValue}>0.00 Mbps</Text>
 						<UpArrowIcon width={24} height={24} />
 					</View>
-				</View>
+				</View>*/}
 
 				<Text style={styles.connectionDurationText}>{formatTime(time)}</Text>
 				<View style={styles.locationData}>

@@ -1,9 +1,5 @@
 import { Paths } from "expo-file-system";
-import ExpoLibxray, {
-	LibxrayConfigBuilder,
-	RunXrayRequest,
-	RunXrayResponse,
-} from "expo-libxray";
+import ExpoLibxray, { LibxrayConfigBuilder } from "expo-libxray";
 
 const config = (initialConfig: string) => {
 	const appFilesDir = Paths.document;
@@ -91,8 +87,7 @@ export const useLibxray = () => {
 	const initialConfig = (shareLink: string) =>
 		ExpoLibxray.convertShareLinksToXrayJson(shareLink);
 
-	const runXray: (request: RunXrayRequest) => Promise<RunXrayResponse> =
-		ExpoLibxray.runXray;
+	const runXray = ExpoLibxray.runXray;
 
 	const testXray = (shareLink: string) => ExpoLibxray.testXray(shareLink);
 

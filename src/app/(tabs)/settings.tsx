@@ -5,15 +5,13 @@ import MoonIcon from "@/assets/images/tabler_moon-filled.svg";
 import { Locales } from "@/constants/locales";
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme, useAppThemeToggle } from "@/context/ThemeContext";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
 	ScrollView,
 	StyleSheet,
-	Switch,
 	Text,
-	TextInput,
 	TouchableOpacity,
 	View,
 } from "react-native";
@@ -30,7 +28,11 @@ export default function SettingsScreen() {
 
 	const theme = useAppTheme();
 	const { themeName, updateTheme } = useAppThemeToggle();
-	const styles = createStyles(theme);
+	const styles = useMemo(() => createStyles(theme), [theme]);
+
+	useEffect(() => {
+		setLanguage(settings.localization);
+	}, [settings.localization]);
 
 	if (isLoading) {
 		return <ActivityIndicator size="large" />;
@@ -103,6 +105,16 @@ export default function SettingsScreen() {
 							ArrowUpIconComponent={() => <ChevronUp width={24} height={24} />}
 							showTickIcon={false}
 						/>
+					</View>
+				</View>
+
+				{/*<View style={styles.settingGroup}>
+					<Text style={styles.groupLabel}>{t("section_routing")}</Text>
+					<View style={styles.settingItem}>
+						<View style={styles.settingLabelRow}>
+							<Text style={styles.settingLabel}>{t("split_tunneling")}</Text>
+							<SplitTunneling height={32} width={32} onPress={() => {}} />
+						</View>
 					</View>
 				</View>
 
@@ -195,7 +207,7 @@ export default function SettingsScreen() {
 							</View>
 						</View>
 					</View>
-				</View>
+				</View>*/}
 			</ScrollView>
 		</>
 	);

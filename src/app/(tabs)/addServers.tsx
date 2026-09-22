@@ -3,7 +3,9 @@ import { useAppTheme } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
-import { useEffect, useState } from "react";
+import { useSettings } from "@/hooks/useSettings";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	Alert,
 	Image,
@@ -17,6 +19,7 @@ import CountryPicker, {
 	Country,
 	CountryCode,
 } from "react-native-country-picker-modal";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AddServers() {
 	const [remark, setRemark] = useState("Default user server");
@@ -27,7 +30,10 @@ export default function AddServers() {
 	const { addServer } = useServers();
 
 	const theme = useAppTheme();
-	const styles = createStyles(theme);
+	const styles = useMemo(() => createStyles(theme), [theme]);
+	const insets = useSafeAreaInsets();
+	const { t } = useTranslation();
+	const { settings } = useSettings();
 
 	const onSelect = (selectedCountry: Country) => {
 		setCountryTag(selectedCountry.cca2);
@@ -76,15 +82,23 @@ export default function AddServers() {
 
 	return (
 		<View style={styles.container}>
-			<Text style={styles.headerFont}>Add your own servers</Text>
+			<Text style={styles.headerFont}>{t("add_servers_title")}</Text>
 			<View>
-				<Text style={styles.labelFont}>Choose country</Text>
+				<Text style={styles.labelFont}>{t("add_servers_country_label")}</Text>
 				<CountryPicker
 					theme={{
 						backgroundColor: theme.colors.primary,
 						filterPlaceholderTextColor: theme.colors.text,
 						onBackgroundTextColor: theme.colors.text,
 					}}
+					modalProps={{
+						style: {
+							backgroundColor: theme.colors.primary,
+							paddingTop: insets.top,
+							paddingBottom: insets.bottom,
+						},
+					}}
+					translation={settings.localization === "en" ? "common" : "rus"}
 					countryCode={countryTag}
 					withFilter
 					withFlag
@@ -104,10 +118,11 @@ export default function AddServers() {
 											resizeMode="contain"
 										/>
 									)}
-									<Text style={{ color: theme.colors.text, fontSize: 16 }}>
+									<Text
+										style={{ color: theme.colors.text_input, fontSize: 16 }}>
 										{typeof country?.name === "string"
 											? country.name
-											: country?.name.common || "Choose country"}
+											: country?.name.common || t("add_servers_country_label")}
 									</Text>
 								</View>
 							</TouchableOpacity>
@@ -116,7 +131,7 @@ export default function AddServers() {
 				/>
 			</View>
 			<View>
-				<Text style={styles.labelFont}>Name of your server</Text>
+				<Text style={styles.labelFont}>{t("add_servers_name_label")}</Text>
 				<TextInput
 					style={styles.input}
 					onChangeText={(text) => setRemark(text)}
@@ -124,7 +139,7 @@ export default function AddServers() {
 				/>
 			</View>
 			<View>
-				<Text style={styles.labelFont}>Paste connection link</Text>
+				<Text style={styles.labelFont}>{t("add_servers_link_label")}</Text>
 				<TextInput
 					style={styles.input}
 					onChangeText={(text) => setConnectionLink(text)}
@@ -141,7 +156,7 @@ export default function AddServers() {
 					}
 					setServerSubmit(true);
 				}}>
-				<Text style={styles.saveButtonText}>Save</Text>
+				<Text style={styles.saveButtonText}>{t("save")}</Text>
 			</TouchableOpacity>
 		</View>
 	);
@@ -163,7 +178,7 @@ const createStyles = (theme: CustomTheme) =>
 			paddingHorizontal: 12,
 			fontSize: 16,
 			backgroundColor: theme.colors.card,
-			color: theme.colors.text,
+			color: theme.colors.text_input,
 			justifyContent: "center",
 		},
 		labelFont: {

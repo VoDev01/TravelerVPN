@@ -16,7 +16,7 @@ import {
 	useRouter,
 } from "expo-router";
 import { useHeaderHeight } from "expo-router/build/react-navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	RefreshControl,
@@ -61,7 +61,8 @@ function ServersScreenContent({
 	const { city } = useLocalSearchParams<{ city?: string }>();
 
 	const theme = useAppTheme();
-	const styles = createStyles(theme);
+	const styles = useMemo(() => createStyles(theme), [theme]);
+	const { t } = useTranslation();
 
 	//const { serversMetrics, wsClose } = useWebSocketClient();
 
@@ -85,14 +86,14 @@ function ServersScreenContent({
 
 			if (appServersData.length > 0) {
 				sections.push({
-					title: "App servers",
+					title: t("section_subscription_servers"),
 					data: appServersData,
 				});
 			}
 
 			if (userServersData.length > 0) {
 				sections.push({
-					title: "User servers",
+					title: t("section_user_servers"),
 					data: userServersData,
 				});
 				setIsUserServersEmpty(false);
@@ -262,7 +263,7 @@ function ServersScreenContent({
 	}) => <Text style={styles.serversCategoryTitle}>{title}</Text>;
 
 	if (isRefreshing) {
-		return <Loader loaderText="Загрузка серверов..." />;
+		return <Loader loaderText={t("loader_servers")} />;
 	}
 
 	const visibleServers = deleteMode
@@ -298,7 +299,7 @@ function ServersScreenContent({
 			}
 			ListEmptyComponent={
 				<View style={styles.emptyContainer}>
-					<Text style={styles.emptyText}>No available servers found</Text>
+					<Text style={styles.emptyText}>{t("no_available_servers")}</Text>
 				</View>
 			}
 		/>
@@ -323,7 +324,7 @@ export default function ServersScreen() {
 	const { deleteUserServers, getServerById } = useServers();
 
 	const theme = useAppTheme();
-	const styles = createStyles(theme);
+	const styles = useMemo(() => createStyles(theme), [theme]);
 	const insets = useSafeAreaInsets();
 
 	const headerHeight = useHeaderHeight();
@@ -480,7 +481,7 @@ const createStyles = (theme: CustomTheme) =>
 			justifyContent: "flex-start",
 		},
 		title: {
-			color: theme.colors.secondary,
+			color: theme.colors.text,
 			fontSize: 26,
 			fontWeight: "600",
 			textAlign: "center",
@@ -502,6 +503,7 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		button: {
 			paddingHorizontal: 24,
+			marginBottom: 24,
 			paddingVertical: 12,
 			borderRadius: 12,
 			width: "65%",
@@ -550,7 +552,7 @@ const createStyles = (theme: CustomTheme) =>
 			flex: 6,
 		},
 		serverInfoText: {
-			color: theme.colors.text,
+			color: theme.colors.text_input,
 			fontSize: 14,
 			fontFamily: "CustomFont-Regular",
 		},
