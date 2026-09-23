@@ -1,34 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
-import { requireOptionalNativeModule } from "expo-modules-core";
 import * as SecureStore from "expo-secure-store";
 
 const USER_ID_KEY = "USER_ID";
 const USER_ID_BACKUP_KEY = "USER_ID_BACKUP";
-
-interface DeviceIdentifierNativeModule {
-	getAndroidId(): string | null;
-}
-
-/**
- * A device-stable id that survives an Android "Clear data" / `pm clear` (and even
- * reinstall), because ANDROID_ID is provided by the OS rather than stored in the
- * app's (wiped) private storage. Returns null on iOS/web or when the native
- * module is unavailable (e.g. Expo Go), in which case we fall back to storage /
- * a random UUID.
- */
-const getDeviceSeedId = (): string | null => {
-	try {
-		const nativeModule =
-			requireOptionalNativeModule<DeviceIdentifierNativeModule>(
-				"DeviceIdentifier",
-			);
-		return nativeModule?.getAndroidId() ?? null;
-	} catch (error) {
-		console.warn("DeviceIdentifier native module unavailable:", error);
-		return null;
-	}
-};
 
 let userIdPromise: Promise<string> | null = null;
 
