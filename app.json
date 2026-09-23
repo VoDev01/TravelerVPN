@@ -35,7 +35,8 @@
 		},
 		"extra": {
 			"backendBaseUrl": "http://192.168.0.143",
-			"backendWsUrl": "http://192.168.0.143/ws"
+			"backendWsUrl": "http://192.168.0.143/ws",
+			"testUserGeoIp": "41.206.208.194"
 		},
 		"plugins": [
 			"expo-router",

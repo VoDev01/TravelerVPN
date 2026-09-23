@@ -5,6 +5,7 @@ import MoonIcon from "@/assets/images/tabler_moon-filled.svg";
 import { Locales } from "@/constants/locales";
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme, useAppThemeToggle } from "@/context/ThemeContext";
+import { getOrCreateUserId } from "@/utility/userId";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -25,6 +26,8 @@ export default function SettingsScreen() {
 	const [open, setOpen] = useState(false);
 	const [language, setLanguage] = useState(settings.localization);
 	const [languages, setLanguages] = useState(Locales);
+	const [userId, setUserId] = useState("");
+	const [tgId, setTgId] = useState("");
 
 	const theme = useAppTheme();
 	const { themeName, updateTheme } = useAppThemeToggle();
@@ -34,81 +37,102 @@ export default function SettingsScreen() {
 		setLanguage(settings.localization);
 	}, [settings.localization]);
 
+	useEffect(() => {
+		getOrCreateUserId().then((id) => {
+			setUserId(id);
+		});
+	}, [userId]);
+
 	if (isLoading) {
 		return <ActivityIndicator size="large" />;
 	}
 
 	return (
-		<>
+		<ScrollView style={styles.container}>
+			<View style={styles.header}>
+				<Text style={styles.headerTitle}>{t("account_title")}</Text>
+			</View>
+			<View style={styles.accountContainer}>
+				<View style={styles.accountRow}>
+					<Text style={[styles.accountText]}>{t("account_uuid")}</Text>
+					<ScrollView horizontal={true}>
+						<Text selectable={true} style={styles.accountText}>
+							{userId}
+						</Text>
+					</ScrollView>
+				</View>
+				<View style={styles.accountRow}>
+					<Text style={styles.accountText}>{t("account_tgid")}</Text>
+					<Text style={styles.accountText}>{tgId}</Text>
+				</View>
+			</View>
+
 			<View style={styles.header}>
 				<Text style={styles.headerTitle}>{t("settings_title")}</Text>
 			</View>
-			<ScrollView style={styles.settingsContainer}>
-				<View style={styles.settingGroup}>
-					<Text style={styles.groupLabel}>{t("section_ui")}</Text>
-					<View style={styles.settingItem}>
-						<Text style={styles.settingLabel}>{t("theme")}</Text>
-						<TouchableOpacity
-							style={styles.settingThemeButton}
-							onPress={() => {
-								updateTheme("theme", themeName === "dark" ? "light" : "dark");
-							}}>
-							{themeName === "dark" ? <SunIcon /> : <MoonIcon />}
-						</TouchableOpacity>
-					</View>
-				</View>
-				<View style={styles.settingGroup}>
-					<Text style={styles.groupLabel}>{t("section_language")}</Text>
-					<View style={styles.settingItem}>
-						<Text style={styles.settingLabel}>{t("choose_language")}</Text>
-						<DropDownPicker
-							open={open}
-							value={language}
-							items={languages}
-							setOpen={setOpen}
-							setValue={(callback) => {
-								const newValue =
-									typeof callback === "function"
-										? callback(language)
-										: callback;
+			<View style={styles.settingGroup}>
+				<Text style={styles.groupLabel}>{t("section_language")}</Text>
+				<View style={styles.settingItem}>
+					<Text style={styles.settingLabel}>{t("choose_language")}</Text>
+					<DropDownPicker
+						open={open}
+						value={language}
+						items={languages}
+						setOpen={setOpen}
+						setValue={(callback) => {
+							const newValue =
+								typeof callback === "function" ? callback(language) : callback;
 
-								if (newValue) {
-									setLanguage(newValue);
-									updateSetting("localization", newValue);
-									i18n.changeLanguage(newValue);
-								}
-							}}
-							setItems={setLanguages}
-							listMode="SCROLLVIEW"
-							style={{
-								backgroundColor: theme.colors.primary,
-								borderColor: "transparent",
-								minHeight: 40,
-								width: 125,
-							}}
-							containerStyle={{
-								width: 125,
-								borderRadius: 12,
-							}}
-							dropDownContainerStyle={{
-								backgroundColor: theme.colors.primary,
-								borderColor: "#3D3D3D",
-								borderRadius: 12,
-							}}
-							textStyle={{
-								color: theme.colors.text,
-								fontSize: 14,
-							}}
-							ArrowDownIconComponent={() => (
-								<ChevronDown width={24} height={24} />
-							)}
-							ArrowUpIconComponent={() => <ChevronUp width={24} height={24} />}
-							showTickIcon={false}
-						/>
-					</View>
+							if (newValue) {
+								setLanguage(newValue);
+								updateSetting("localization", newValue);
+								i18n.changeLanguage(newValue);
+							}
+						}}
+						setItems={setLanguages}
+						listMode="SCROLLVIEW"
+						style={{
+							backgroundColor: theme.colors.primary,
+							borderColor: "transparent",
+							minHeight: 40,
+							width: 125,
+						}}
+						containerStyle={{
+							width: 125,
+							borderRadius: 12,
+						}}
+						dropDownContainerStyle={{
+							backgroundColor: theme.colors.primary,
+							borderColor: "#3D3D3D",
+							borderRadius: 12,
+						}}
+						textStyle={{
+							color: theme.colors.text,
+							fontSize: 14,
+						}}
+						ArrowDownIconComponent={() => (
+							<ChevronDown width={24} height={24} />
+						)}
+						ArrowUpIconComponent={() => <ChevronUp width={24} height={24} />}
+						showTickIcon={false}
+					/>
 				</View>
+			</View>
+			<View style={styles.settingGroup}>
+				<Text style={styles.groupLabel}>{t("section_ui")}</Text>
+				<View style={styles.settingItem}>
+					<Text style={styles.settingLabel}>{t("theme")}</Text>
+					<TouchableOpacity
+						style={styles.settingThemeButton}
+						onPress={() => {
+							updateTheme("theme", themeName === "dark" ? "light" : "dark");
+						}}>
+						{themeName === "dark" ? <SunIcon /> : <MoonIcon />}
+					</TouchableOpacity>
+				</View>
+			</View>
 
-				{/*<View style={styles.settingGroup}>
+			{/*<View style={styles.settingGroup}>
 					<Text style={styles.groupLabel}>{t("section_routing")}</Text>
 					<View style={styles.settingItem}>
 						<View style={styles.settingLabelRow}>
@@ -208,13 +232,16 @@ export default function SettingsScreen() {
 						</View>
 					</View>
 				</View>*/}
-			</ScrollView>
-		</>
+		</ScrollView>
 	);
 }
 
 const createStyles = (theme: CustomTheme) =>
 	StyleSheet.create({
+		container: {
+			flex: 1,
+			rowGap: 12,
+		},
 		settingsContainer: {
 			flex: 1,
 			rowGap: 12,
@@ -303,5 +330,25 @@ const createStyles = (theme: CustomTheme) =>
 			height: 48,
 			width: 48,
 			backgroundColor: theme.colors.text,
+		},
+		accountContainer: {
+			flex: 1,
+			rowGap: 12,
+		},
+		accountRow: {
+			flexDirection: "row",
+			columnGap: 48,
+			alignItems: "center",
+			backgroundColor: theme.colors.card,
+			borderRadius: 12,
+			paddingVertical: 14,
+			paddingHorizontal: 14,
+			marginBottom: 12,
+			width: "100%",
+		},
+		accountText: {
+			color: theme.colors.text,
+			padding: 8,
+			fontSize: 16,
 		},
 	});

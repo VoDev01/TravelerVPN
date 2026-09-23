@@ -167,10 +167,12 @@ export default function InteractiveServerMap() {
 		setFlight({ id: connectingServerId, seq: flightSeqRef.current, A, B });
 	}, [connectingServerId, userGeo, serversById]);
 
+	// The arc is sampled from 64 points, so segments beyond ~64 add no real
+	// resolution yet make each mesh-line rebuild (and reveal step) more expensive.
 	const flightSegments = flight
 		? Math.min(
-				Math.max(Math.floor(flight.A.distanceTo(flight.B) * 40), 40),
-				150,
+				Math.max(Math.floor(flight.A.distanceTo(flight.B) * 8), 24),
+				64,
 			)
 		: 40;
 

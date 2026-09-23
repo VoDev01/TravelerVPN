@@ -86,6 +86,10 @@ const fallbackResources = {
 			notification_content: "Status:",
 			notification_connected: "Connected 🛬✅​​",
 			notification_waiting: "Waiting... 🛫​​​",
+
+			account_title: "Account",
+			account_uuid: "UUID",
+			account_tgid: "Telegram id",
 		},
 	},
 	ru: {
@@ -170,6 +174,10 @@ const fallbackResources = {
 			notification_content: "Статус:",
 			notification_connected: "Подключено 🛬✅​​",
 			notification_waiting: "Ожидание... 🛫​​​",
+
+			account_title: "Аккаунт",
+			account_uuid: "UUID",
+			account_tgid: "Telegram id",
 		},
 	},
 };

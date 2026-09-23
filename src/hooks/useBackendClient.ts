@@ -1,4 +1,5 @@
 import { getOrCreateUserId } from "@/utility/userId";
+import Constants from "expo-constants";
 import makeRequest from "../utility/api";
 
 export interface VpnResponse {
@@ -137,9 +138,11 @@ export const useBackendClient = () => {
 				{
 					userId,
 				},
-				{
-					"X-Forwarded-For": "41.206.208.194",
-				},
+				Constants.expoConfig?.extra?.testUserGeoIp
+					? {
+							"X-Forwarded-For": Constants.expoConfig?.extra?.testUserGeoIp,
+						}
+					: undefined,
 			)) as VpnResponse;
 		} catch (error) {
 			console.error("Error attaching inbounds:", error);
