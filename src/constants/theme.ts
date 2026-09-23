@@ -20,6 +20,7 @@ export interface CustomTheme {
 		important1: string;
 		important2: string;
 		important3: string;
+		map: string;
 	};
 }
 
@@ -27,7 +28,7 @@ export const LightTheme = {
 	...DefaultTheme,
 	colors: {
 		...DefaultTheme.colors,
-		text: "#000000ff",
+		text: "#000000",
 		text_input: "#fff",
 		primary: "#fff",
 		background: "#fff",
@@ -35,8 +36,9 @@ export const LightTheme = {
 		tretiary: "#969696",
 		card: "#303030",
 		important1: "#C40000",
-		important2: "#00E50F",
-		important3: "#F3D600",
+		important2: "#00b90c",
+		important3: "#d6bd00",
+		map: "#E35336",
 	},
 } as CustomTheme;
 
@@ -54,6 +56,7 @@ export const DarkTheme = {
 		important1: "#C40000",
 		important2: "#00E50F",
 		important3: "#F3D600",
+		map: "#E35336",
 	},
 } as CustomTheme;
 

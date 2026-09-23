@@ -211,14 +211,14 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		title: {
 			color: theme.colors.text,
-			fontFamily: "CustomFont-Bold",
+			fontFamily: "Nunito-Bold",
 			fontSize: 34,
 			lineHeight: 40,
 			marginTop: 12,
 		},
 		subtitle: {
 			color: theme.colors.tretiary,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 			fontSize: 16,
 			lineHeight: 22,
 			marginTop: 6,
@@ -257,7 +257,7 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		planName: {
 			color: theme.colors.secondary,
-			fontFamily: "CustomFont-Bold",
+			fontFamily: "Nunito-Bold",
 			fontSize: 18,
 		},
 		badge: {
@@ -272,7 +272,7 @@ const createStyles = (theme: CustomTheme) =>
 		priceRow: { alignItems: "baseline", flexDirection: "row", marginTop: 16 },
 		price: {
 			color: theme.colors.secondary,
-			fontFamily: "CustomFont-Bold",
+			fontFamily: "Nunito-Bold",
 			fontSize: 30,
 		},
 		period: { color: theme.colors.tretiary, fontSize: 13, marginLeft: 8 },
@@ -293,12 +293,12 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		continueButtonText: {
 			color: theme.colors.background,
-			fontFamily: "CustomFont-Bold",
+			fontFamily: "Nunito-Bold",
 			fontSize: 17,
 		},
 		continuePrice: {
 			color: theme.colors.background,
-			fontFamily: "CustomFont-Bold",
+			fontFamily: "Nunito-Bold",
 			fontSize: 17,
 		},
 		modalBackdrop: {
@@ -323,7 +323,7 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		paymentTitle: {
 			color: theme.colors.text,
-			fontFamily: "CustomFont-Bold",
+			fontFamily: "Nunito-Bold",
 			fontSize: 24,
 		},
 		paymentDescription: {
@@ -343,7 +343,7 @@ const createStyles = (theme: CustomTheme) =>
 		summaryPlan: { color: theme.colors.secondary, fontSize: 16 },
 		summaryPrice: {
 			color: theme.colors.secondary,
-			fontFamily: "CustomFont-Bold",
+			fontFamily: "Nunito-Bold",
 			fontSize: 17,
 		},
 		mockPayButton: {
@@ -355,7 +355,7 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		mockPayButtonText: {
 			color: theme.colors.background,
-			fontFamily: "CustomFont-Bold",
+			fontFamily: "Nunito-Bold",
 			fontSize: 16,
 		},
 		cancelButton: { alignItems: "center", paddingTop: 16 },

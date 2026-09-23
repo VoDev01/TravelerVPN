@@ -49,8 +49,10 @@ function LayoutContent() {
 	const systemLocale = useLocales()[0].languageCode;
 
 	const [loaded, error] = useFonts({
-		"CustomFont-Regular": require("@/assets/fonts/Nunito-Regular.ttf"),
-		"CustomFont-Bold": require("@/assets/fonts/Nunito-Bold.ttf"),
+		"Nunito-Regular": require("@/assets/fonts/Nunito-Regular.ttf"),
+		"Nunito-Bold": require("@/assets/fonts/Nunito-Bold.ttf"),
+		"Geist-Regular": require("@/assets/fonts/Geist-Regular.ttf"),
+		"Geist-Bold": require("@/assets/fonts/Geist-Bold.ttf"),
 	});
 
 	const insets = useSafeAreaInsets();
@@ -99,6 +101,7 @@ function LayoutContent() {
 					options={{
 						contentStyle: {
 							padding: 24,
+							backgroundColor: theme.colors.primary,
 						},
 						headerLeft: () => {
 							const router = useRouter();
@@ -127,6 +130,7 @@ function LayoutContent() {
 						headerTransparent: true,
 						contentStyle: {
 							padding: 24,
+							backgroundColor: theme.colors.primary,
 						},
 					}}
 				/>
@@ -137,6 +141,7 @@ function LayoutContent() {
 						headerTransparent: true,
 						contentStyle: {
 							padding: 24,
+							backgroundColor: theme.colors.primary,
 						},
 					}}
 				/>

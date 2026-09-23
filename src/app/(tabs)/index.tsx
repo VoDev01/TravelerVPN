@@ -32,6 +32,7 @@ export default function MainScreen() {
 		const subscription = ExpoLibxray.addListener(
 			"onVpnStatusChange",
 			(event: VpnStatusEvent) => {
+				console.log(event);
 				setConnectionState(event.status);
 				if (event.error) console.error(event.error);
 			},
@@ -69,19 +70,7 @@ export default function MainScreen() {
 	}, [selectedServerId]);
 
 	useEffect(() => {
-		if (connectionState === "DISCONNECTED") {
-			const timer = setTimeout(async () => {
-				try {
-					reset();
-					stopXray();
-					stop();
-				} catch (e) {
-					console.error("Error while stopping xray:", e);
-				}
-			}, 100);
-
-			return () => clearTimeout(timer);
-		} else if (connectionState === "CONNECTED") {
+		if (connectionState === "CONNECTED") {
 			reset();
 			start();
 		}
@@ -135,6 +124,9 @@ export default function MainScreen() {
 					style={styles.disconnectButton}
 					onPress={() => {
 						setServer(null);
+						reset();
+						stopXray();
+						stop();
 						setConnectionState("DISCONNECTED");
 					}}>
 					<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>
@@ -190,7 +182,7 @@ const createStyles = (theme: CustomTheme) =>
 		statValue: {
 			color: theme.colors.text,
 			fontSize: 18,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		statLabel: {
 			color: "#888",
@@ -205,7 +197,7 @@ const createStyles = (theme: CustomTheme) =>
 			color: theme.colors.text,
 			fontSize: 18,
 			marginTop: 4,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		mapContainer: {
 			width: "100%",
@@ -224,7 +216,7 @@ const createStyles = (theme: CustomTheme) =>
 			color: theme.colors.text,
 			fontSize: 18,
 			marginTop: 4,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		locationFlag: {
 			fontSize: 24,
@@ -252,12 +244,12 @@ const createStyles = (theme: CustomTheme) =>
 		chooseServerButtonText: {
 			color: theme.colors.important2,
 			fontSize: 20,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		disconnectButtonText: {
 			color: theme.colors.important1,
 			fontSize: 20,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		trafficContainer: {
 			marginTop: "auto",
@@ -276,7 +268,7 @@ const createStyles = (theme: CustomTheme) =>
 			color: theme.colors.text,
 			fontSize: 18,
 			marginBottom: 8,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		trafficStatusBar: {
 			height: 12,

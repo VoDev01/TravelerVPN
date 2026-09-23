@@ -179,7 +179,7 @@ export const createStyles = (theme: CustomTheme) =>
 		},
 		title: {
 			color: theme.colors.secondary,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 			fontSize: 26,
 			fontWeight: "600",
 			textAlign: "center",
@@ -217,7 +217,7 @@ export const createStyles = (theme: CustomTheme) =>
 		},
 		saveButtonText: {
 			color: theme.colors.background,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 			fontSize: 18,
 		},
 	});

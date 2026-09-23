@@ -235,12 +235,12 @@ const createStyles = (theme: CustomTheme) =>
 		backButtonText: {
 			color: theme.colors.text,
 			fontSize: 24,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		headerTitle: {
 			color: theme.colors.text,
 			fontSize: 32,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		settingGroup: {
 			marginBottom: 28,
