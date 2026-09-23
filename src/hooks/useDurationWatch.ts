@@ -20,7 +20,10 @@ export const useDurationWatch = () => {
 		};
 	}, [isRunning]);
 
-	const start = () => {
+	const start = (initialMs?: number) => {
+		if (typeof initialMs === "number") {
+			setTime(initialMs);
+		}
 		setIsRunning(true);
 	};
 

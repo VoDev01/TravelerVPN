@@ -202,7 +202,7 @@ const createStyles = (theme: CustomTheme) =>
 		saveButtonText: {
 			color: theme.colors.background,
 			fontSize: 16,
-			//fontFamily: "Nunito-Regular",
+			//fontFamily: "CustomFont-Regular",
 		},
 		flagButtonContainer: {
 			flexDirection: "row",

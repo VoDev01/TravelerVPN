@@ -80,6 +80,7 @@ export default function FlightTrajectory({
 	const cameraOffsetDistance = 6.0;
 
 	const center = new THREE.Vector3(0, 0, 0);
+
 	const worldUp = new THREE.Vector3();
 	const middleAB = new THREE.Vector3();
 
@@ -108,14 +109,18 @@ export default function FlightTrajectory({
 				if (aircraftRef.current) {
 					const aircraft = aircraftRef.current;
 					const earth = aircraft.parent;
-					const earthPos = earth?.position ?? center;
 
 					middleAB.set(0, 0, 0).addVectors(A, B).multiplyScalar(0.5);
 
-					const middleABUp = middleAB.clone().sub(earthPos).normalize();
+					if (earth) {
+						earth.updateWorldMatrix(true, false);
+						earth.localToWorld(middleAB);
+					}
+
+					worldUp.copy(middleAB).normalize();
 
 					cameraTargetPos
-						.copy(middleABUp)
+						.copy(worldUp)
 						.multiplyScalar(cameraOffsetDistance)
 						.add(middleAB);
 

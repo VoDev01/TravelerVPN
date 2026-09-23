@@ -1,5 +1,6 @@
 import { Paths } from "expo-file-system";
 import ExpoLibxray, { LibxrayConfigBuilder } from "expo-libxray";
+import i18n from "i18next";
 
 const config = (initialConfig: string) => {
 	const appFilesDir = Paths.document;
@@ -83,6 +84,20 @@ const config = (initialConfig: string) => {
 		.build();
 };
 
+const notificationContent = {
+	title: i18n.t("notification_title"),
+	content: i18n.t("notification_content"),
+	statusConnected: i18n.t("notification_connected"),
+	statusWaiting: i18n.t("notification_waiting"),
+};
+
+i18n.on("languageChanged", (lng) => {
+	notificationContent.title = i18n.t("notification_title");
+	notificationContent.content = i18n.t("notification_title");
+	notificationContent.statusConnected = i18n.t("notification_connected");
+	notificationContent.statusWaiting = i18n.t("notification_waiting");
+});
+
 export const useLibxray = () => {
 	const initialConfig = (shareLink: string) =>
 		ExpoLibxray.convertShareLinksToXrayJson(shareLink);
@@ -92,6 +107,8 @@ export const useLibxray = () => {
 	const testXray = (shareLink: string) => ExpoLibxray.testXray(shareLink);
 
 	const stopXray = ExpoLibxray.stopXray;
+
+	const getXrayState = ExpoLibxray.getXrayState;
 
 	const pingBatch = ExpoLibxray.pingBatch;
 
@@ -103,12 +120,13 @@ export const useLibxray = () => {
 					appsSplitTunneling: undefined,
 					vpnServiceErrorLocalized: "Vpn permission is rejected.",
 					notificationErrorLocalized: "Vpn permission is rejected.",
-					vpnServiceNotificationTitle: "Vpn status",
-					vpnServiceNotificationContent: "Status:",
+					vpnServiceNotificationTitle: notificationContent.title,
+					vpnServiceNotificationContent: notificationContent.content,
 					vpnServiceNotificationStatus: {
-						connected: "Connected!",
-						waiting: "Waiting...",
-						error: "Internal Service Error",
+						connected: notificationContent.statusConnected,
+						waiting: notificationContent.statusWaiting,
+						connecting: "Connecting...",
+						error: "Internal service error",
 					},
 				});
 				result.then((r) => {
@@ -127,6 +145,7 @@ export const useLibxray = () => {
 		runXray: startXray,
 		testXray,
 		stopXray,
+		getXrayState,
 		pingBatch,
 		convertShareLinksToJson,
 	};
