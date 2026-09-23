@@ -472,7 +472,7 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		actionText: {
 			color: theme.colors.secondary,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 			fontSize: 15,
 		},
 		navigation: {
@@ -486,7 +486,7 @@ const createStyles = (theme: CustomTheme) =>
 			fontWeight: "600",
 			textAlign: "center",
 			marginBottom: 24,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		serverList: {
 			flex: 1,
@@ -519,7 +519,7 @@ const createStyles = (theme: CustomTheme) =>
 		buttonText: {
 			color: theme.colors.background,
 			fontSize: 24,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		serversContainer: {
 			flex: 1,
@@ -554,12 +554,12 @@ const createStyles = (theme: CustomTheme) =>
 		serverInfoText: {
 			color: theme.colors.text_input,
 			fontSize: 14,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		serversCategoryTitle: {
 			color: theme.colors.text,
 			fontSize: 20,
-			fontFamily: "CustomFont-Regular",
+			fontFamily: "Nunito-Regular",
 		},
 		emptyContainer: {
 			flex: 1,

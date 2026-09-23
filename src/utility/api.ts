@@ -1,6 +1,8 @@
+import Constants from "expo-constants";
 import Toast from "react-native-toast-message";
 
-const baseUrl = process.env.EXPO_PUBLIC_BACKEND_BASEURL;
+const baseUrl =
+	Constants.expoConfig?.extra?.backendBaseUrl || "https://traveler-vpn.com";
 
 type BodyParams = Record<string, any>;
 

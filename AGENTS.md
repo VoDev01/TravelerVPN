@@ -26,6 +26,6 @@
 
 ## Environment And Checkout
 
-- Runtime configuration uses `EXPO_PUBLIC_BACKEND_BASEURL`, `EXPO_PUBLIC_BACKEND_WSURL`, `EXPO_PUBLIC_LOCIZE_PROJECT_ID`, and `EXPO_PUBLIC_LOCIZE_API_KEY`. Do not commit `.env`; Locize uploads missing translations only in development.
+- Runtime configuration uses `EXPO_PUBLIC_LOCIZE_PROJECT_ID`, and `EXPO_PUBLIC_LOCIZE_API_KEY`. Do not commit `.env`; Locize uploads missing translations only in development.
 - Backend requests in `src/utility/api.ts` use URL-encoded parameters for query strings and non-GET bodies, not JSON.
 - Root `assets/` is ignored and currently untracked even though `app.json` and source imports require it. Do not remove local assets, and do not assume a clean clone can build without obtaining them separately.

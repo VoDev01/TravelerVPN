@@ -33,6 +33,10 @@
 			"output": "static",
 			"favicon": "./assets/images/favicon.png"
 		},
+		"extra": {
+			"backendBaseUrl": "http://192.168.0.143",
+			"backendWsUrl": "http://192.168.0.143/ws"
+		},
 		"plugins": [
 			"expo-router",
 			[

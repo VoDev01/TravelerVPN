@@ -38,6 +38,7 @@ export default function InteractiveServerMap({
 	onServerConnectingId: number | undefined;
 	isVpnConnecting: boolean;
 }) {
+	console.log(isVpnConnecting);
 	const { t } = useTranslation();
 
 	const aircraftRef = useRef<THREE.Object3D>(null);
@@ -90,7 +91,7 @@ export default function InteractiveServerMap({
 			.catch((e) => {
 				console.error(`Unable to load servers for InteractiveMap: ${e}`);
 			});
-	}, [isVpnConnecting, onServerConnectingId]);
+	}, [isVpnConnecting]);
 
 	const A = useMemo(() => new THREE.Vector3(), []);
 	const B = useMemo(() => new THREE.Vector3(), []);
@@ -127,14 +128,16 @@ export default function InteractiveServerMap({
 			return (
 				<GlobeMarker
 					key={serverGeo.id}
-					id={serverGeo.location.city}
+					cityId={serverGeo.location.city}
 					lat={serverGeo.location.latitude}
 					lon={serverGeo.location.longitude}
-					activeId={activeLocationId}
+					activeCityId={activeLocationId}
 					onSelect={(city: string) => {
 						setActiveLocationId(city);
 						onSelectLocation(city);
 					}}
+					id={serverGeo.id}
+					serverConnectingId={onServerConnectingId}
 				/>
 			);
 		}
@@ -145,14 +148,16 @@ export default function InteractiveServerMap({
 			return (
 				<GlobeMarker
 					key={"user_geo"}
-					id={"user_geo"}
+					cityId={"user_geo"}
 					lat={userGeo.latitude}
 					lon={userGeo.longitude}
-					activeId={activeLocationId}
+					activeCityId={activeLocationId}
 					onSelect={(city: string) => {
 						setActiveLocationId(city);
 						onSelectLocation(city);
 					}}
+					id={0}
+					serverConnectingId={undefined}
 				/>
 			);
 		}
@@ -160,54 +165,50 @@ export default function InteractiveServerMap({
 
 	return (
 		<View style={styles.content}>
-			{isActive && (
-				<Canvas
-					gl={{
-						antialias: false,
-						powerPreference: "high-performance",
-						failIfMajorPerformanceCaveat: true,
-					}}
-					camera={{ position: [-15.2, 0, 0], fov: 65 }}>
-					<ambientLight intensity={3} />
-					<Animate ref={earthRef} />
-					<group ref={earthRef}>
-						<Model
-							model={"earth"}
-							props={{
-								position: [0, 0, 0],
-							}}
-						/>
-						{serversLocations.map((serverGeo) =>
-							renderServerLocation(serverGeo),
-						)}
-						{renderUserLocation()}
-						<Model
-							ref={aircraftRef}
-							model={"aircraft"}
-							props={{
-								scale: 0.04,
-							}}
-						/>
-						{isFlightPathDefined && (
-							<FlightTrajectory
-								A={A}
-								B={B}
-								height={2.5}
-								aircraftRef={aircraftRef}
-								segments={optimalSegments}
-								onAnimationStateChange={setIsCameraMoving}
-								animationVisible={setIsFlightPathDefined}
-								initialCameraPosRef={initialCameraPos}
-							/>
-						)}
-					</group>
-					<OrbitControls
-						enableRotate={!isCameraMoving}
-						enableZoom={false}
-						enablePan={false}
+			<Canvas
+				gl={{
+					antialias: false,
+					powerPreference: "high-performance",
+					failIfMajorPerformanceCaveat: true,
+				}}
+				camera={{ position: [-15.2, 0, 0], fov: 65 }}>
+				<ambientLight intensity={3} />
+				<Animate ref={earthRef} />
+				<group ref={earthRef}>
+					<Model
+						model={"earth"}
+						props={{
+							position: [0, 0, 0],
+						}}
 					/>
-				</Canvas>
-			)}
+					{serversLocations.map((serverGeo) => renderServerLocation(serverGeo))}
+					{renderUserLocation()}
+					<Model
+						ref={aircraftRef}
+						model={"aircraft"}
+						props={{
+							scale: 0.04,
+						}}
+					/>
+					{isFlightPathDefined && (
+						<FlightTrajectory
+							A={A}
+							B={B}
+							height={2.5}
+							aircraftRef={aircraftRef}
+							segments={optimalSegments}
+							onAnimationStateChange={setIsCameraMoving}
+							animationVisible={setIsFlightPathDefined}
+							initialCameraPosRef={initialCameraPos}
+						/>
+					)}
+				</group>
+				<OrbitControls
+					enableRotate={!isCameraMoving}
+					enableZoom={false}
+					enablePan={false}
+				/>
+			</Canvas>
 			{!isLoaded && (
 				<View style={StyleSheet.absoluteFill} pointerEvents="none">
 					<Loader loaderText={t("loader_map")} />

@@ -77,6 +77,11 @@ export default function FlightTrajectory({
 	const CAMERA_RETURN_SPEED = 0.03;
 	const DRAW_SPEED = 0.2;
 	const FLIGHT_SPEED = 0.15;
+	const cameraOffsetDistance = 6.0;
+
+	const center = new THREE.Vector3(0, 0, 0);
+	const worldUp = new THREE.Vector3();
+	const middleAB = new THREE.Vector3();
 
 	useEffect(() => {
 		if (lineGeom.current) {
@@ -100,6 +105,24 @@ export default function FlightTrajectory({
 			if (aircraftRef.current) aircraftRef.current.visible = false;
 
 			if (drawProgressRef.current < 1.0 && lineGeom.current) {
+				if (aircraftRef.current) {
+					const aircraft = aircraftRef.current;
+					const earth = aircraft.parent;
+					const earthPos = earth?.position ?? center;
+
+					middleAB.set(0, 0, 0).addVectors(A, B).multiplyScalar(0.5);
+
+					const middleABUp = middleAB.clone().sub(earthPos).normalize();
+
+					cameraTargetPos
+						.copy(middleABUp)
+						.multiplyScalar(cameraOffsetDistance)
+						.add(middleAB);
+
+					state.camera.position.lerp(cameraTargetPos, CAMERA_RETURN_SPEED);
+					state.camera.lookAt(middleAB);
+				}
+
 				drawProgressRef.current += delta * DRAW_SPEED;
 				const p = Math.min(drawProgressRef.current, 1.0);
 
@@ -146,9 +169,7 @@ export default function FlightTrajectory({
 
 				dummyGlobal.position.copy(worldCurrentPoint);
 
-				const worldUp = new THREE.Vector3()
-					.subVectors(worldCurrentPoint, earth.position)
-					.normalize();
+				worldUp.subVectors(worldCurrentPoint, earth.position).normalize();
 				dummyGlobal.up.copy(worldUp);
 
 				if (p < 1.0) {
@@ -161,7 +182,6 @@ export default function FlightTrajectory({
 				earth.getWorldQuaternion(inverseEarthQuat).invert();
 				aircraft.quaternion.copy(inverseEarthQuat).multiply(worldQuat);
 
-				const cameraOffsetDistance = 6.0;
 				cameraTargetPos
 					.copy(worldUp)
 					.multiplyScalar(cameraOffsetDistance)
