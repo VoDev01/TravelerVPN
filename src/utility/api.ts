@@ -1,10 +1,21 @@
 import Constants from "expo-constants";
+import i18n from "i18next";
 import Toast from "react-native-toast-message";
 
 const baseUrl =
 	Constants.expoConfig?.extra?.backendBaseUrl || "https://traveler-vpn.com";
 
 type BodyParams = Record<string, any>;
+
+const errorToastText = {
+	text1: i18n.t("toast_servers_error_text1"),
+	text2: i18n.t("toast_servers_error_text2"),
+};
+
+i18n.on("languageChanged", (lng) => {
+	errorToastText.text1 = i18n.t("toast_servers_error_text1");
+	errorToastText.text2 = i18n.t("toast_servers_error_text2");
+});
 
 const makeRequest = async (
 	url: string,
@@ -35,8 +46,8 @@ const makeRequest = async (
 	} catch (error) {
 		Toast.show({
 			type: "error",
-			text1: "Unable to reach TravelerVPN servers",
-			text2: "Check your internet connection or report this issue.",
+			text1: errorToastText.text1,
+			text2: errorToastText.text2,
 		});
 		console.error("Error making request to a backend server:", error);
 	}

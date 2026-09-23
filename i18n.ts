@@ -78,9 +78,14 @@ const fallbackResources = {
 			toast_subscription_denied_text2:
 				"Start using TravelerVPN servers by buying a subcription",
 
-			toast_servers_error_text1: "Unable to reach servers",
+			toast_servers_error_text1: "Service unavailable",
 			toast_servers_error_text2:
 				"Check your internet connection or report this issue",
+
+			notification_title: "TravelerVPN tunnel",
+			notification_content: "Status:",
+			notification_connected: "Connected 🛬✅​​",
+			notification_waiting: "Waiting... 🛫​​​",
 		},
 	},
 	ru: {
@@ -157,9 +162,14 @@ const fallbackResources = {
 			toast_subscription_denied_text2:
 				"Начните использовать сервера TravelerVPN, купив подписку",
 
-			toast_servers_error_text1: "Невозможно подключиться к сервису",
+			toast_servers_error_text1: "Сервис недоступен",
 			toast_servers_error_text2:
 				"Проверьте интернет-соединение или сообщите об этой проблеме",
+
+			notification_title: "TravelerVPN туннель",
+			notification_content: "Статус:",
+			notification_connected: "Подключено 🛬✅​​",
+			notification_waiting: "Ожидание... 🛫​​​",
 		},
 	},
 };

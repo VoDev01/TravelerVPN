@@ -1,9 +1,12 @@
 import LeftArrowWhite from "@/assets/images/line-md_arrow-left-white.svg";
 import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { CanvasErrorBoundary } from "@/components/CanvasErrorBoundary";
 import { toastConfig } from "@/components/config/toastConfig";
 import { Loader } from "@/components/Loader";
+import InteractiveServerMap from "@/components/InteractiveServerMap";
 import { ModelProvider } from "@/context/ModelContext";
+import { ServerMapProvider } from "@/context/ServerMapContext";
 import {
 	ThemeProvider,
 	useAppTheme,
@@ -146,6 +149,17 @@ function LayoutContent() {
 					}}
 				/>
 			</Stack>
+			{/*
+				Globally mounted interactive globe. Rendered after <Stack> so it sits
+				above every screen and is never unmounted while navigating the root
+				navigator. Its visibility is driven by the index tab's measured frame,
+				and it eases in via a short timer fade so it does not pop over a screen
+				animation. The error boundary isolates any GL/render failure so it can
+				never propagate to the router and force a NavigationContainer remount.
+			*/}
+			<CanvasErrorBoundary>
+				<InteractiveServerMap />
+			</CanvasErrorBoundary>
 			<Toast
 				config={toastConfig}
 				position="bottom"
@@ -217,8 +231,10 @@ export default function Layout() {
 		<ThemeProvider>
 			<ModelProvider>
 				<SafeAreaProvider initialMetrics={initialWindowMetrics}>
+					<ServerMapProvider>
+						<LayoutContent />
+					</ServerMapProvider>
 					<AnimatedSplashOverlay />
-					<LayoutContent />
 					<ThemedSystemUI />
 				</SafeAreaProvider>
 			</ModelProvider>

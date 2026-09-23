@@ -68,6 +68,8 @@ function ServersScreenContent({
 
 	const setServersSections = () => {
 		fetchServers().then((data) => {
+			if (data.length === servers.length) return;
+
 			const appServersData = data
 				.filter((server) => server.type !== "user_defined")
 				.map((server) => {

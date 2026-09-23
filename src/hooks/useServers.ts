@@ -37,7 +37,6 @@ export function useServers() {
 							const linkObj = JSON.parse(linkJson);
 							const address = linkObj.data.outbounds[0].settings.address;
 							const geo = await getGeoFromIp(address);
-							console.log(1);
 							await ServerRepository.add({
 								connectionLink: r.connectionLink,
 								remark: r.inbound.remark,
