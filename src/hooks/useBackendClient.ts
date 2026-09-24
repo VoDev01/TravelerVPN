@@ -1,3 +1,4 @@
+import { getStoredTelegramId } from "@/utility/telegramId";
 import { getOrCreateUserId } from "@/utility/userId";
 import Constants from "expo-constants";
 import makeRequest from "../utility/api";
@@ -39,8 +40,10 @@ export const useBackendClient = () => {
 	) => {
 		try {
 			const userId = await getOrCreateUserId();
+			const tgId = await getStoredTelegramId();
 			return (await makeRequest("/api/user/subscription/renew", "POST", {
 				userId,
+				tgId,
 				planId,
 				paymentReference,
 			})) as VpnResponse;

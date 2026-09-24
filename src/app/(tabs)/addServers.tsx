@@ -47,17 +47,20 @@ export default function AddServers() {
 	const { getGeoFromIp } = useBackendClient();
 
 	useEffect(() => {
+		if (connectionLink === "") return;
+
 		let address: string = "";
-		convertShareLinksToJson(connectionLink)
+		convertShareLinksToJson(connectionLink.trim())
 			.then((response) => {
 				const configObj = JSON.parse(response).data;
 
 				const sendThrough = configObj.outbounds[0].sendThrough;
 				const builder = new LibxrayConfigBuilder(configObj);
 				if (
-					sendThrough !== "0.0.0.0" ||
-					sendThrough !== "::" ||
-					sendThrough !== ""
+					sendThrough &&
+					sendThrough !== "0.0.0.0" &&
+					sendThrough !== "::" &&
+					sendThrough.length > 0
 				) {
 					builder.setOutbounds([
 						{
@@ -92,6 +95,7 @@ export default function AddServers() {
 							countryTag,
 							connectionLink,
 							type: "user_defined",
+							address,
 							city: geo?.response.city,
 							country: geo?.response.country,
 							latitude: geo?.response.latitude,

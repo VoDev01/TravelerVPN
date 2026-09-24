@@ -78,7 +78,9 @@ export default function EditServerScreen() {
 			const nextConnectionLink = connectionLink.trim();
 			let endpoint = {};
 			if (nextConnectionLink !== server.connectionLink) {
+				console.log(nextConnectionLink);
 				const linkJson = await convertShareLinksToJson(nextConnectionLink);
+				console.log(JSON.parse(linkJson));
 				const address = JSON.parse(linkJson).data.outbounds[0].settings.address;
 				const geo = await getGeoFromIp(address);
 				if (!geo?.response)

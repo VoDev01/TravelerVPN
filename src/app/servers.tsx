@@ -8,7 +8,7 @@ import { ServerMetrics } from "@/hooks/useBackendClient";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { MetricsServerData } from "@/hooks/useWebSocketClient";
-import { PingBatchItem } from "expo-libxray";
+import { LibxrayConfigBuilder, PingBatchItem } from "expo-libxray";
 import {
 	Href,
 	useLocalSearchParams,
@@ -53,18 +53,15 @@ function ServersScreenContent({
 }: ServersScreenContentProps) {
 	const [servers, setServers] = useState<MetricsServerSection[]>([]);
 	const { pingBatch, convertShareLinksToJson } = useLibxray();
-	//const [appServers, setAppServers] = useState<MetricsServerData[]>([]);
 
 	const [isRefreshing, setIsRefreshing] = useState(true);
 
-	const { fetchServers, refreshServers } = useServers();
+	const { fetchServers } = useServers();
 	const { city } = useLocalSearchParams<{ city?: string }>();
 
 	const theme = useAppTheme();
 	const styles = useMemo(() => createStyles(theme), [theme]);
 	const { t } = useTranslation();
-
-	//const { serversMetrics, wsClose } = useWebSocketClient();
 
 	const setServersSections = () => {
 		fetchServers().then((data) => {
@@ -75,8 +72,6 @@ function ServersScreenContent({
 				.map((server) => {
 					return { ...server, metrics: null };
 				});
-
-			//setAppServers([...appServersData]);
 
 			const userServersData = data
 				.filter((server) => server.type === "user_defined")
@@ -113,9 +108,17 @@ function ServersScreenContent({
 
 			const jsonConfigs: string[] = await Promise.all(
 				flatServers.map(async (server) => {
-					return JSON.parse(
+					const configObj = JSON.parse(
 						await convertShareLinksToJson(server.connectionLink),
 					).data;
+
+					return new LibxrayConfigBuilder(configObj)
+						.setOutbounds([
+							{
+								sendThrough: "0.0.0.0",
+							},
+						])
+						.build();
 				}),
 			);
 
@@ -141,7 +144,10 @@ function ServersScreenContent({
 					configs: configsPayload,
 					timeout: 5000,
 					url: "https://google.com",
+					locationUrl: undefined,
 				});
+
+				console.log(batchResponse);
 
 				for (let j = 0; j < batchItems.length; j++) {
 					if (batchResponse.results && batchResponse.results[j]) {
@@ -186,32 +192,10 @@ function ServersScreenContent({
 
 	useEffect(() => {
 		setServersSections();
-	}, [isRefreshing]);
-
-	// useEffect(() => {
-	// 	if (appServers.length > 0) serversMetrics(appServers);
-
-	// 	return () => {
-	// 		wsClose();
-	// 	};
-	// }, [appServers]);
-
-	useEffect(() => {
 		updateServersMetrics();
+
+		return () => setIsRefreshing(false);
 	}, [isRefreshing]);
-
-	const onRefresh = () => {
-		setIsRefreshing(true);
-		refreshServers()
-			.then(() => {
-				setServersSections();
-			})
-			.catch((e) => {
-				console.error(e);
-			});
-
-		setIsRefreshing(false);
-	};
 
 	const renderServer = ({ item }: { item: MetricsServerData }) => {
 		const isDeleteSelected = selectedForDeletion.has(item.id);
@@ -296,7 +280,9 @@ function ServersScreenContent({
 			refreshControl={
 				<RefreshControl
 					refreshing={isRefreshing}
-					onRefresh={onRefresh}
+					onRefresh={() => {
+						setIsRefreshing(true);
+					}}
 					tintColor={theme.colors.background}
 				/>
 			}
@@ -344,25 +330,10 @@ export default function ServersScreen() {
 	};
 
 	const editSelectedServer = async () => {
-		if (!selectedServer) {
-			Toast.show({
-				type: "info",
-				text2: "Select a user-defined server to update",
-			});
-			return;
-		}
-		try {
-			const server = await getServerById(selectedServer);
-			if (server?.type !== "user_defined") {
-				return;
-			}
-			router.push({
-				pathname: "/server-edit",
-				params: { serverId: `${selectedServer}` },
-			} as unknown as Href);
-		} catch (error) {
-			console.error(error);
-		}
+		Toast.show({
+			type: "info",
+			text2: "Select a user-defined server to update",
+		});
 	};
 
 	const handleDeleteAction = async () => {
@@ -413,7 +384,22 @@ export default function ServersScreen() {
 					);
 			},
 		});
-	}, [navigation, selectedServer, deleteMode]);
+	}, [navigation, selectedServer, deleteMode, isUserServersEmpty]);
+
+	useEffect(() => {
+		if (!selectedServer) return;
+		getServerById(selectedServer)
+			.then((server) => {
+				if (server?.type !== "user_defined") {
+					return;
+				}
+				router.push({
+					pathname: "/server-edit",
+					params: { serverId: `${selectedServer}` },
+				} as unknown as Href);
+			})
+			.catch((e) => console.error(e));
+	}, [selectedServer]);
 
 	return (
 		<View style={[styles.container, { paddingTop, paddingBottom }]}>
@@ -460,6 +446,7 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		actions: {
 			flexDirection: "row",
+			alignSelf: "center",
 			alignItems: "center",
 			justifyContent: "center",
 			columnGap: 8,

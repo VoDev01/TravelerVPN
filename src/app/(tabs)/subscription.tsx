@@ -1,6 +1,7 @@
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
+import { getStoredTelegramId } from "@/utility/telegramId";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -63,7 +64,18 @@ export default function SubscriptionScreen() {
 
 	const selectedPlan = plans.find((plan) => plan.id === selectedPlanId)!;
 
-	const openPaymentGateway = () => {
+	const openPaymentGateway = async () => {
+		const telegramId = await getStoredTelegramId();
+
+		if (!telegramId) {
+			Toast.show({
+				type: "info",
+				text1: t("toast_telegram_required_text1"),
+				text2: t("toast_telegram_required_text2"),
+			});
+			return;
+		}
+
 		// Replace this modal with the payment-provider redirect.
 		setPaymentVisible(true);
 	};
