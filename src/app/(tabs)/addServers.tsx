@@ -4,10 +4,10 @@ import { useBackendClient } from "@/hooks/useBackendClient";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { useSettings } from "@/hooks/useSettings";
+import { LibxrayConfigBuilder } from "expo-libxray";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-	Alert,
 	Image,
 	StyleSheet,
 	Text,
@@ -20,12 +20,14 @@ import CountryPicker, {
 	CountryCode,
 } from "react-native-country-picker-modal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 export default function AddServers() {
 	const [remark, setRemark] = useState("Default user server");
 	const [countryTag, setCountryTag] = useState<CountryCode>("AM");
 	const [country, setCountry] = useState<Country | null>(null);
 	const [connectionLink, setConnectionLink] = useState("");
+	const [connectionJson, setConnectionJson] = useState("");
 
 	const { addServer } = useServers();
 
@@ -41,44 +43,79 @@ export default function AddServers() {
 	};
 
 	const [serverSubmit, setServerSubmit] = useState(false);
-	const { convertShareLinksToJson } = useLibxray();
+	const { convertShareLinksToJson, testXray } = useLibxray();
 	const { getGeoFromIp } = useBackendClient();
 
-	const showAlert = (validationError: string) => {
-		Alert.alert("Invalid server data", validationError, [
-			{
-				text: "OK",
-			},
-		]);
-	};
-
 	useEffect(() => {
-		if (!serverSubmit) return () => {};
-
 		let address: string = "";
 		convertShareLinksToJson(connectionLink)
-			.then((json) => {
-				address = JSON.parse(json).address;
+			.then((response) => {
+				const configObj = JSON.parse(response).data;
+
+				const sendThrough = configObj.outbounds[0].sendThrough;
+				const builder = new LibxrayConfigBuilder(configObj);
+				if (
+					sendThrough !== "0.0.0.0" ||
+					sendThrough !== "::" ||
+					sendThrough !== ""
+				) {
+					builder.setOutbounds([
+						{
+							sendThrough: "0.0.0.0",
+						},
+					]);
+					setRemark(sendThrough);
+				}
+				address = configObj.outbounds[0].settings.address;
+				setConnectionJson(builder.build());
 			})
 			.catch((e) => console.error(e));
 
-		getGeoFromIp(address)
-			.then((geo) => {
-				addServer({
-					remark,
-					countryTag,
-					connectionLink,
-					type: "user_defined",
-					city: geo?.response.city,
-					country: geo?.response.country,
-					latitude: geo?.response.latitude,
-					longitude: geo?.response.longitude,
-				});
+		if (!serverSubmit) return;
+
+		testXray(connectionJson)
+			.then((response) => {
+				const responseObj = JSON.parse(response);
+
+				if (!responseObj.success) {
+					Toast.show({
+						type: "error",
+						text1: "Invalid connection link",
+						text2: "Ensure that connection link has a valid syntax",
+					});
+					console.warn(responseObj.error);
+				}
+				getGeoFromIp(address)
+					.then((geo) => {
+						addServer({
+							remark,
+							countryTag,
+							connectionLink,
+							type: "user_defined",
+							city: geo?.response.city,
+							country: geo?.response.country,
+							latitude: geo?.response.latitude,
+							longitude: geo?.response.longitude,
+						}).then(() => {
+							Toast.show({
+								type: "success",
+								text1: "Successfully added new server",
+							});
+							setServerSubmit(false);
+						});
+					})
+					.catch((e) => {
+						Toast.show({
+							type: "error",
+							text1: "Unable to add this server",
+						});
+						console.error(e);
+					});
 			})
 			.catch((e) => console.error(e));
 
 		return () => setServerSubmit(false);
-	}, [serverSubmit]);
+	}, [serverSubmit, connectionLink]);
 
 	return (
 		<View style={styles.container}>
@@ -149,10 +186,27 @@ export default function AddServers() {
 			<TouchableOpacity
 				style={styles.saveButton}
 				onPress={() => {
-					if (remark.length === 0) {
-						showAlert("Remark cant be empty");
-					} else if (connectionLink.length === 0) {
-						showAlert("Connection link cant be empty");
+					if (connectionLink.length === 0) {
+						Toast.show({
+							type: "error",
+							text1: "Invalid server data",
+							text2: "Connection link cant be empty",
+						});
+						return;
+					} else if (remark.length <= 3) {
+						Toast.show({
+							type: "error",
+							text1: "Invalid server data",
+							text2: "Remark cant be empty or less than 3 characters",
+						});
+						return;
+					} else if (country === null) {
+						Toast.show({
+							type: "error",
+							text1: "Invalid server data",
+							text2: "Server country isnt selected",
+						});
+						return;
 					}
 					setServerSubmit(true);
 				}}>

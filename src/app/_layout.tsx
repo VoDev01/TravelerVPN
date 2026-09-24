@@ -3,8 +3,8 @@ import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { CanvasErrorBoundary } from "@/components/CanvasErrorBoundary";
 import { toastConfig } from "@/components/config/toastConfig";
-import { Loader } from "@/components/Loader";
 import InteractiveServerMap from "@/components/InteractiveServerMap";
+import { Loader } from "@/components/Loader";
 import { ModelProvider } from "@/context/ModelContext";
 import { ServerMapProvider } from "@/context/ServerMapContext";
 import {
@@ -76,7 +76,22 @@ function LayoutContent() {
 	const BASE_OFFSET = 16;
 	const safeBottomOffset = bottomInset + BASE_OFFSET;
 
-	if (!loaded && !error) {
+	if (error) {
+		console.error(error);
+		return (
+			<View
+				style={{
+					flex: 1,
+					justifyContent: "center",
+					alignItems: "center",
+					padding: 12,
+				}}>
+				<Text style={{ color: "red", fontSize: 16 }}>Unable to load fonts</Text>
+			</View>
+		);
+	}
+
+	if (!loaded) {
 		return <Loader loaderText={t("loader_fonts")} />;
 	}
 
@@ -111,6 +126,10 @@ function LayoutContent() {
 
 							return (
 								<TouchableOpacity
+									style={{
+										marginTop: 8,
+										marginLeft: 8,
+									}}
 									onPress={() => {
 										router.back();
 									}}>
@@ -149,14 +168,6 @@ function LayoutContent() {
 					}}
 				/>
 			</Stack>
-			{/*
-				Globally mounted interactive globe. Rendered after <Stack> so it sits
-				above every screen and is never unmounted while navigating the root
-				navigator. Its visibility is driven by the index tab's measured frame,
-				and it eases in via a short timer fade so it does not pop over a screen
-				animation. The error boundary isolates any GL/render failure so it can
-				never propagate to the router and force a NavigationContainer remount.
-			*/}
 			<CanvasErrorBoundary>
 				<InteractiveServerMap />
 			</CanvasErrorBoundary>

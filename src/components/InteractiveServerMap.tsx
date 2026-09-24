@@ -170,10 +170,7 @@ export default function InteractiveServerMap() {
 	// The arc is sampled from 64 points, so segments beyond ~64 add no real
 	// resolution yet make each mesh-line rebuild (and reveal step) more expensive.
 	const flightSegments = flight
-		? Math.min(
-				Math.max(Math.floor(flight.A.distanceTo(flight.B) * 8), 24),
-				64,
-			)
+		? Math.min(Math.max(Math.floor(flight.A.distanceTo(flight.B) * 8), 24), 64)
 		: 40;
 
 	const handleFlightVisibility = (visible: boolean) => {
@@ -234,7 +231,7 @@ export default function InteractiveServerMap() {
 					lon={serverGeo.location.longitude}
 					activeCityId={activeLocationId}
 					hitRadius={markerHitRadii[serverGeo.id]}
-					onSelect={(city: string) => {
+					onSelect={(city: string | null) => {
 						setActiveLocationId(city);
 						setSelectedLocation(city);
 					}}
@@ -254,7 +251,7 @@ export default function InteractiveServerMap() {
 					lat={userGeo.latitude}
 					lon={userGeo.longitude}
 					activeCityId={activeLocationId}
-					onSelect={(city: string) => {
+					onSelect={(city: string | null) => {
 						setActiveLocationId(city);
 						setSelectedLocation(city);
 					}}

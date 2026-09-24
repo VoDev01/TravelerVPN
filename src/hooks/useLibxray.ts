@@ -104,7 +104,7 @@ export const useLibxray = () => {
 
 	const runXray = ExpoLibxray.runXray;
 
-	const testXray = (shareLink: string) => ExpoLibxray.testXray(shareLink);
+	const testXray = ExpoLibxray.testXray;
 
 	const stopXray = ExpoLibxray.stopXray;
 

@@ -43,6 +43,24 @@ const withAndroidPlugin: ConfigPlugin = (config) => {
 
 		mainApplication.service.push(xrayService as any);
 
+		if (!mainApplication.profileable) {
+			mainApplication.profileable = [];
+		} else if (!Array.isArray(mainApplication.profileable)) {
+			mainApplication.profileable = [mainApplication.profileable];
+		}
+
+		const hasProfileable = mainApplication.profileable.some(
+			(p: any) => p && p.$ && p.$["android:shell"] === "true",
+		);
+
+		if (!hasProfileable) {
+			mainApplication.profileable.push({
+				$: {
+					"android:shell": "true",
+				},
+			});
+		}
+
 		return modConfig;
 	});
 };

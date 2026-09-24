@@ -208,8 +208,9 @@ function ServersScreenContent({
 			})
 			.catch((e) => {
 				console.error(e);
-				setIsRefreshing(false);
 			});
+
+		setIsRefreshing(false);
 	};
 
 	const renderServer = ({ item }: { item: MetricsServerData }) => {

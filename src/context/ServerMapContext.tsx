@@ -27,7 +27,7 @@ interface ServerMapContextData {
 	connectingServerId: number | undefined;
 	setConnectingServerId: (id: number | undefined) => void;
 	selectedLocation: string | null;
-	setSelectedLocation: (location: string) => void;
+	setSelectedLocation: (location: string | null) => void;
 }
 
 const ServerMapContext = createContext<ServerMapContextData | undefined>(
@@ -60,7 +60,7 @@ export const ServerMapProvider = ({
 		setConnectingServerIdState(next);
 	}, []);
 
-	const setSelectedLocation = useCallback((next: string) => {
+	const setSelectedLocation = useCallback((next: string | null) => {
 		setSelectedLocationState(next);
 	}, []);
 

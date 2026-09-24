@@ -47,7 +47,7 @@ interface GlobeMarkerProps {
 	id: number;
 	serverConnectingId: number | undefined;
 	activeCityId: string | null;
-	onSelect: (id: string) => void;
+	onSelect: (id: string | null) => void;
 	hitRadius?: number;
 }
 
@@ -75,7 +75,8 @@ export default function GlobeMarker({
 			<mesh
 				onClick={(e) => {
 					e.stopPropagation();
-					onSelect(cityId);
+					if (!isActive) onSelect(cityId);
+					else onSelect(null);
 				}}>
 				<sphereGeometry args={[Math.max(hitRadius, VISUAL_RADIUS), 16, 16]} />
 				<meshBasicMaterial transparent opacity={0} depthWrite={false} />

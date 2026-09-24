@@ -27,16 +27,17 @@
 				"POST_NOTIFICATIONS",
 				"ACCESS_NETWORK_STATE",
 				"ACCESS_WIFI_STATE"
-			]
+			],
+			"allowBackup": true
 		},
 		"web": {
 			"output": "static",
 			"favicon": "./assets/images/favicon.png"
 		},
 		"extra": {
-			"backendBaseUrl": "http://192.168.0.143",
-			"backendWsUrl": "http://192.168.0.143/ws",
-			"testUserGeoIp": "41.206.208.194"
+			"backendBaseUrl": "http://10.0.2.2",
+			"backendWsUrl": "http://10.0.2.2/ws",
+			"testUserGeoIp": "41.206.208.194" //Change to null or delete on release!
 		},
 		"plugins": [
 			"expo-router",
@@ -62,7 +63,14 @@
 					"hidden": false
 				}
 			],
-			"./plugins/withAndroidUserIdBackup.ts",
+			[
+				"expo-build-properties",
+				{
+					"android": {
+						"usesCleartextTraffic": true //Change to false or delete on release!
+					}
+				}
+			],
 			"./plugins/withAndroidPlugin.ts",
 			"./plugins/withAndroidAbiFilters.ts",
 			"expo-font",
