@@ -35,6 +35,7 @@ export const useBackendClient = () => {
 
 	const renewSubscription = async (
 		planId: string,
+		period: string,
 		paymentReference: string,
 	) => {
 		try {
@@ -42,6 +43,7 @@ export const useBackendClient = () => {
 			return (await makeRequest("/api/user/subscription/renew", "POST", {
 				userId,
 				planId,
+				period,
 				paymentReference,
 			})) as VpnResponse;
 		} catch (error) {

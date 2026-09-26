@@ -3,7 +3,7 @@ import { GeoLocation, useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
 import { OrbitControls, useProgress } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
-import { RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -55,8 +55,12 @@ interface ServerGeoLocation {
 export default function InteractiveServerMap() {
 	const { t } = useTranslation();
 
-	const { frame, connectingServerId, isConnecting, setSelectedLocation } =
-		useServerMap();
+	const {
+		frame,
+		connectingServerId,
+		setSelectedLocation,
+		setFlightInProgress,
+	} = useServerMap();
 
 	const isVisible = frame !== null;
 
@@ -110,8 +114,50 @@ export default function InteractiveServerMap() {
 	const lastFlightIdRef = useRef<number | undefined>(undefined);
 	const flightSeqRef = useRef(0);
 
+	// Publish whether the flight animation is currently running so the index can
+	// delay *revealing* CONNECTED until the plane lands (the tunnel connects now,
+	// the status is shown at animation end).
+	useEffect(() => {
+		setFlightInProgress(flight !== null);
+	}, [flight, setFlightInProgress]);
+
+	useEffect(
+		() => () => {
+			setFlightInProgress(false);
+		},
+		[setFlightInProgress],
+	);
+
 	const { getUserGeoFromIp } = useBackendClient();
 	const { fetchServers } = useServers();
+
+	// Rebuild the marker sets from the current server list. `fetchServers` is a new
+	// closure every render (not memoized by its hook), so capture it in a stable
+	// callback; its behavior does not depend on component state.
+	const refreshServers = useCallback(() => {
+		fetchServers()
+			.then((servers) => {
+				const byCity = new Map<string, ServerGeoLocation>();
+				const byId = new Map<number, GeoLocation>();
+				servers.forEach((server) => {
+					const location: GeoLocation = {
+						country: server.country,
+						city: server.city,
+						latitude: server.latitude,
+						longitude: server.longitude,
+					};
+					byId.set(server.id, location);
+					byCity.set(server.city, { id: server.id, location });
+				});
+				// Always assign (even when empty) so removed servers clear their markers.
+				setServersLocations([...byCity.values()]);
+				setServersById(byId);
+			})
+			.catch((e) => {
+				console.error(`Unable to load servers for InteractiveMap: ${e}`);
+			});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	useEffect(() => {
 		getUserGeoFromIp()
@@ -121,33 +167,25 @@ export default function InteractiveServerMap() {
 			.catch((e) => {
 				console.error(e);
 			});
-		fetchServers()
-			.then((servers) => {
-				if (servers.length > 0) {
-					const byCity = new Map<string, ServerGeoLocation>();
-					const byId = new Map<number, GeoLocation>();
-					servers.forEach((server) => {
-						const location: GeoLocation = {
-							country: server.country,
-							city: server.city,
-							latitude: server.latitude,
-							longitude: server.longitude,
-						};
-						byId.set(server.id, location);
-						byCity.set(server.city, { id: server.id, location });
-					});
-					setServersLocations([...byCity.values()]);
-					setServersById(byId);
-				}
-			})
-			.catch((e) => {
-				console.error(`Unable to load servers for InteractiveMap: ${e}`);
-			});
-	}, []);
+		refreshServers();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [refreshServers]);
+
+	// Re-sync markers when the globe becomes visible (e.g. returning to the index
+	// tab after adding/removing servers elsewhere). R3F re-renders the marker
+	// children from the updated state without remounting the Canvas.
+	useEffect(() => {
+		if (isVisible) {
+			refreshServers();
+		}
+	}, [isVisible, refreshServers]);
 
 	useEffect(() => {
 		if (connectingServerId == null) {
 			lastFlightIdRef.current = undefined;
+			// Abort any in-flight animation immediately (e.g. disconnect pressed
+			// mid-flight) instead of letting the plane keep flying to nowhere.
+			setFlight(null);
 			return;
 		}
 		if (connectingServerId === lastFlightIdRef.current) return;
@@ -178,6 +216,15 @@ export default function InteractiveServerMap() {
 			setFlight(null);
 		}
 	};
+
+	// If a flight is aborted (e.g. disconnect mid-animation) the trajectory never
+	// reports completion, so re-enable orbit controls instead of leaving the camera
+	// locked in "moving" state.
+	useEffect(() => {
+		if (flight === null) {
+			setIsCameraMoving(false);
+		}
+	}, [flight]);
 
 	// Per-marker press radius, sized from the nearest-neighbour gap so hit targets
 	// grow without ever overlapping each other (radius <= half the nearest gap).
@@ -281,7 +328,7 @@ export default function InteractiveServerMap() {
 				pointerEvents={isVisible ? "auto" : "none"}>
 				<Canvas
 					gl={{
-						antialias: false,
+						antialias: true,
 						powerPreference: "high-performance",
 						failIfMajorPerformanceCaveat: false,
 					}}

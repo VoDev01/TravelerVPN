@@ -1,6 +1,7 @@
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
+import { UserPlan, UserPlanDuration } from "@/types/VpnUser";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -15,10 +16,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
-type PlanId = "business_monthly" | "business_quarterly" | "business_yearly";
-
 interface SubscriptionPlan {
-	id: PlanId;
+	id: string;
+	plan: UserPlan;
+	period: UserPlanDuration;
 	nameKey: string;
 	periodKey: string;
 	price: string;
@@ -27,20 +28,26 @@ interface SubscriptionPlan {
 
 const plans: SubscriptionPlan[] = [
 	{
-		id: "business_monthly",
+		id: `${UserPlan.BUSINESS}_${UserPlanDuration.MONTHLY.label}`,
+		plan: UserPlan.BUSINESS,
+		period: UserPlanDuration.MONTHLY,
 		nameKey: "plan_monthly",
 		periodKey: "plan_per_month",
 		price: "4.99$",
 	},
 	{
-		id: "business_quarterly",
+		id: `${UserPlan.BUSINESS}_${UserPlanDuration.QUARTERLY.label}`,
+		plan: UserPlan.BUSINESS,
+		period: UserPlanDuration.QUARTERLY,
 		nameKey: "plan_quarterly",
 		periodKey: "plan_every_three_months",
 		price: "12.99$",
 		badgeKey: "plan_popular",
 	},
 	{
-		id: "business_yearly",
+		id: `${UserPlan.BUSINESS}_${UserPlanDuration.YEARLY.label}`,
+		plan: UserPlan.BUSINESS,
+		period: UserPlanDuration.YEARLY,
 		nameKey: "plan_yearly",
 		periodKey: "plan_per_year",
 		price: "39.99$",
@@ -49,8 +56,9 @@ const plans: SubscriptionPlan[] = [
 ];
 
 export default function SubscriptionScreen() {
-	const [selectedPlanId, setSelectedPlanId] =
-		useState<PlanId>("business_quarterly");
+	const [selectedPlanId, setSelectedPlanId] = useState<string>(
+		`${UserPlan.BUSINESS}_${UserPlanDuration.MONTHLY.label}`,
+	);
 	const [paymentVisible, setPaymentVisible] = useState(false);
 	const [isRenewing, setIsRenewing] = useState(false);
 
@@ -73,7 +81,11 @@ export default function SubscriptionScreen() {
 		try {
 			// A real gateway callback should supply its verified payment reference here.
 			const paymentReference = `mock-${Date.now()}`;
-			const result = await renewSubscription(selectedPlan.id, paymentReference);
+			const result = await renewSubscription(
+				selectedPlan.plan,
+				selectedPlan.period.label,
+				paymentReference,
+			);
 			if (result?.status !== "success") {
 				throw new Error(result?.message ?? "Unable to renew subscription");
 			}

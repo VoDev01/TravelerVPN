@@ -13,30 +13,11 @@ export const seedDatabase = async () => {
 		const existingServers = await db.select().from(serversTable);
 
 		if (existingServers.length === 0) {
-			console.log(
-				"База данных пуста. Начинаем наполнение дефолтными серверами...",
-			);
+			console.log("Db is empty. Seeding...");
 
-			await db.insert(serversTable).values([
-				{
-					connectionLink: "http://localhost:8000",
-					locationCity: "New York",
-					locationCountry: "USA",
-					ipv4: "192.168.1.1",
-					ipv6: "2001:db8::1",
-				},
-				{
-					connectionLink: "http://localhost:8000",
-					locationCity: "Frankfurt",
-					locationCountry: "Germany",
-					ipv4: "192.168.1.2",
-					ipv6: "2001:db8::2",
-				},
-			]);
-
-			console.log("Данные успешно добавлены!");
+			console.log("Data seeded!");
 		}
 	} catch (error) {
-		console.error("Ошибка при сиде базы данных:", error);
+		console.error("Error while trying to seed db:", error);
 	}
 };

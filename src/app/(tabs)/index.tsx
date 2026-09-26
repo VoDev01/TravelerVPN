@@ -4,7 +4,6 @@ import { useAppTheme } from "@/context/ThemeContext";
 import { useDurationWatch } from "@/hooks/useDurationWatch";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import ExpoLibxray from "expo-libxray";
 import { VpnStatusEvent } from "expo-libxray/build/ExpoLibxrayModule";
 import { Link, useIsFocused, useLocalSearchParams } from "expo-router";
@@ -22,8 +21,13 @@ export default function MainScreen() {
 	const [server, setServer] = useState<ServerEntity | null>(null);
 	const { getServerById } = useServers();
 
-	const { setFrame, setIsConnecting, setConnectingServerId, selectedLocation } =
-		useServerMap();
+	const {
+		setFrame,
+		setIsConnecting,
+		setConnectingServerId,
+		selectedLocation,
+		flightInProgress,
+	} = useServerMap();
 
 	const mapRef = useRef<View>(null);
 	const isFocused = useIsFocused();
@@ -33,170 +37,140 @@ export default function MainScreen() {
 	const styles = useMemo(() => createStyles(theme), [theme]);
 
 	const [connectionState, setConnectionState] = useState("DISCONNECTED");
-	const { runXray, testXray, stopXray, getXrayState } = useLibxray();
+	const [connectionStateText, setConnectionStateText] = useState(
+		t("not_connected"),
+	);
+	const { runXray, stopXray, getXrayState } = useLibxray();
 
 	const serverIdRef = useRef<number | undefined>(undefined);
-	const connectedAtRef = useRef<number | null>(null);
-	const bootstrappedRef = useRef(false);
+	const connectLinkRef = useRef<string | null>(null);
+	const pendingConnectRef = useRef(false);
+	const wasFlightInProgressRef = useRef(false);
 	const connectionStateRef = useRef<string>("DISCONNECTED");
 
 	useEffect(() => {
 		connectionStateRef.current = connectionState;
 	}, [connectionState]);
 
-	// Keep a ref to the active server id so the status listener (registered once)
-	// can persist it when the tunnel reports CONNECTED.
 	useEffect(() => {
 		serverIdRef.current = server?.id;
 	}, [server]);
 
-	const persistActive = useCallback(async (serverId: number) => {
-		const connectedAt = connectedAtRef.current ?? Date.now();
-		connectedAtRef.current = connectedAt;
-		try {
-			await AsyncStorage.setItem(ACTIVE_SERVER_ID_KEY, String(serverId));
-			await AsyncStorage.setItem(CONNECTED_AT_KEY, String(connectedAt));
-		} catch (e) {
-			console.error("Unable to persist active VPN session:", e);
+	// Start the actual tunnel once the flight animation has landed. Guarded by
+	// pendingConnectRef so it runs at most once per connect; a disconnect during the
+	// animation clears that flag, so the tunnel is never started at all.
+	const startPendingConnection = useCallback(() => {
+		if (!pendingConnectRef.current) {
+			return;
 		}
-	}, []);
-
-	const clearActive = useCallback(async () => {
-		connectedAtRef.current = null;
-		try {
-			await AsyncStorage.removeItem(ACTIVE_SERVER_ID_KEY);
-			await AsyncStorage.removeItem(CONNECTED_AT_KEY);
-		} catch (e) {
-			console.error("Unable to clear active VPN session:", e);
+		pendingConnectRef.current = false;
+		const link = connectLinkRef.current;
+		if (!link) {
+			return;
 		}
-	}, []);
+		connectLinkRef.current = null;
+		runXray(link).catch((e) => {
+			console.error("Failed to start Xray:", e);
+			setConnectionState("ERROR");
+		});
+	}, [runXray]);
 
-	// Live transitions come from the native event stream (authoritative). Persist
-	// the session on CONNECTED; clear it when the tunnel is down.
 	useEffect(() => {
 		const subscription = ExpoLibxray.addListener(
 			"onVpnStatusChange",
 			(event: VpnStatusEvent) => {
 				setConnectionState(event.status);
 				if (event.error) console.error(event.error);
-				if (event.status === "CONNECTED") {
-					if (serverIdRef.current != null) {
-						persistActive(serverIdRef.current);
-					}
-				} else if (
-					event.status === "DISCONNECTED" ||
-					event.status === "ERROR"
-				) {
-					void clearActive();
-				}
 			},
 		);
 
 		return () => {
 			subscription.remove();
 		};
-	}, [persistActive, clearActive]);
+	}, []);
 
-	const { selectedServerId } = useLocalSearchParams<{
+	const { selectedServerId, connectNonce } = useLocalSearchParams<{
 		selectedServerId?: string;
+		connectNonce?: string;
 	}>();
 
 	useEffect(() => {
 		if (!selectedServerId) {
 			return;
 		}
+		pendingConnectRef.current = true;
+		setConnectionState("CONNECTING");
 		getServerById(+selectedServerId)
 			.then((selectedServer: ServerEntity | undefined) => {
 				if (!selectedServer) {
 					console.error(`Server with id ${selectedServerId} is not found`);
+					pendingConnectRef.current = false;
+					setConnectionState("DISCONNECTED");
 					return;
 				}
-
-				// Fresh connect: anchor the timer to now until the CONNECTED event
-				// confirms it (which also persists serverId + connectedAt).
-				connectedAtRef.current = Date.now();
-
-				runXray(selectedServer.connectionLink).catch((e) => {
-					console.error(e);
-				});
-
+				// Stash the link and bind the server; the tunnel is started by
+				// startPendingConnection() once the flight animation lands.
+				connectLinkRef.current = selectedServer.connectionLink;
 				setServer(selectedServer);
 			})
 			.catch((e) => {
 				console.error(e);
+				pendingConnectRef.current = false;
+				setConnectionState("DISCONNECTED");
 			});
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedServerId]);
 
-	// One-time cold-start bootstrap: if a tunnel is already running (e.g. the app
-	// was killed while connected and no status event will replay), restore the
-	// server + true elapsed timer. Guarded by a stored server id so a flaky
-	// getXrayState() can never fabricate a connection.
+		const fallback = setTimeout(() => startPendingConnection(), 15000);
+		return () => clearTimeout(fallback);
+	}, [selectedServerId, connectNonce]);
+
 	useEffect(() => {
-		if (bootstrappedRef.current) {
-			return;
+		const was = wasFlightInProgressRef.current;
+		wasFlightInProgressRef.current = flightInProgress;
+		if (was && !flightInProgress) {
+			startPendingConnection();
 		}
-		bootstrappedRef.current = true;
-		(async () => {
-			try {
-				const [running, storedServerId, storedConnectedAt] =
-					await Promise.all([
-						getXrayState(),
-						AsyncStorage.getItem(ACTIVE_SERVER_ID_KEY),
-						AsyncStorage.getItem(CONNECTED_AT_KEY),
-					]);
-				if (running && storedServerId) {
-					connectedAtRef.current = Number(storedConnectedAt) || Date.now();
-					const restored = await getServerById(+storedServerId);
-					if (restored) {
-						setServer(restored);
-					}
-					setConnectionState("CONNECTED");
-				}
-			} catch (e) {
-				console.error("VPN bootstrap failed:", e);
-			}
-		})();
-	}, [getXrayState, getServerById]);
+	}, [flightInProgress, startPendingConnection]);
 
-	// Demote-only safety net for a tunnel that died without a DISCONNECTED event.
-	// It never promotes, so it cannot re-create the "false connected after stop"
-	// bug that the previous promote-on-poll introduced.
 	useEffect(() => {
 		if (!isFocused) {
 			return;
 		}
 		const check = async () => {
-			if (connectionStateRef.current !== "CONNECTED") {
+			if (
+				pendingConnectRef.current ||
+				connectionStateRef.current !== "CONNECTED"
+			) {
 				return;
 			}
 			try {
 				const running = await getXrayState();
 				if (!running) {
-					await clearActive();
 					setConnectionState("DISCONNECTED");
 				}
 			} catch (e) {
 				console.error("Unable to read Xray state:", e);
 			}
 		};
-		const interval = setInterval(check, 5000);
+		const interval = setInterval(check, 2500);
 		return () => clearInterval(interval);
-	}, [isFocused, getXrayState, clearActive]);
+	}, [isFocused, getXrayState]);
 
-	// Timer runs while CONNECTED, seeded from the real connected-at so a restored
-	// (post-restart) tunnel shows true elapsed time instead of restarting at 0.
+	const displayState =
+		connectionState === "CONNECTED" && flightInProgress
+			? "CONNECTING"
+			: connectionState;
+
 	useEffect(() => {
-		if (connectionState === "CONNECTED") {
-			if (connectedAtRef.current == null) {
-				connectedAtRef.current = Date.now();
-			}
-			const elapsed = Math.max(0, Date.now() - connectedAtRef.current);
-			start(elapsed);
-		} else if (connectionState === "DISCONNECTED") {
+		if (displayState === "CONNECTED") {
+			start(0);
+			setConnectionStateText(server?.remark ?? t("not_connected"));
+		} else if (displayState === "DISCONNECTED") {
 			reset();
+			setConnectionStateText(t("not_connected"));
+		} else {
+			setConnectionStateText(t("connecting"));
 		}
-	}, [connectionState, start, reset]);
+	}, [displayState, start, reset, server]);
 
 	useEffect(() => {
 		setIsConnecting(connectionState === "CONNECTING");
@@ -216,8 +190,6 @@ export default function MainScreen() {
 				if (width > 0 && height > 0) {
 					setFrame({ x, y, width, height });
 				} else if (attempts++ < 5) {
-					// Layout can still be settling right after a redirect back to the
-					// index tab; retry so the globe frame is never left unset.
 					requestAnimationFrame(run);
 				}
 			});
@@ -250,12 +222,8 @@ export default function MainScreen() {
 
 				<Text style={styles.connectionDurationText}>{formatTime(time)}</Text>
 				<View style={styles.locationData}>
-					<Text style={styles.locationText}>
-						{connectionState === "DISCONNECTED"
-							? t("not_connected")
-							: server?.remark}
-					</Text>
-					{connectionState !== "DISCONNECTED" && server && (
+					<Text style={styles.locationText}>{connectionStateText}</Text>
+					{displayState !== "DISCONNECTED" && server && (
 						<Text style={styles.locationFlag}>
 							{String.fromCodePoint(
 								...server.countryTag
@@ -275,10 +243,14 @@ export default function MainScreen() {
 			*/}
 			<View ref={mapRef} style={styles.mapContainer} onLayout={measureMap} />
 
-			{connectionState === "CONNECTING" || connectionState === "CONNECTED" ? (
+			{displayState === "CONNECTING" || displayState === "CONNECTED" ? (
 				<TouchableOpacity
 					style={styles.disconnectButton}
 					onPress={async () => {
+						// Cancel the deferred connect so an aborted/finished flight can't start
+						// the VPN service after the user has already disconnected.
+						pendingConnectRef.current = false;
+						connectLinkRef.current = null;
 						setServer(null);
 						reset();
 						stop();
@@ -291,7 +263,7 @@ export default function MainScreen() {
 						// (not the DISCONNECTED event, which may never fire) and retry once.
 						let stillRunning = false;
 						try {
-							stillRunning = await getXrayState();
+							stillRunning = JSON.parse(await getXrayState()).data.running;
 						} catch (e) {
 							console.error("Unable to read Xray state:", e);
 						}
@@ -302,7 +274,6 @@ export default function MainScreen() {
 								console.error("Failed to stop Xray on retry:", e);
 							}
 						}
-						await clearActive();
 						setConnectionState("DISCONNECTED");
 					}}>
 					<Text style={styles.disconnectButtonText}>{t("disconnect")}</Text>

@@ -5,6 +5,8 @@ import MoonIcon from "@/assets/images/tabler_moon-filled.svg";
 import { Locales } from "@/constants/locales";
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme, useAppThemeToggle } from "@/context/ThemeContext";
+import { useBackendClient } from "@/hooks/useBackendClient";
+import { UserPlan, VpnUser } from "@/types/VpnUser";
 import { getOrCreateUserId } from "@/utility/userId";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,11 +25,14 @@ export default function SettingsScreen() {
 	const { t, i18n } = useTranslation();
 	const { settings, isLoading, updateSetting } = useSettings();
 
+	const { getUser } = useBackendClient();
+	const [user, setUser] = useState<VpnUser | null>(null);
+	const [subscriptionText, setSubscriptionText] = useState("Receiving...");
+
 	const [open, setOpen] = useState(false);
 	const [language, setLanguage] = useState(settings.localization);
 	const [languages, setLanguages] = useState(Locales);
 	const [userId, setUserId] = useState("");
-	const [tgId, setTgId] = useState("");
 
 	const theme = useAppTheme();
 	const { themeName, updateTheme } = useAppThemeToggle();
@@ -43,6 +48,23 @@ export default function SettingsScreen() {
 		});
 	}, [userId]);
 
+	useEffect(() => {
+		getUser().then((response) => {
+			setUser(response?.response);
+		});
+	}, [user]);
+
+	useEffect(() => {
+		if (user) {
+			switch (user.plan) {
+				case UserPlan.FREE:
+					setSubscriptionText(t("account_free"));
+				case UserPlan.BUSINESS:
+					setSubscriptionText(t("account_business"));
+			}
+		}
+	}, [user, language]);
+
 	if (isLoading) {
 		return <ActivityIndicator size="large" />;
 	}
@@ -54,7 +76,7 @@ export default function SettingsScreen() {
 			</View>
 			<View style={styles.accountContainer}>
 				<View style={styles.accountRow}>
-					<Text style={[styles.accountText]}>{t("account_uuid")}</Text>
+					<Text style={styles.accountText}>{t("account_uuid")}</Text>
 					<ScrollView horizontal={true}>
 						<Text selectable={true} style={styles.accountText}>
 							{userId}
@@ -62,8 +84,11 @@ export default function SettingsScreen() {
 					</ScrollView>
 				</View>
 				<View style={styles.accountRow}>
-					<Text style={styles.accountText}>{t("account_tgid")}</Text>
-					<Text style={styles.accountText}>{tgId}</Text>
+					<Text style={styles.accountText}>{t("account_subscription")}</Text>
+					<Text
+						style={(styles.accountText, { color: theme.colors.important3 })}>
+						{subscriptionText}
+					</Text>
 				</View>
 			</View>
 
@@ -337,7 +362,7 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		accountRow: {
 			flexDirection: "row",
-			columnGap: 48,
+			justifyContent: "space-between",
 			alignItems: "center",
 			backgroundColor: theme.colors.card,
 			borderRadius: 12,

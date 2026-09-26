@@ -16,6 +16,7 @@ const fallbackResources = {
 			cancel: "Cancel",
 			select: "Select",
 			connect: "Connect",
+			connecting: "Connecting...",
 			disconnect: "Disconnect",
 			save: "Save",
 
@@ -90,6 +91,10 @@ const fallbackResources = {
 			account_title: "Account",
 			account_uuid: "UUID",
 			account_tgid: "Telegram id",
+
+			account_subscription: "Subscription",
+			account_business: "Business",
+			account_free: "Economy",
 		},
 	},
 	ru: {
@@ -104,6 +109,7 @@ const fallbackResources = {
 			cancel: "Отмена",
 			select: "Выбрать",
 			connect: "Подключится",
+			connecting: "Подключение...",
 			disconnect: "Отключиться",
 			save: "Сохранить",
 
@@ -178,6 +184,10 @@ const fallbackResources = {
 			account_title: "Аккаунт",
 			account_uuid: "UUID",
 			account_tgid: "Telegram id",
+
+			account_subscription: "Подписка",
+			account_business: "Бизнес",
+			account_free: "Эконом",
 		},
 	},
 };

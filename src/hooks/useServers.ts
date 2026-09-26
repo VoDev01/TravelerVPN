@@ -14,7 +14,12 @@ export function useServers() {
 
 		try {
 			const localServers = await ServerRepository.getAll();
-			if (localServers && localServers.length > 0) {
+			if (
+				localServers &&
+				localServers.length > 0 &&
+				localServers.filter((server) => server.type === "traveler_vpn").length >
+					0
+			) {
 				return localServers;
 			} else {
 				const response = await getSubscription(tgId ?? 0n);
@@ -69,13 +74,8 @@ export function useServers() {
 		}
 	};
 
-	const refreshServers = async () => {
-		await ServerRepository.deleteManaged();
-	};
-
 	return {
 		fetchServers,
-		refreshServers,
 		deleteServer: ServerRepository.delete,
 		deleteUserServers: ServerRepository.deleteUserDefined,
 		addServer: ServerRepository.add,

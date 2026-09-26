@@ -28,6 +28,13 @@ interface ServerMapContextData {
 	setConnectingServerId: (id: number | undefined) => void;
 	selectedLocation: string | null;
 	setSelectedLocation: (location: string | null) => void;
+	/**
+	 * True while the globe's flight animation is playing. The index uses this to
+	 * delay *revealing* CONNECTED (and the duration timer) until the plane lands,
+	 * even though the tunnel itself connects in parallel the moment it is started.
+	 */
+	flightInProgress: boolean;
+	setFlightInProgress: (inProgress: boolean) => void;
 }
 
 const ServerMapContext = createContext<ServerMapContextData | undefined>(
@@ -47,6 +54,7 @@ export const ServerMapProvider = ({
 	const [selectedLocation, setSelectedLocationState] = useState<string | null>(
 		null,
 	);
+	const [flightInProgress, setFlightInProgressState] = useState(false);
 
 	const setFrame = useCallback((next: MapFrame | null) => {
 		setFrameState(next);
@@ -64,6 +72,10 @@ export const ServerMapProvider = ({
 		setSelectedLocationState(next);
 	}, []);
 
+	const setFlightInProgress = useCallback((next: boolean) => {
+		setFlightInProgressState(next);
+	}, []);
+
 	const value = useMemo(
 		() => ({
 			frame,
@@ -74,6 +86,8 @@ export const ServerMapProvider = ({
 			setConnectingServerId,
 			selectedLocation,
 			setSelectedLocation,
+			flightInProgress,
+			setFlightInProgress,
 		}),
 		[
 			frame,
@@ -84,6 +98,8 @@ export const ServerMapProvider = ({
 			setConnectingServerId,
 			selectedLocation,
 			setSelectedLocation,
+			flightInProgress,
+			setFlightInProgress,
 		],
 	);
 

@@ -4,28 +4,24 @@ import { useBackendClient } from "@/hooks/useBackendClient";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { useSettings } from "@/hooks/useSettings";
+import { countryToAlpha2 } from "country-to-iso";
 import { LibxrayConfigBuilder } from "expo-libxray";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-	Image,
 	StyleSheet,
 	Text,
 	TextInput,
 	TouchableOpacity,
 	View,
 } from "react-native";
-import CountryPicker, {
-	Country,
-	CountryCode,
-} from "react-native-country-picker-modal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 export default function AddServers() {
 	const [remark, setRemark] = useState("Default user server");
-	const [countryTag, setCountryTag] = useState<CountryCode>("AM");
-	const [country, setCountry] = useState<Country | null>(null);
+	// const [countryTag, setCountryTag] = useState<CountryCode>("AM");
+	// const [country, setCountry] = useState<Country | null>(null);
 	const [connectionLink, setConnectionLink] = useState("");
 	const [connectionJson, setConnectionJson] = useState("");
 
@@ -37,10 +33,10 @@ export default function AddServers() {
 	const { t } = useTranslation();
 	const { settings } = useSettings();
 
-	const onSelect = (selectedCountry: Country) => {
-		setCountryTag(selectedCountry.cca2);
-		setCountry(selectedCountry);
-	};
+	// const onSelect = (selectedCountry: Country) => {
+	// 	setCountryTag(selectedCountry.cca2);
+	// 	setCountry(selectedCountry);
+	// };
 
 	const [serverSubmit, setServerSubmit] = useState(false);
 	const { convertShareLinksToJson, testXray } = useLibxray();
@@ -50,26 +46,29 @@ export default function AddServers() {
 		let address: string = "";
 		convertShareLinksToJson(connectionLink)
 			.then((response) => {
-				const configObj = JSON.parse(response).data;
+				const responseObj = JSON.parse(response);
+				if (!responseObj.success) throw new Error(responseObj.error);
+				const configObj = responseObj.data;
 
-				const sendThrough = configObj.outbounds[0].sendThrough;
+				const tag = configObj.outbounds[0].tag;
 				const builder = new LibxrayConfigBuilder(configObj);
-				if (
-					sendThrough !== "0.0.0.0" ||
-					sendThrough !== "::" ||
-					sendThrough !== ""
-				) {
-					builder.setOutbounds([
-						{
-							sendThrough: "0.0.0.0",
-						},
-					]);
-					setRemark(sendThrough);
-				}
+				builder.setOutbounds([
+					{
+						sendThrough: "0.0.0.0",
+					},
+				]);
+				setRemark(tag);
 				address = configObj.outbounds[0].settings.address;
 				setConnectionJson(builder.build());
 			})
-			.catch((e) => console.error(e));
+			.catch((e) => {
+				Toast.show({
+					type: "error",
+					text1: "Invalid connection link",
+					text2: e.message,
+				});
+				console.error(e);
+			});
 
 		if (!serverSubmit) return;
 
@@ -89,8 +88,9 @@ export default function AddServers() {
 					.then((geo) => {
 						addServer({
 							remark,
-							countryTag,
+							countryTag: countryToAlpha2(geo?.response.country) ?? "US",
 							connectionLink,
+							address,
 							type: "user_defined",
 							city: geo?.response.city,
 							country: geo?.response.country,
@@ -121,7 +121,7 @@ export default function AddServers() {
 		<View style={styles.container}>
 			<Text style={styles.headerFont}>{t("add_servers_title")}</Text>
 			<View>
-				<Text style={styles.labelFont}>{t("add_servers_country_label")}</Text>
+				{/*<Text style={styles.labelFont}>{t("add_servers_country_label")}</Text>
 				<CountryPicker
 					theme={{
 						backgroundColor: theme.colors.primary,
@@ -165,7 +165,7 @@ export default function AddServers() {
 							</TouchableOpacity>
 						);
 					}}
-				/>
+				/>*/}
 			</View>
 			<View>
 				<Text style={styles.labelFont}>{t("add_servers_name_label")}</Text>
@@ -179,7 +179,7 @@ export default function AddServers() {
 				<Text style={styles.labelFont}>{t("add_servers_link_label")}</Text>
 				<TextInput
 					style={styles.input}
-					onChangeText={(text) => setConnectionLink(text)}
+					onChangeText={setConnectionLink}
 					value={connectionLink}
 				/>
 			</View>
@@ -200,14 +200,14 @@ export default function AddServers() {
 							text2: "Remark cant be empty or less than 3 characters",
 						});
 						return;
-					} else if (country === null) {
+					} /*else if (country === null) {
 						Toast.show({
 							type: "error",
 							text1: "Invalid server data",
 							text2: "Server country isnt selected",
 						});
 						return;
-					}
+					}*/
 					setServerSubmit(true);
 				}}>
 				<Text style={styles.saveButtonText}>{t("save")}</Text>

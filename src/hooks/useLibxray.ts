@@ -32,13 +32,7 @@ const config = (initialConfig: string) => {
 					sendThrough: "0.0.0.0",
 				},
 			],
-			[
-				"streamSettings.realitySettings.password",
-				"streamSettings.realitySettings.port",
-				"streamSettings.port",
-				"streamSettings.xhttpSettings.xmux",
-				"streamSettings.xhttpSettings.extra.xmux",
-			],
+			["streamSettings.realitySettings.port", "streamSettings.port"],
 		)
 		.setDns(
 			{ "domain-!ru": ["8.8.8.8", "1.1.1.1"] },
@@ -141,6 +135,12 @@ export const useLibxray = () => {
 
 	const convertShareLinksToJson = ExpoLibxray.convertShareLinksToXrayJson;
 
+	const buildPingConfig = async (shareLink: string): Promise<string> => {
+		const converted = await initialConfig(shareLink);
+		const data = JSON.parse(converted).data;
+		return typeof data === "string" ? data : JSON.stringify(data);
+	};
+
 	return {
 		runXray: startXray,
 		testXray,
@@ -148,5 +148,6 @@ export const useLibxray = () => {
 		getXrayState,
 		pingBatch,
 		convertShareLinksToJson,
+		buildPingConfig,
 	};
 };

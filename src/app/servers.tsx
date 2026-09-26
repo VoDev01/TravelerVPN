@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import CancelIcon from "@/assets/images/at-icons_cross.svg";
 import DeleteIcon from "@/assets/images/bi_trash-fill.svg";
 import EditIcon from "@/assets/images/bxs_pencil.svg";
@@ -16,7 +17,7 @@ import {
 	useRouter,
 } from "expo-router";
 import { useHeaderHeight } from "expo-router/build/react-navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	RefreshControl,
@@ -28,6 +29,22 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { ServerEntity } from "../../db/schema/servers";
+
+const METRICS_STORAGE_KEY = "travelervpn.serverMetrics.v1";
+
+type StoredMetric = { latencyMs: number; status: string };
+type MetricsCache = Record<string, StoredMetric>;
+
+const readMetricsCache = async (): Promise<MetricsCache> => {
+	try {
+		const raw = await AsyncStorage.getItem(METRICS_STORAGE_KEY);
+		return raw ? (JSON.parse(raw) as MetricsCache) : {};
+	} catch (e) {
+		console.error("Failed to read latency cache:", e);
+		return {};
+	}
+};
 
 interface MetricsServerSection {
 	title: string;
@@ -52,166 +69,219 @@ function ServersScreenContent({
 	setIsUserServersEmpty,
 }: ServersScreenContentProps) {
 	const [servers, setServers] = useState<MetricsServerSection[]>([]);
-	const { pingBatch, convertShareLinksToJson } = useLibxray();
-	//const [appServers, setAppServers] = useState<MetricsServerData[]>([]);
+	const { pingBatch, buildPingConfig, getXrayState } = useLibxray();
 
-	const [isRefreshing, setIsRefreshing] = useState(true);
+	// Full-screen loader covers only the first server fetch, never the pings.
+	const [booting, setBooting] = useState(true);
+	// Pull-to-refresh spinner; cleared when the background ping run replaces values.
+	const [refreshing, setRefreshing] = useState(false);
+	const loadingRef = useRef(false);
+	const pingRunIdRef = useRef(0);
+	const metricsCacheRef = useRef<MetricsCache>({});
 
-	const { fetchServers, refreshServers } = useServers();
+	const { fetchServers } = useServers();
 	const { city } = useLocalSearchParams<{ city?: string }>();
 
 	const theme = useAppTheme();
 	const styles = useMemo(() => createStyles(theme), [theme]);
 	const { t } = useTranslation();
 
-	//const { serversMetrics, wsClose } = useWebSocketClient();
+	const buildSections = (data: ServerEntity[]): MetricsServerSection[] => {
+		const withCachedMetrics = (server: ServerEntity): MetricsServerData => {
+			const cached = metricsCacheRef.current[String(server.id)];
+			return {
+				...server,
+				metrics: cached
+					? { latencyMs: BigInt(cached.latencyMs), status: cached.status }
+					: null,
+			};
+		};
 
-	const setServersSections = () => {
-		fetchServers().then((data) => {
-			if (data.length === servers.length) return;
+		const appServersData = data
+			.filter((server) => server.type !== "user_defined")
+			.map(withCachedMetrics);
 
-			const appServersData = data
-				.filter((server) => server.type !== "user_defined")
-				.map((server) => {
-					return { ...server, metrics: null };
-				});
+		const userServersData = data
+			.filter((server) => server.type === "user_defined")
+			.map(withCachedMetrics);
 
-			//setAppServers([...appServersData]);
+		const sections: MetricsServerSection[] = [];
 
-			const userServersData = data
-				.filter((server) => server.type === "user_defined")
-				.map((server) => {
-					return { ...server, metrics: null };
-				});
+		if (appServersData.length > 0) {
+			sections.push({
+				title: t("section_subscription_servers"),
+				data: appServersData,
+			});
+		}
 
-			const sections: MetricsServerSection[] = [];
-
-			if (appServersData.length > 0) {
-				sections.push({
-					title: t("section_subscription_servers"),
-					data: appServersData,
-				});
-			}
-
-			if (userServersData.length > 0) {
-				sections.push({
-					title: t("section_user_servers"),
-					data: userServersData,
-				});
-				setIsUserServersEmpty(false);
-			} else {
-				setIsUserServersEmpty(true);
-			}
-			setServers(sections);
-			setIsRefreshing(false);
-		});
+		if (userServersData.length > 0) {
+			sections.push({
+				title: t("section_user_servers"),
+				data: userServersData,
+			});
+		}
+		setIsUserServersEmpty(userServersData.length === 0);
+		return sections;
 	};
 
-	const updateServersMetrics = async () => {
-		try {
-			const flatServers = servers.flatMap((v) => v.data);
+	const persistCache = () => {
+		AsyncStorage.setItem(
+			METRICS_STORAGE_KEY,
+			JSON.stringify(metricsCacheRef.current),
+		).catch((e) => console.error("Failed to persist latency cache:", e));
+	};
 
-			const jsonConfigs: string[] = await Promise.all(
-				flatServers.map(async (server) => {
-					return JSON.parse(
-						await convertShareLinksToJson(server.connectionLink),
-					).data;
-				}),
-			);
+	// Update one server's metric live, mirror it into the persisted cache, and
+	// patch just its row without blocking the list on the rest of the probes.
+	const applyMetric = (id: number, metric: ServerMetrics | null) => {
+		if (metric) {
+			metricsCacheRef.current[String(id)] = {
+				latencyMs: Number(metric.latencyMs),
+				status: metric.status,
+			};
+			persistCache();
+		} else {
+			delete metricsCacheRef.current[String(id)];
+		}
+		setServers((prev) =>
+			prev.map((section) => ({
+				...section,
+				data: section.data.map((server) =>
+					server.id === id ? { ...server, metrics: metric } : server,
+				),
+			})),
+		);
+	};
 
-			const metricsResults: (ServerMetrics | null)[] = new Array(
-				flatServers.length,
-			).fill(null);
+	// Latency probe. Uses buildPingConfig (raw outbound, no `sendThrough`) because
+	// the tester runs as a plain process; up to 5 configs run concurrently per
+	// pingBatch call, and batches/configs are built sequentially so two calls
+	// never hit the shared LibXray Go core at once. Each finished batch patches
+	// the rows in place; a newer run (higher runId) aborts this one.
+	const pingMetrics = async (
+		flatServers: MetricsServerData[],
+		runId: number,
+	) => {
+		const BATCH_SIZE = 5;
 
-			const BATCH_SIZE = 5;
+		for (let i = 0; i < flatServers.length; i += BATCH_SIZE) {
+			if (pingRunIdRef.current !== runId) return;
+			const batchItems = flatServers.slice(i, i + BATCH_SIZE);
 
-			for (let i = 0; i < jsonConfigs.length; i += BATCH_SIZE) {
-				const batchItems = jsonConfigs.slice(i, i + BATCH_SIZE);
-				const configsPayload: PingBatchItem[] = batchItems.map((config) => {
-					const xrayJsonString =
-						typeof config === "string" ? config : JSON.stringify(config);
-
-					return {
-						xrayJson: xrayJsonString,
-						outboundTag: undefined,
-					};
-				});
-
-				const batchResponse = await pingBatch({
-					configs: configsPayload,
-					timeout: 5000,
-					url: "https://google.com",
-				});
-
-				for (let j = 0; j < batchItems.length; j++) {
-					if (batchResponse.results && batchResponse.results[j]) {
-						const responseItem = batchResponse.results[j];
-
-						if (responseItem && responseItem.success) {
-							metricsResults[i + j] = {
-								latencyMs: responseItem.delay ?? 1000n,
-								status: "success",
-							};
-						} else {
-							metricsResults[i + j] = {
-								latencyMs: responseItem.delay ?? 1000n,
-								status: "timeout",
-							};
-						}
-					}
+			const configsPayload: PingBatchItem[] = [];
+			for (const server of batchItems) {
+				try {
+					const xrayJson = await buildPingConfig(server.connectionLink);
+					configsPayload.push({ xrayJson, outboundTag: undefined });
+				} catch (e) {
+					console.error("Failed to build Xray config for ping:", e);
+					configsPayload.push({ xrayJson: "", outboundTag: undefined });
 				}
 			}
 
-			let globalIndex = 0;
-			const updatedSections: MetricsServerSection[] = servers.map(
-				(section) => ({
-					title: section.title,
-					data: section.data.map((server): MetricsServerData => {
-						const metrics = metricsResults[globalIndex];
-						globalIndex++;
+			let batchResponse: Awaited<ReturnType<typeof pingBatch>> | undefined;
+			try {
+				batchResponse = await pingBatch({
+					configs: configsPayload,
+					timeout: 5,
+					url: "https://cp.cloudflare.com/",
+					locationUrl: undefined,
+				});
+			} catch (e) {
+				console.error("pingBatch failed:", e);
+				continue;
+			}
+			if (pingRunIdRef.current !== runId) return;
 
-						return {
-							...server,
-							metrics: metrics,
-						};
-					}),
-				}),
-			);
+			for (let j = 0; j < batchItems.length; j++) {
+				const responseItem = batchResponse?.results?.[j];
+				if (!responseItem) continue;
+				applyMetric(batchItems[j].id, {
+					latencyMs: responseItem.delay ?? 1000n,
+					status: responseItem.success ? "success" : "timeout",
+				});
+			}
+		}
+	};
 
-			setServers(updatedSections);
-		} catch (error) {
-			console.error("Error pinging in batches:", error);
+	const startBackgroundPing = (
+		sections: MetricsServerSection[],
+		shouldClearRefreshing: boolean,
+	) => {
+		const flatServers = sections.flatMap((section) => section.data);
+		if (flatServers.length === 0) {
+			if (shouldClearRefreshing) setRefreshing(false);
+			return;
+		}
+		pingRunIdRef.current += 1;
+		const runId = pingRunIdRef.current;
+
+		(async () => {
+			// Skip probes while the tunnel is up: the shared Xray core cannot run
+			// its tester against a live VPN, so every probe fails.
+			let connected = false;
+			try {
+				const xrayState = JSON.parse(await getXrayState());
+				connected = xrayState.data.running;
+			} catch (e) {
+				console.error(e);
+			}
+
+			if (!connected) {
+				await pingMetrics(flatServers, runId);
+			}
+			if (shouldClearRefreshing && pingRunIdRef.current === runId) {
+				setRefreshing(false);
+			}
+		})();
+	};
+
+	// Fetch servers, paint them immediately from cached latencies, then re-probe
+	// in the background. "refresh" replaces the saved results before re-measuring;
+	// "mount" keeps the cache visible while the new probes land.
+	const loadServers = async (mode: "mount" | "refresh") => {
+		if (loadingRef.current) {
+			return;
+		}
+		loadingRef.current = true;
+		const isRefresh = mode === "refresh";
+		try {
+			if (isRefresh) {
+				pingRunIdRef.current += 1;
+				metricsCacheRef.current = {};
+				AsyncStorage.removeItem(METRICS_STORAGE_KEY).catch((e) =>
+					console.error("Failed to clear latency cache:", e),
+				);
+				setRefreshing(true);
+			} else {
+				metricsCacheRef.current = await readMetricsCache();
+			}
+
+			const data = await fetchServers();
+
+			const currentIds = new Set(data.map((server) => String(server.id)));
+			for (const cachedId of Object.keys(metricsCacheRef.current)) {
+				if (!currentIds.has(cachedId)) {
+					delete metricsCacheRef.current[cachedId];
+				}
+			}
+
+			const sections = buildSections(data);
+			setServers(sections);
+			startBackgroundPing(sections, isRefresh);
+		} catch (e) {
+			console.error("Error loading servers:", e);
+			if (isRefresh) setRefreshing(false);
+		} finally {
+			loadingRef.current = false;
+			setBooting(false);
 		}
 	};
 
 	useEffect(() => {
-		setServersSections();
-	}, [isRefreshing]);
-
-	// useEffect(() => {
-	// 	if (appServers.length > 0) serversMetrics(appServers);
-
-	// 	return () => {
-	// 		wsClose();
-	// 	};
-	// }, [appServers]);
-
-	useEffect(() => {
-		updateServersMetrics();
-	}, [isRefreshing]);
-
-	const onRefresh = () => {
-		setIsRefreshing(true);
-		refreshServers()
-			.then(() => {
-				setServersSections();
-			})
-			.catch((e) => {
-				console.error(e);
-			});
-
-		setIsRefreshing(false);
-	};
+		loadServers("mount");
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const renderServer = ({ item }: { item: MetricsServerData }) => {
 		const isDeleteSelected = selectedForDeletion.has(item.id);
@@ -244,8 +314,8 @@ function ServersScreenContent({
 							style={styles.serverInfoText}
 							numberOfLines={1}
 							ellipsizeMode="tail">
-							{item.remark.length > 25
-								? `${item.remark.slice(0, 25)}...`
+							{item.remark.length > 30
+								? `${item.remark.slice(0, 30)}...`
 								: item.remark}
 						</Text>
 						<Text style={[styles.serverInfoText, { flexShrink: 0 }]}>
@@ -265,7 +335,7 @@ function ServersScreenContent({
 		section: MetricsServerSection;
 	}) => <Text style={styles.serversCategoryTitle}>{title}</Text>;
 
-	if (isRefreshing) {
+	if (booting) {
 		return <Loader loaderText={t("loader_servers")} />;
 	}
 
@@ -295,8 +365,10 @@ function ServersScreenContent({
 			SectionSeparatorComponent={() => <View style={{ height: 24 }} />}
 			refreshControl={
 				<RefreshControl
-					refreshing={isRefreshing}
-					onRefresh={onRefresh}
+					refreshing={refreshing}
+					onRefresh={() => {
+						loadServers("refresh");
+					}}
 					tintColor={theme.colors.background}
 				/>
 			}
@@ -437,12 +509,21 @@ export default function ServersScreen() {
 					<TouchableOpacity
 						style={[styles.button, styles.submitButton]}
 						onPress={() => {
-							if (selectedServer) {
-								router.navigate({
-									pathname: "/",
-									params: { selectedServerId: `${selectedServer}` },
-								});
-							} else console.error("No server selected");
+							if (!selectedServer) {
+								console.error("No server selected");
+								return;
+							}
+							// Navigate to the status screen and tell it which server to bind.
+							// The index plays the flight animation first, then starts the VPN
+							// service when the plane lands (connectNonce forces a re-bind even
+							// when reconnecting to the same server).
+							router.navigate({
+								pathname: "/",
+								params: {
+									selectedServerId: `${selectedServer}`,
+									connectNonce: `${Date.now()}`,
+								},
+							} as Href);
 						}}>
 						<Text style={styles.buttonText}>{t("connect")}</Text>
 					</TouchableOpacity>

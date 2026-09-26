@@ -3325,6 +3325,11 @@ country-list@^2.4.1:
   resolved "https://registry.yarnpkg.com/country-list/-/country-list-2.4.1.tgz#468b60a91004533133352a629de07a3a9d459899"
   integrity sha512-KhVV/UfUV3dSNpsWIqHTQxLpYDKPKz1UwkRjadt+YbX2PRhyCEihEoS5XgB7J7AMXpkicvl+tRHvkNI5wbji/g==
 
+country-to-iso@^1.6.3:
+  version "1.6.3"
+  resolved "https://registry.yarnpkg.com/country-to-iso/-/country-to-iso-1.6.3.tgz#77ae8b5ead38ec1a961e6fbb5ccb10b1bffd2a1f"
+  integrity sha512-M7ZOcaJTwG2wWK9KF7fFjoNmA6+B9GmaiIXd9wFPdmlx3G9fKItaVN+a1NhOAKNAjPSVA2V02hPm5DPJ8lHPHg==
+
 cross-env@^7.0.3:
   version "7.0.3"
   resolved "https://registry.yarnpkg.com/cross-env/-/cross-env-7.0.3.tgz#865264b29677dc015ba8418918965dd232fc54cf"
@@ -3950,9 +3955,9 @@ expo-keep-awake@~57.0.2:
   integrity sha512-GqgH746wtJImmsbyHmCQoi7cOslKuWQBbJHXr53S35Bpf5UvxCAztvnitUEd7D0QvFN2rvkOhylbZpgZZfBLlQ==
 
 expo-libxray@^1.3.1:
-  version "1.3.15"
-  resolved "https://registry.yarnpkg.com/expo-libxray/-/expo-libxray-1.3.15.tgz#49775e8a8e7c586d1123fc9c8741d334b6caed3d"
-  integrity sha512-xdFN3THngZW2Heu/7lxm0Jm0MSG33axUq5m70nPHRkha3f2apubqnaFLgp0nW8YNkCgCbh4Wt+kNX6MthAkNdA==
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/expo-libxray/-/expo-libxray-1.4.0.tgz#b83243906e0554b21ccc22d9bc4b0f82b8bfb6a1"
+  integrity sha512-8MKBgS76qt0vZX7YtXx+OQuyBm29sgKyXt+wTAuMXpBwoid1VzMSRKD0413j/PZI4+UTcuz5oVjRHm8EW3vyyw==
   dependencies:
     lodash "^4.18.1"
 
@@ -4709,6 +4714,11 @@ inquirer@^14.0.2:
     "@inquirer/type" "^4.0.7"
     mute-stream "^3.0.0"
     run-async "^4.0.6"
+
+install@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/install/-/install-0.13.0.tgz#6af6e9da9dd0987de2ab420f78e60d9c17260776"
+  integrity sha512-zDml/jzr2PKU9I8J/xyZBQn8rPCAY//UOYNmR01XwNwyfhEWObo2SWfSl1+0tm1u6PhxLwDnfsT/6jB7OUxqFA==
 
 invariant@^2.2.4:
   version "2.2.4"
