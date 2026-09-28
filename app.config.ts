@@ -1,0 +1,94 @@
+import { ConfigContext, ExpoConfig } from "expo/config";
+
+export default ({ config }: ConfigContext): ExpoConfig => ({
+	...config,
+
+	name: "TravelerVPN",
+	slug: "TravelerVPN",
+	version: "1.0.0",
+	orientation: "portrait",
+	icon: "./assets/images/icon.png",
+	scheme: "travelervpn",
+	userInterfaceStyle: "automatic",
+
+	ios: {
+		icon: "./assets/expo.icon",
+	},
+
+	android: {
+		adaptiveIcon: {
+			backgroundColor: "#E6F4FE",
+			foregroundImage: "./assets/images/android-icon-foreground.png",
+			backgroundImage: "./assets/images/android-icon-background.png",
+			monochromeImage: "./assets/images/android-icon-monochrome.png",
+		},
+		predictiveBackGestureEnabled: false,
+		package: "com.traveler.vpn",
+		permissions: [
+			"INTERNET",
+			"FOREGROUND_SERVICE",
+			"FOREGROUND_SERVICE_SYSTEM_EXEMPTED",
+			"BIND_VPN_SERVICE",
+			"POST_NOTIFICATIONS",
+			"ACCESS_NETWORK_STATE",
+			"ACCESS_WIFI_STATE",
+		],
+		allowBackup: true,
+	},
+
+	web: {
+		output: "static",
+		favicon: "./assets/images/favicon.png",
+	},
+
+	extra: {
+		backendBaseUrl: "http://traveler-vpn.com",
+		backendWsUrl: "http://traveler-vpn.com/ws",
+		testUserGeoIp: null, // Change to null or delete on release!
+	},
+
+	plugins: [
+		"expo-router",
+		[
+			"expo-splash-screen",
+			{
+				backgroundColor: "#208AEF",
+				image: "./assets/images/splash-icon.png",
+				imageWidth: 76,
+			},
+		],
+		"expo-sqlite",
+		[
+			"expo-secure-store",
+			{
+				configureAndroidBackup: true,
+			},
+		],
+		[
+			"expo-navigation-bar",
+			{
+				enforceContrast: true,
+				hidden: false,
+			},
+		],
+		[
+			"expo-build-properties",
+			{
+				android: {
+					usesCleartextTraffic: true, // Change to false or delete on release!
+				},
+			},
+		],
+		"./plugins/withPlugin.ts",
+		"expo-font",
+		"expo-asset",
+		"expo-image",
+		"expo-localization",
+		"expo-web-browser",
+	],
+
+	experiments: {
+		typedRoutes: true,
+		reactCompiler: true,
+	},
+});

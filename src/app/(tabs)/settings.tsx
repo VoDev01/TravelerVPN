@@ -8,7 +8,8 @@ import { useAppTheme, useAppThemeToggle } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
 import { UserPlan, VpnUser } from "@/types/VpnUser";
 import { getOrCreateUserId } from "@/utility/userId";
-import { useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
@@ -26,7 +27,6 @@ export default function SettingsScreen() {
 	const { settings, isLoading, updateSetting } = useSettings();
 
 	const { getUser } = useBackendClient();
-	const [user, setUser] = useState<VpnUser | null>(null);
 	const [subscriptionText, setSubscriptionText] = useState("Receiving...");
 
 	const [open, setOpen] = useState(false);
@@ -48,22 +48,28 @@ export default function SettingsScreen() {
 		});
 	}, [userId]);
 
-	useEffect(() => {
-		getUser().then((response) => {
-			setUser(response?.response);
-		});
-	}, [user]);
-
-	useEffect(() => {
-		if (user) {
-			switch (user.plan) {
-				case UserPlan.FREE:
-					setSubscriptionText(t("account_free"));
-				case UserPlan.BUSINESS:
-					setSubscriptionText(t("account_business"));
-			}
-		}
-	}, [user, language]);
+	useFocusEffect(
+		useCallback(() => {
+			getUser().then((response) => {
+				if (response?.response) {
+					const user = response.response as VpnUser | undefined;
+					if (user) {
+						switch (user.plan) {
+							case UserPlan.FREE:
+								setSubscriptionText(t("account_free"));
+								break;
+							case UserPlan.BUSINESS:
+								setSubscriptionText(t("account_business"));
+								break;
+							default:
+								setSubscriptionText("Receiving...");
+								break;
+						}
+					}
+				}
+			});
+		}, []),
+	);
 
 	if (isLoading) {
 		return <ActivityIndicator size="large" />;
