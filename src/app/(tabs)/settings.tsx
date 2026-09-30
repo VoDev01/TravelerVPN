@@ -7,6 +7,7 @@ import { CustomTheme } from "@/constants/theme";
 import { useAppTheme, useAppThemeToggle } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
 import { UserPlan, VpnUser } from "@/types/VpnUser";
+import { getStoredTelegramId, setStoredTelegramId } from "@/utility/telegramId";
 import { getOrCreateUserId } from "@/utility/userId";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,10 +17,12 @@ import {
 	ScrollView,
 	StyleSheet,
 	Text,
+	TextInput,
 	TouchableOpacity,
 	View,
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
+import Toast from "react-native-toast-message";
 import { useSettings } from "../../hooks/useSettings";
 
 export default function SettingsScreen() {
@@ -33,6 +36,7 @@ export default function SettingsScreen() {
 	const [language, setLanguage] = useState(settings.localization);
 	const [languages, setLanguages] = useState(Locales);
 	const [userId, setUserId] = useState("");
+	const [tgId, setTgId] = useState("");
 
 	const theme = useAppTheme();
 	const { themeName, updateTheme } = useAppThemeToggle();
@@ -70,6 +74,16 @@ export default function SettingsScreen() {
 			});
 		}, []),
 	);
+	useEffect(() => {
+		getStoredTelegramId().then(setTgId);
+	}, []);
+
+	const saveTelegramId = async () => {
+		const cleaned = tgId.replace(/[^0-9]/g, "").trim();
+		setTgId(cleaned);
+		await setStoredTelegramId(cleaned);
+		Toast.show({ type: "success", text1: t("telegram_id_saved") });
+	};
 
 	if (isLoading) {
 		return <ActivityIndicator size="large" />;
@@ -95,6 +109,8 @@ export default function SettingsScreen() {
 						style={(styles.accountText, { color: theme.colors.important3 })}>
 						{subscriptionText}
 					</Text>
+					<Text style={styles.accountText}>{t("account_tgid")}</Text>
+					<Text style={styles.accountText}>{tgId || "—"}</Text>
 				</View>
 			</View>
 
@@ -159,6 +175,31 @@ export default function SettingsScreen() {
 							updateTheme("theme", themeName === "dark" ? "light" : "dark");
 						}}>
 						{themeName === "dark" ? <SunIcon /> : <MoonIcon />}
+					</TouchableOpacity>
+				</View>
+			</View>
+
+			<View style={styles.settingGroup}>
+				<Text style={styles.groupLabel}>{t("telegram_id_title")}</Text>
+				<View style={styles.telegramContainer}>
+					<Text style={styles.telegramHint}>{t("telegram_id_hint")}</Text>
+					<TextInput
+						value={tgId}
+						onChangeText={(value) => setTgId(value.replace(/[^0-9]/g, ""))}
+						placeholder={t("telegram_id_placeholder")}
+						placeholderTextColor={theme.colors.tretiary}
+						keyboardType="number-pad"
+						inputMode="numeric"
+						maxLength={20}
+						autoCorrect={false}
+						cursorColor={theme.colors.text}
+						style={styles.telegramInput}
+					/>
+					<TouchableOpacity
+						activeOpacity={0.8}
+						style={styles.telegramSaveButton}
+						onPress={saveTelegramId}>
+						<Text style={styles.telegramSaveText}>{t("save")}</Text>
 					</TouchableOpacity>
 				</View>
 			</View>
@@ -353,6 +394,38 @@ const createStyles = (theme: CustomTheme) =>
 			alignItems: "center",
 			columnGap: 12,
 			justifyContent: "flex-end",
+		},
+		telegramContainer: {
+			backgroundColor: theme.colors.card,
+			borderRadius: 12,
+			padding: 14,
+			rowGap: 12,
+			width: "100%",
+		},
+		telegramHint: {
+			color: theme.colors.secondary,
+			fontSize: 14,
+			lineHeight: 20,
+		},
+		telegramInput: {
+			backgroundColor: theme.colors.primary,
+			borderRadius: 12,
+			color: theme.colors.text,
+			fontSize: 16,
+			paddingHorizontal: 14,
+			paddingVertical: 12,
+			width: "100%",
+		},
+		telegramSaveButton: {
+			alignItems: "center",
+			backgroundColor: theme.colors.important2,
+			borderRadius: 12,
+			paddingVertical: 14,
+		},
+		telegramSaveText: {
+			color: theme.colors.background,
+			fontFamily: "Nunito-Bold",
+			fontSize: 16,
 		},
 		settingThemeButton: {
 			justifyContent: "center",

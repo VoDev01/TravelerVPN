@@ -114,6 +114,15 @@ const fallbackResources = {
 			account_subscription: "Subscription",
 			account_business: "Business",
 			account_free: "Economy",
+			telegram_id_title: "Telegram ID",
+			telegram_id_hint:
+				"We need your Telegram ID to process payments and send subscription updates.",
+			telegram_id_placeholder: "Enter your Telegram ID",
+			telegram_id_saved: "Telegram ID saved",
+
+			toast_telegram_required_text1: "Telegram ID required",
+			toast_telegram_required_text2:
+				"Please add your Telegram ID in Settings before making a payment.",
 		},
 	},
 	ru: {
@@ -226,6 +235,15 @@ const fallbackResources = {
 			account_subscription: "Подписка",
 			account_business: "Бизнес",
 			account_free: "Эконом",
+			telegram_id_title: "Telegram ID",
+			telegram_id_hint:
+				"Нужен ваш Telegram ID для обработки платежей и уведомлений о подписке.",
+			telegram_id_placeholder: "Введите ваш Telegram ID",
+			telegram_id_saved: "Telegram ID сохранён",
+
+			toast_telegram_required_text1: "Необходим Telegram ID",
+			toast_telegram_required_text2:
+				"Добавьте ваш Telegram ID в настройках перед оплатой.",
 		},
 	},
 };

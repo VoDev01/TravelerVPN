@@ -157,6 +157,26 @@ function LayoutContent() {
 							padding: 24,
 							backgroundColor: theme.colors.primary,
 						},
+						headerLeft: () => {
+							const router = useRouter();
+
+							return (
+								<TouchableOpacity
+									style={{
+										marginTop: 8,
+										marginLeft: 8,
+									}}
+									onPress={() => {
+										router.back();
+									}}>
+									{themeName === "dark" ? (
+										<LeftArrowWhite width={48} height={48} />
+									) : (
+										<LeftArrow width={48} height={48} />
+									)}
+								</TouchableOpacity>
+							);
+						},
 					}}
 				/>
 				<Stack.Screen
@@ -167,6 +187,26 @@ function LayoutContent() {
 						contentStyle: {
 							padding: 24,
 							backgroundColor: theme.colors.primary,
+						},
+						headerLeft: () => {
+							const router = useRouter();
+
+							return (
+								<TouchableOpacity
+									style={{
+										marginTop: 8,
+										marginLeft: 8,
+									}}
+									onPress={() => {
+										router.back();
+									}}>
+									{themeName === "dark" ? (
+										<LeftArrowWhite width={48} height={48} />
+									) : (
+										<LeftArrow width={48} height={48} />
+									)}
+								</TouchableOpacity>
+							);
 						},
 					}}
 				/>

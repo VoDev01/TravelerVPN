@@ -6,6 +6,7 @@ import {
 	syncSubscriptionExpiryReminder,
 } from "@/hooks/useSubscriptionExpiryReminder";
 import { UserPlan, VpnUser } from "@/types/VpnUser";
+import { getStoredTelegramId } from "@/utility/telegramId";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -54,6 +55,18 @@ export default function SubscriptionScreen() {
 	const [codeExpiresAt, setCodeExpiresAt] = useState<number | null>(null);
 	const [renewal, setRenewal] = useState<RenewalInvoice | null>(null);
 	const [now, setNow] = useState(Date.now());
+	const openPaymentGateway = async () => {
+		const telegramId = await getStoredTelegramId();
+
+		if (!telegramId) {
+			Toast.show({
+				type: "info",
+				text1: t("toast_telegram_required_text1"),
+				text2: t("toast_telegram_required_text2"),
+			});
+			return;
+		}
+	};
 
 	const codeRef = useRef<string | null>(null);
 	useEffect(() => {

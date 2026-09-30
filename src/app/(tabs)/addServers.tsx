@@ -43,8 +43,10 @@ export default function AddServers() {
 	const { getGeoFromIp } = useBackendClient();
 
 	useEffect(() => {
+		if (connectionLink === "") return;
+
 		let address: string = "";
-		convertShareLinksToJson(connectionLink)
+		convertShareLinksToJson(connectionLink.trim())
 			.then((response) => {
 				const responseObj = JSON.parse(response);
 				if (!responseObj.success) throw new Error(responseObj.error);

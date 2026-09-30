@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import CancelIcon from "@/assets/images/at-icons_cross.svg";
 import DeleteIcon from "@/assets/images/bi_trash-fill.svg";
 import EditIcon from "@/assets/images/bxs_pencil.svg";
@@ -9,6 +8,7 @@ import { ServerMetrics } from "@/hooks/useBackendClient";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { MetricsServerData } from "@/hooks/useWebSocketClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PingBatchItem } from "expo-libxray";
 import {
 	Href,
@@ -416,25 +416,10 @@ export default function ServersScreen() {
 	};
 
 	const editSelectedServer = async () => {
-		if (!selectedServer) {
-			Toast.show({
-				type: "info",
-				text2: "Select a user-defined server to update",
-			});
-			return;
-		}
-		try {
-			const server = await getServerById(selectedServer);
-			if (server?.type !== "user_defined") {
-				return;
-			}
-			router.push({
-				pathname: "/server-edit",
-				params: { serverId: `${selectedServer}` },
-			} as unknown as Href);
-		} catch (error) {
-			console.error(error);
-		}
+		Toast.show({
+			type: "info",
+			text2: "Select a user-defined server to update",
+		});
 	};
 
 	const handleDeleteAction = async () => {
@@ -485,7 +470,22 @@ export default function ServersScreen() {
 					);
 			},
 		});
-	}, [navigation, selectedServer, deleteMode]);
+	}, [navigation, selectedServer, deleteMode, isUserServersEmpty]);
+
+	useEffect(() => {
+		if (!selectedServer) return;
+		getServerById(selectedServer)
+			.then((server) => {
+				if (server?.type !== "user_defined") {
+					return;
+				}
+				router.push({
+					pathname: "/server-edit",
+					params: { serverId: `${selectedServer}` },
+				} as unknown as Href);
+			})
+			.catch((e) => console.error(e));
+	}, [selectedServer]);
 
 	return (
 		<View style={[styles.container, { paddingTop, paddingBottom }]}>
@@ -541,6 +541,7 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		actions: {
 			flexDirection: "row",
+			alignSelf: "center",
 			alignItems: "center",
 			justifyContent: "center",
 			columnGap: 8,
