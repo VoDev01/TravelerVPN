@@ -13,6 +13,7 @@ import {
 	useAppThemeToggle,
 } from "@/context/ThemeContext";
 import { useSettings } from "@/hooks/useSettings";
+import { useSubscriptionExpiryReminder } from "@/hooks/useSubscriptionExpiryReminder";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { useFonts } from "expo-font";
 import { useLocales } from "expo-localization";
@@ -57,6 +58,8 @@ function LayoutContent() {
 		"Geist-Regular": require("@/assets/fonts/Geist-Regular.ttf"),
 		"Geist-Bold": require("@/assets/fonts/Geist-Bold.ttf"),
 	});
+
+	useSubscriptionExpiryReminder();
 
 	const insets = useSafeAreaInsets();
 

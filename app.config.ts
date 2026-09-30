@@ -12,10 +12,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 	userInterfaceStyle: "automatic",
 
 	ios: {
+		...config.ios,
 		icon: "./assets/expo.icon",
+		bundleIdentifier: "com.traveler.vpn",
 	},
 
 	android: {
+		...config.android,
 		adaptiveIcon: {
 			backgroundColor: "#E6F4FE",
 			foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -42,8 +45,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 	},
 
 	extra: {
-		backendBaseUrl: "http://traveler-vpn.com",
-		backendWsUrl: "http://traveler-vpn.com/ws",
+		backendBaseUrl: "http://10.0.2.2",
+		backendWsUrl: "http://10.0.2.2/ws",
+		subscriptionExpiryReminderDays: 2, // Days before expiry to fire the local reminder.
 		testUserGeoIp: null, // Change to null or delete on release!
 	},
 
@@ -85,6 +89,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 		"expo-image",
 		"expo-localization",
 		"expo-web-browser",
+		"expo-notifications",
 	],
 
 	experiments: {

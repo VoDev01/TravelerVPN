@@ -33,21 +33,44 @@ export const useBackendClient = () => {
 		}
 	};
 
-	const renewSubscription = async (
-		planId: string,
-		period: string,
-		paymentReference: string,
-	) => {
+	const createBillingCode = async () => {
 		try {
 			const userId = await getOrCreateUserId();
-			return (await makeRequest("/api/user/subscription/renew", "POST", {
+			return (await makeRequest("/api/billing/code", "POST", {
 				userId,
-				planId,
-				period,
-				paymentReference,
 			})) as VpnResponse;
 		} catch (error) {
-			console.error("Error renewing subscription:", error);
+			console.error("Error creating billing code:", error);
+		}
+	};
+
+	const getBillingStatus = async (code: string) => {
+		try {
+			return (await makeRequest("/api/billing/status", "GET", {
+				code,
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error fetching billing status:", error);
+		}
+	};
+
+	const getBillingPlans = async () => {
+		try {
+			return (await makeRequest("/api/billing/plans", "GET")) as VpnResponse;
+		} catch (error) {
+			console.error("Error fetching billing plans:", error);
+		}
+	};
+
+	const getRenewalInvoice = async (existingCode?: string) => {
+		try {
+			const userId = await getOrCreateUserId();
+			return (await makeRequest("/api/billing/renewal", "POST", {
+				userId,
+				...(existingCode ? { existingCode } : {}),
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error fetching renewal invoice:", error);
 		}
 	};
 
@@ -177,14 +200,17 @@ export const useBackendClient = () => {
 
 	return {
 		attachInbounds,
+		createBillingCode,
 		detachInbounds,
+		getBillingPlans,
+		getBillingStatus,
+		getRenewalInvoice,
 		getSubscription,
 		getUser,
 		getUserTraffic,
 		getGeoFromIp,
 		getUserGeoFromIp,
 		metrics,
-		renewSubscription,
 		testNode,
 		updateUser,
 		ws,

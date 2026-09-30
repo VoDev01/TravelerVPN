@@ -48,7 +48,6 @@ const fallbackResources = {
 			every: "Every",
 			minutes: "minutes",
 
-			subscription_business: "Business class",
 			subscription_title: "Choose your plan",
 			subscription_subtitle:
 				"Keep every location unlocked and renew your access in seconds.",
@@ -63,12 +62,32 @@ const fallbackResources = {
 			subscription_benefits:
 				"All servers - Unlimited traffic - Priority access",
 			continue_to_payment: "Continue to payment",
-			payment_placeholder_title: "Payment gateway placeholder",
-			payment_placeholder_description:
-				"This sheet marks where the app will redirect to a payment provider. Use the simulation button to test the successful-payment callback.",
-			simulate_payment_success: "Simulate successful payment",
-			subscription_renewed: "Subscription renewed",
-			subscription_renewal_failed: "Unable to renew subscription",
+			subscription_current_plan: "Current plan",
+			subscription_expires_on: "Expires on",
+			subscription_web_hint:
+				"Subscriptions are purchased on our website. Generate a code below, open the payment page and pay with crypto.",
+			subscription_get_code: "Get activation code",
+			subscription_get_code_renew: "Renew subscription",
+			subscription_code_label: "Your activation code",
+			subscription_code_expires_in: "Expires in",
+			subscription_code_expired: "Code expired",
+			subscription_code_copied: "Code copied",
+			subscription_code_error: "Unable to create a code. Please try again.",
+			subscription_copy_code: "Copy",
+			subscription_open_payment: "Open payment page",
+			subscription_open_error: "Unable to open the browser",
+			subscription_waiting_payment: "Waiting for payment confirmation...",
+			subscription_activated: "Subscription activated",
+			subscription_get_new_code: "Get a new code",
+			subscription_renewal_ready: "Renewal invoice ready",
+			subscription_renewal_hint:
+				"Complete the payment in your browser to extend your subscription.",
+			subscription_renew_now: "Renew now",
+			subscription_invoice_valid_for: "Invoice valid for",
+			subscription_refresh: "Refresh",
+			subscription_expiring_title: "Subscription expiring soon",
+			subscription_expiring_body:
+				"Your TravelerVPN subscription expires in {{days}} days. Renew to keep access.",
 
 			add_servers_title: "Add your own servers",
 			add_servers_country_label: "Choose country",
@@ -141,7 +160,6 @@ const fallbackResources = {
 			every: "Каждые",
 			minutes: "минут",
 
-			subscription_business: "Бизнесс класс",
 			subscription_title: "Выберите тариф",
 			subscription_subtitle:
 				"Откройте все локации и продлите доступ за несколько секунд.",
@@ -156,12 +174,32 @@ const fallbackResources = {
 			subscription_benefits:
 				"Все серверы - Безлимитный трафик - Приоритетный доступ",
 			continue_to_payment: "Перейти к оплате",
-			payment_placeholder_title: "Заглушка платежного шлюза",
-			payment_placeholder_description:
-				"Здесь приложение будет перенаправлять пользователя в платежный сервис. Кнопка симуляции проверяет успешное завершение оплаты.",
-			simulate_payment_success: "Симулировать успешную оплату",
-			subscription_renewed: "Подписка продлена",
-			subscription_renewal_failed: "Не удалось продлить подписку",
+			subscription_current_plan: "Текущий тариф",
+			subscription_expires_on: "Действует до",
+			subscription_web_hint:
+				"Подписка оформляется на нашем сайте. Создайте код ниже, откройте страницу оплаты и оплатите криптовалютой.",
+			subscription_get_code: "Получить код активации",
+			subscription_get_code_renew: "Продлить подписку",
+			subscription_code_label: "Ваш код активации",
+			subscription_code_expires_in: "Истекает через",
+			subscription_code_expired: "Код истёк",
+			subscription_code_copied: "Код скопирован",
+			subscription_code_error: "Не удалось создать код. Попробуйте ещё раз.",
+			subscription_copy_code: "Копировать",
+			subscription_open_payment: "Открыть страницу оплаты",
+			subscription_open_error: "Не удалось открыть браузер",
+			subscription_waiting_payment: "Ожидаем подтверждение оплаты...",
+			subscription_activated: "Подписка активирована",
+			subscription_get_new_code: "Получить новый код",
+			subscription_renewal_ready: "Счёт на продление готов",
+			subscription_renewal_hint:
+				"Завершите оплату в браузере, чтобы продлить подписку.",
+			subscription_renew_now: "Продлить сейчас",
+			subscription_invoice_valid_for: "Счёт действителен ещё",
+			subscription_refresh: "Обновить",
+			subscription_expiring_title: "Подписка скоро истекает",
+			subscription_expiring_body:
+				"Ваша подписка TravelerVPN истекает через {{days}} дн. Продлите её, чтобы сохранить доступ.",
 
 			add_servers_title: "Добавить сервер",
 			add_servers_country_label: "Выберите страну",
