@@ -1,7 +1,7 @@
 import { UserPlan, VpnUser } from "@/types/VpnUser";
 import Constants from "expo-constants";
-import { useRouter } from "expo-router";
 import * as Notifications from "expo-notifications";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import { AppState, Platform } from "react-native";
 import i18n from "../../i18n";
@@ -102,7 +102,12 @@ export const useSubscriptionExpiryReminder = () => {
 	const refresh = useCallback(async () => {
 		try {
 			const response = await clientRef.current.getUser();
-			const user = response?.response as VpnUser | undefined;
+			const user =
+				response?.status === "success" &&
+				response.response &&
+				typeof response.response === "object"
+					? (response.response as VpnUser)
+					: undefined;
 
 			if (user && user.plan === UserPlan.BUSINESS && user.expiryAt) {
 				await syncSubscriptionExpiryReminder(Number(user.expiryAt));
@@ -127,26 +132,32 @@ export const useSubscriptionExpiryReminder = () => {
 	}, [refresh]);
 
 	useEffect(() => {
-		const handleResponse = (
-			response: Notifications.NotificationResponse | null,
-		) => {
-			const data = response?.notification.request.content.data as
-				| { type?: string }
-				| undefined;
-			if (data?.type === REMINDER_TYPE) {
-				router.push("/subscription");
-			}
-		};
+		let subscription: Notifications.EventSubscription | null = null;
+		try {
+			const handleResponse = (
+				response: Notifications.NotificationResponse | null,
+			) => {
+				const data = response?.notification.request.content.data as
+					| { type?: string }
+					| undefined;
+				if (data?.type === REMINDER_TYPE) {
+					router.push("/subscription");
+				}
+			};
 
-		// Cold start: the app may have been launched by tapping the notification.
-		Notifications.getLastNotificationResponseAsync()
-			.then(handleResponse)
-			.catch(() => undefined);
+			// Cold start: the app may have been launched by tapping the notification.
+			const notification = Notifications.getLastNotificationResponse();
 
-		const subscription =
-			Notifications.addNotificationResponseReceivedListener(handleResponse);
+			if (!notification)
+				throw new Error("Notification response cant be received");
 
-		return () => subscription.remove();
+			subscription =
+				Notifications.addNotificationResponseReceivedListener(handleResponse);
+		} catch (e) {
+			console.error(e);
+		} finally {
+			return () => subscription?.remove();
+		}
 	}, [router]);
 
 	return { refresh };

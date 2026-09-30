@@ -55,7 +55,8 @@ export default function SubscriptionScreen() {
 	const [codeExpiresAt, setCodeExpiresAt] = useState<number | null>(null);
 	const [renewal, setRenewal] = useState<RenewalInvoice | null>(null);
 	const [now, setNow] = useState(Date.now());
-	const openPaymentGateway = async () => {
+
+	const requireTelegramId = async (): Promise<boolean> => {
 		const telegramId = await getStoredTelegramId();
 
 		if (!telegramId) {
@@ -64,8 +65,9 @@ export default function SubscriptionScreen() {
 				text1: t("toast_telegram_required_text1"),
 				text2: t("toast_telegram_required_text2"),
 			});
-			return;
+			return false;
 		}
+		return true;
 	};
 
 	const codeRef = useRef<string | null>(null);
@@ -125,7 +127,12 @@ export default function SubscriptionScreen() {
 	const refreshUser = useCallback(async () => {
 		try {
 			const response = await clientRef.current.getUser();
-			const currentUser = (response?.response as VpnUser) ?? null;
+			const currentUser =
+				response?.status === "success" &&
+				response.response &&
+				typeof response.response === "object"
+					? (response.response as VpnUser)
+					: null;
 			setUser(currentUser);
 			if (currentUser) {
 				await loadRenewal(currentUser);
@@ -147,6 +154,7 @@ export default function SubscriptionScreen() {
 	}, []);
 
 	const handleGetCode = async () => {
+		if (!(await requireTelegramId())) return;
 		setIsCreatingCode(true);
 		try {
 			const response = await clientRef.current.createBillingCode();
@@ -192,12 +200,18 @@ export default function SubscriptionScreen() {
 
 	const handleOpenRenewal = async () => {
 		if (!renewal) return;
+		if (!(await requireTelegramId())) return;
 		await openUrl(renewal.payUrl);
 	};
 
 	const onActivated = useCallback(async () => {
 		const response = await clientRef.current.getUser();
-		const refreshed = response?.response as VpnUser | undefined;
+		const refreshed =
+			response?.status === "success" &&
+			response.response &&
+			typeof response.response === "object"
+				? (response.response as VpnUser)
+				: undefined;
 		setUser(refreshed ?? null);
 		if (refreshed?.expiryAt) {
 			await syncSubscriptionExpiryReminder(Number(refreshed.expiryAt));
@@ -212,7 +226,10 @@ export default function SubscriptionScreen() {
 	const checkCode = useCallback(async (candidate: string) => {
 		try {
 			const response = await clientRef.current.getBillingStatus(candidate);
-			return response?.response?.status === "APPLIED";
+			return (
+				response?.status === "success" &&
+				response?.response?.status === "APPLIED"
+			);
 		} catch {
 			return false;
 		}

@@ -22,6 +22,7 @@ const makeRequest = async (
 	method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
 	data?: BodyParams,
 	headers?: HeadersInit,
+	jsonBody?: unknown,
 ) => {
 	try {
 		const urlEncoded = new URLSearchParams(data);
@@ -31,13 +32,21 @@ const makeRequest = async (
 			? `${baseUrl}${url}${url.includes("?") ? "&" : "?"}${queryString}`
 			: `${baseUrl}${url}`;
 
+		const hasJsonBody = jsonBody !== undefined;
+
 		const options = {
 			method,
 			headers: {
 				Accept: "application/json",
+				...(hasJsonBody ? { "Content-Type": "application/json" } : {}),
 				...headers,
 			},
-			body: method === "GET" ? undefined : urlEncoded,
+			body:
+				method === "GET"
+					? undefined
+					: hasJsonBody
+						? JSON.stringify(jsonBody)
+						: urlEncoded,
 		};
 
 		const response = await fetch(getUrl, options);

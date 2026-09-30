@@ -8,12 +8,14 @@ import { useAppTheme, useAppThemeToggle } from "@/context/ThemeContext";
 import { useBackendClient } from "@/hooks/useBackendClient";
 import { UserPlan, VpnUser } from "@/types/VpnUser";
 import { getStoredTelegramId, setStoredTelegramId } from "@/utility/telegramId";
-import { getOrCreateUserId } from "@/utility/userId";
+import { getOrCreateUserId, setUserId } from "@/utility/userId";
+import * as Clipboard from "expo-clipboard";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
+	Linking,
 	ScrollView,
 	StyleSheet,
 	Text,
@@ -25,18 +27,31 @@ import DropDownPicker from "react-native-dropdown-picker";
 import Toast from "react-native-toast-message";
 import { useSettings } from "../../hooks/useSettings";
 
+const RECOVERY_POLL_MS = 3000;
+const RECOVERY_MAX_POLLS = 40;
+
 export default function SettingsScreen() {
 	const { t, i18n } = useTranslation();
 	const { settings, isLoading, updateSetting } = useSettings();
 
-	const { getUser } = useBackendClient();
-	const [subscriptionText, setSubscriptionText] = useState("Receiving...");
+	const {
+		getUser,
+		saveTelegramId: saveTelegramIdRemote,
+		startRecovery,
+		verifyRecovery,
+	} = useBackendClient();
+
+	const [subscriptionText, setSubscriptionText] = useState<string | null>(null);
+	const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
 
 	const [open, setOpen] = useState(false);
 	const [language, setLanguage] = useState(settings.localization);
 	const [languages, setLanguages] = useState(Locales);
-	const [userId, setUserId] = useState("");
+	const [userId, setUserIdState] = useState("");
 	const [tgId, setTgId] = useState("");
+	const [isRecovering, setIsRecovering] = useState(false);
+
+	const recoveryPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	const theme = useAppTheme();
 	const { themeName, updateTheme } = useAppThemeToggle();
@@ -47,42 +62,126 @@ export default function SettingsScreen() {
 	}, [settings.localization]);
 
 	useEffect(() => {
-		getOrCreateUserId().then((id) => {
-			setUserId(id);
-		});
-	}, [userId]);
+		getOrCreateUserId().then(setUserIdState);
+		getStoredTelegramId().then(setTgId);
+	}, []);
+
+	const stopRecoveryPolling = useCallback(() => {
+		if (recoveryPollRef.current) {
+			clearInterval(recoveryPollRef.current);
+			recoveryPollRef.current = null;
+		}
+	}, []);
+
+	useEffect(() => stopRecoveryPolling, [stopRecoveryPolling]);
+
+	const loadSubscription = useCallback(async () => {
+		try {
+			const response = await getUser();
+			if (
+				response?.status === "success" &&
+				response.response &&
+				typeof response.response === "object"
+			) {
+				const user = response.response as VpnUser;
+				setSubscriptionText(
+					user.plan === UserPlan.BUSINESS
+						? t("account_business")
+						: t("account_free"),
+				);
+			} else {
+				setSubscriptionText(t("account_free"));
+			}
+		} catch {
+			setSubscriptionText(t("account_free"));
+		} finally {
+			setIsLoadingSubscription(false);
+		}
+	}, [t]);
 
 	useFocusEffect(
 		useCallback(() => {
-			getUser().then((response) => {
-				if (response?.response) {
-					const user = response.response as VpnUser | undefined;
-					if (user) {
-						switch (user.plan) {
-							case UserPlan.FREE:
-								setSubscriptionText(t("account_free"));
-								break;
-							case UserPlan.BUSINESS:
-								setSubscriptionText(t("account_business"));
-								break;
-							default:
-								setSubscriptionText("Receiving...");
-								break;
-						}
-					}
-				}
-			});
-		}, []),
+			loadSubscription();
+		}, [loadSubscription]),
 	);
-	useEffect(() => {
-		getStoredTelegramId().then(setTgId);
-	}, []);
+
+	const copyUserId = async () => {
+		if (!userId) return;
+		await Clipboard.setStringAsync(userId);
+		Toast.show({ type: "success", text1: t("account_copied") });
+	};
 
 	const saveTelegramId = async () => {
 		const cleaned = tgId.replace(/[^0-9]/g, "").trim();
 		setTgId(cleaned);
 		await setStoredTelegramId(cleaned);
+
+		if (cleaned) {
+			const result = await saveTelegramIdRemote(cleaned);
+			if (result?.status !== "success") {
+				Toast.show({
+					type: "error",
+					text1: result?.message ?? t("telegram_id_save_failed"),
+				});
+				return;
+			}
+		}
+
 		Toast.show({ type: "success", text1: t("telegram_id_saved") });
+	};
+
+	const handleRestore = async () => {
+		const cleaned = tgId.replace(/[^0-9]/g, "").trim();
+		if (!cleaned) {
+			Toast.show({ type: "info", text1: t("recovery_tg_required") });
+			return;
+		}
+
+		setIsRecovering(true);
+		stopRecoveryPolling();
+
+		try {
+			const start = await startRecovery(cleaned);
+			const token = start?.response?.token as string | undefined;
+			const deepLink = start?.response?.deepLink as string | undefined;
+
+			if (start?.status !== "success" || !token) {
+				throw new Error(start?.message ?? t("recovery_start_failed"));
+			}
+
+			if (deepLink) {
+				await Linking.openURL(deepLink).catch(() => undefined);
+			}
+
+			let polls = 0;
+			recoveryPollRef.current = setInterval(async () => {
+				polls += 1;
+				const verify = await verifyRecovery(token);
+
+				if (verify?.status === "success" && verify.response?.userId) {
+					stopRecoveryPolling();
+					await setUserId(String(verify.response.userId));
+					setUserIdState(String(verify.response.userId));
+					setIsRecovering(false);
+					Toast.show({ type: "success", text1: t("recovery_success") });
+					await loadSubscription();
+					return;
+				}
+
+				if (polls >= RECOVERY_MAX_POLLS) {
+					stopRecoveryPolling();
+					setIsRecovering(false);
+					Toast.show({ type: "error", text1: t("recovery_timeout") });
+				}
+			}, RECOVERY_POLL_MS);
+		} catch (error) {
+			setIsRecovering(false);
+			Toast.show({
+				type: "error",
+				text1:
+					error instanceof Error ? error.message : t("recovery_start_failed"),
+			});
+		}
 	};
 
 	if (isLoading) {
@@ -96,21 +195,40 @@ export default function SettingsScreen() {
 			</View>
 			<View style={styles.accountContainer}>
 				<View style={styles.accountRow}>
-					<Text style={styles.accountText}>{t("account_uuid")}</Text>
-					<ScrollView horizontal={true}>
-						<Text selectable={true} style={styles.accountText}>
-							{userId}
+					<Text style={styles.accountLabel}>{t("account_uuid")}</Text>
+					<View style={styles.accountValueRow}>
+						<Text
+							style={styles.accountValue}
+							numberOfLines={1}
+							ellipsizeMode="middle">
+							{userId || "—"}
 						</Text>
-					</ScrollView>
+						<TouchableOpacity
+							activeOpacity={0.7}
+							style={styles.copyButton}
+							onPress={copyUserId}>
+							<Text style={styles.copyButtonText}>{t("account_copy")}</Text>
+						</TouchableOpacity>
+					</View>
 				</View>
+
 				<View style={styles.accountRow}>
-					<Text style={styles.accountText}>{t("account_subscription")}</Text>
-					<Text
-						style={(styles.accountText, { color: theme.colors.important3 })}>
-						{subscriptionText}
+					<Text style={styles.accountLabel}>
+						{t("account_subscription")}
 					</Text>
-					<Text style={styles.accountText}>{t("account_tgid")}</Text>
-					<Text style={styles.accountText}>{tgId || "—"}</Text>
+					{isLoadingSubscription ? (
+						<ActivityIndicator color={theme.colors.important2} />
+					) : (
+						<Text
+							style={[styles.accountValue, { color: theme.colors.important3 }]}>
+							{subscriptionText ?? t("account_free")}
+						</Text>
+					)}
+				</View>
+
+				<View style={styles.accountRow}>
+					<Text style={styles.accountLabel}>{t("account_tgid")}</Text>
+					<Text style={styles.accountValue}>{tgId || "—"}</Text>
 				</View>
 			</View>
 
@@ -201,109 +319,23 @@ export default function SettingsScreen() {
 						onPress={saveTelegramId}>
 						<Text style={styles.telegramSaveText}>{t("save")}</Text>
 					</TouchableOpacity>
+
+					<Text style={styles.telegramHint}>{t("recovery_hint")}</Text>
+					<TouchableOpacity
+						activeOpacity={0.8}
+						style={styles.restoreButton}
+						disabled={isRecovering}
+						onPress={handleRestore}>
+						{isRecovering ? (
+							<ActivityIndicator color={theme.colors.important2} />
+						) : (
+							<Text style={styles.restoreButtonText}>
+								{t("recovery_button")}
+							</Text>
+						)}
+					</TouchableOpacity>
 				</View>
 			</View>
-
-			{/*<View style={styles.settingGroup}>
-					<Text style={styles.groupLabel}>{t("section_routing")}</Text>
-					<View style={styles.settingItem}>
-						<View style={styles.settingLabelRow}>
-							<Text style={styles.settingLabel}>{t("split_tunneling")}</Text>
-							<SplitTunneling height={32} width={32} onPress={() => {}} />
-						</View>
-					</View>
-				</View>
-
-				<View style={styles.settingGroup}>
-					<Text style={styles.groupLabel}>{t("section_notifications")}</Text>
-					<View style={styles.settingItem}>
-						<View style={styles.settingLabelRow}>
-							<Text style={styles.settingLabel}>{t("connection_alerts")}</Text>
-						</View>
-						<Switch
-							value={settings.connectionAlerts}
-							onValueChange={(value) =>
-								updateSetting("connectionAlerts", value)
-							}
-							trackColor={{ false: theme.colors.background, true: "#666" }}
-							thumbColor={
-								settings.connectionAlerts ? theme.colors.important2 : "#999"
-							}
-						/>
-					</View>
-					<View style={styles.settingItem}>
-						<View style={styles.settingLabelRow}>
-							<Text style={styles.settingLabel}>{t("data_usage_alerts")}</Text>
-						</View>
-						<Switch
-							value={settings.dataUsageAlerts}
-							onValueChange={(value) => updateSetting("dataUsageAlerts", value)}
-							trackColor={{ false: theme.colors.background, true: "#666" }}
-							thumbColor={
-								settings.dataUsageAlerts ? theme.colors.important2 : "#999"
-							}
-						/>
-					</View>
-					<View style={styles.settingItem}>
-						<View style={styles.settingLabelRow}>
-							<Text style={styles.settingLabel}>{t("security_warnings")}</Text>
-						</View>
-						<Switch
-							value={settings.securityWarnings}
-							onValueChange={(value) =>
-								updateSetting("securityWarnings", value)
-							}
-							trackColor={{ false: theme.colors.background, true: "#666" }}
-							thumbColor={
-								settings.securityWarnings ? theme.colors.important2 : "#999"
-							}
-						/>
-					</View>
-				</View>
-
-				<View style={styles.settingGroup}>
-					<Text style={styles.groupLabel}>{t("section_privacy")}</Text>
-					<View style={styles.settingItem}>
-						<View style={styles.settingLabelRow}>
-							<Text style={styles.settingLabel}>{t("kill_switch")}</Text>
-						</View>
-						<Switch
-							value={settings.killSwitch}
-							onValueChange={(value) => updateSetting("killSwitch", value)}
-							trackColor={{ false: theme.colors.background, true: "#666" }}
-							thumbColor={
-								settings.killSwitch ? theme.colors.important2 : "#999"
-							}
-						/>
-					</View>
-					<View style={styles.settingItem}>
-						<View style={styles.settingLabelRow}>
-							<Text style={styles.settingLabelFrag}>{t("server_hopping")}</Text>
-							<View style={styles.settingContainerInput}>
-								<TextInput
-									value={
-										settings.serverHoppingInterval === null
-											? "0"
-											: settings.serverHoppingInterval.toString()
-									}
-									onChangeText={(value) => {
-										const cleaned = value.replace(/[^0-9]/g, "");
-										const parsed =
-											cleaned === "" ? 0 : Number.parseInt(cleaned, 10);
-
-										updateSetting("serverHoppingInterval", parsed);
-									}}
-									style={styles.settingInput}
-									inputMode="numeric"
-									cursorColor={theme.colors.text}
-									maxLength={4}
-									selectionColor={theme.colors.primary}
-								/>
-								<Text style={styles.settingLabelFrag}>{t("minutes")}</Text>
-							</View>
-						</View>
-					</View>
-				</View>*/}
 		</ScrollView>
 	);
 }
@@ -314,27 +346,11 @@ const createStyles = (theme: CustomTheme) =>
 			flex: 1,
 			rowGap: 12,
 		},
-		settingsContainer: {
-			flex: 1,
-			rowGap: 12,
-		},
 		header: {
 			flexDirection: "row",
 			alignItems: "center",
 			marginTop: 30,
 			marginBottom: 30,
-		},
-		backButton: {
-			width: 40,
-			height: 40,
-			justifyContent: "center",
-			alignItems: "center",
-			marginRight: 12,
-		},
-		backButtonText: {
-			color: theme.colors.text,
-			fontSize: 24,
-			fontFamily: "Nunito-Regular",
 		},
 		headerTitle: {
 			color: theme.colors.text,
@@ -360,40 +376,18 @@ const createStyles = (theme: CustomTheme) =>
 			marginBottom: 12,
 			width: "100%",
 		},
-		settingLabelRow: {
-			flexDirection: "row",
-			alignItems: "center",
-			justifyContent: "space-between",
-			flex: 1,
-		},
 		settingLabel: {
 			color: theme.colors.secondary,
 			fontSize: 16,
 			flex: 1,
 		},
-		settingLabelFrag: {
-			color: theme.colors.secondary,
-			fontSize: 16,
-		},
-		languageSelect: {
-			backgroundColor: "#969696",
-			width: 48,
-			height: 48,
-			borderRadius: 12,
-		},
-		settingInput: {
-			backgroundColor: theme.colors.primary,
-			borderRadius: 12,
-			width: 60,
-			color: theme.colors.text,
-			paddingHorizontal: 12,
-		},
-		settingContainerInput: {
-			flexDirection: "row",
-			flex: 1,
+		settingThemeButton: {
+			justifyContent: "center",
 			alignItems: "center",
-			columnGap: 12,
-			justifyContent: "flex-end",
+			borderRadius: 12,
+			height: 48,
+			width: 48,
+			backgroundColor: theme.colors.text,
 		},
 		telegramContainer: {
 			backgroundColor: theme.colors.card,
@@ -427,16 +421,19 @@ const createStyles = (theme: CustomTheme) =>
 			fontFamily: "Nunito-Bold",
 			fontSize: 16,
 		},
-		settingThemeButton: {
-			justifyContent: "center",
+		restoreButton: {
 			alignItems: "center",
+			borderColor: theme.colors.important2,
+			borderWidth: 1,
 			borderRadius: 12,
-			height: 48,
-			width: 48,
-			backgroundColor: theme.colors.text,
+			paddingVertical: 14,
+		},
+		restoreButtonText: {
+			color: theme.colors.important2,
+			fontFamily: "Nunito-Bold",
+			fontSize: 16,
 		},
 		accountContainer: {
-			flex: 1,
 			rowGap: 12,
 		},
 		accountRow: {
@@ -450,9 +447,35 @@ const createStyles = (theme: CustomTheme) =>
 			marginBottom: 12,
 			width: "100%",
 		},
-		accountText: {
-			color: theme.colors.text,
-			padding: 8,
+		accountLabel: {
+			color: theme.colors.secondary,
 			fontSize: 16,
+			flexShrink: 0,
+			marginRight: 12,
+		},
+		accountValueRow: {
+			flexDirection: "row",
+			alignItems: "center",
+			justifyContent: "flex-end",
+			flex: 1,
+			minWidth: 0,
+			columnGap: 10,
+		},
+		accountValue: {
+			color: theme.colors.text,
+			fontSize: 15,
+			flexShrink: 1,
+			textAlign: "right",
+		},
+		copyButton: {
+			backgroundColor: theme.colors.important2,
+			borderRadius: 10,
+			paddingHorizontal: 12,
+			paddingVertical: 8,
+		},
+		copyButtonText: {
+			color: theme.colors.background,
+			fontSize: 13,
+			fontWeight: "700",
 		},
 	});

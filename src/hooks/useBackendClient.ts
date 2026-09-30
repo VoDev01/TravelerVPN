@@ -46,8 +46,10 @@ export const useBackendClient = () => {
 
 	const getBillingStatus = async (code: string) => {
 		try {
+			const userId = await getOrCreateUserId();
 			return (await makeRequest("/api/billing/status", "GET", {
 				code,
+				userId,
 			})) as VpnResponse;
 		} catch (error) {
 			console.error("Error fetching billing status:", error);
@@ -56,7 +58,10 @@ export const useBackendClient = () => {
 
 	const getBillingPlans = async () => {
 		try {
-			return (await makeRequest("/api/billing/plans", "GET")) as VpnResponse;
+			const userId = await getOrCreateUserId();
+			return (await makeRequest("/api/billing/plans", "GET", {
+				userId,
+			})) as VpnResponse;
 		} catch (error) {
 			console.error("Error fetching billing plans:", error);
 		}
@@ -74,6 +79,38 @@ export const useBackendClient = () => {
 		}
 	};
 
+	const saveTelegramId = async (tgId: string) => {
+		try {
+			const userId = await getOrCreateUserId();
+			return (await makeRequest("/api/user/telegram", "POST", {
+				userId,
+				tgId,
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error saving Telegram id:", error);
+		}
+	};
+
+	const startRecovery = async (tgId: string) => {
+		try {
+			return (await makeRequest("/api/user/recover/start", "POST", {
+				tgId,
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error starting recovery:", error);
+		}
+	};
+
+	const verifyRecovery = async (token: string) => {
+		try {
+			return (await makeRequest("/api/user/recover/verify", "GET", {
+				token,
+			})) as VpnResponse;
+		} catch (error) {
+			console.error("Error verifying recovery:", error);
+		}
+	};
+
 	const getUser = async () => {
 		try {
 			const userId = await getOrCreateUserId();
@@ -86,10 +123,13 @@ export const useBackendClient = () => {
 	const updateUser = async (client: any) => {
 		try {
 			const userId = await getOrCreateUserId();
-			return (await makeRequest(`/api/user/update`, "PUT", {
-				userId,
+			return (await makeRequest(
+				`/api/user/update`,
+				"PUT",
+				{ userId },
+				undefined,
 				client,
-			})) as VpnResponse;
+			)) as VpnResponse;
 		} catch (error) {
 			console.error("Error updating user:", error);
 		}
@@ -211,8 +251,11 @@ export const useBackendClient = () => {
 		getGeoFromIp,
 		getUserGeoFromIp,
 		metrics,
+		saveTelegramId,
+		startRecovery,
 		testNode,
 		updateUser,
+		verifyRecovery,
 		ws,
 		wsLogout,
 	};

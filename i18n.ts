@@ -114,11 +114,22 @@ const fallbackResources = {
 			account_subscription: "Subscription",
 			account_business: "Business",
 			account_free: "Economy",
+			account_copy: "Copy",
+			account_copied: "Copied",
 			telegram_id_title: "Telegram ID",
 			telegram_id_hint:
 				"We need your Telegram ID to process payments and send subscription updates.",
 			telegram_id_placeholder: "Enter your Telegram ID",
 			telegram_id_saved: "Telegram ID saved",
+			telegram_id_save_failed: "Unable to save Telegram ID",
+			recovery_hint:
+				"Lost your device or reinstalled the app? Restore your subscription with your Telegram ID.",
+			recovery_button: "Restore subscription",
+			recovery_tg_required: "Enter your Telegram ID first",
+			recovery_start_failed: "Unable to start recovery",
+			recovery_success: "Subscription restored",
+			recovery_timeout:
+				"Recovery not confirmed. Open the Telegram link and try again.",
 
 			toast_telegram_required_text1: "Telegram ID required",
 			toast_telegram_required_text2:
@@ -235,11 +246,22 @@ const fallbackResources = {
 			account_subscription: "Подписка",
 			account_business: "Бизнес",
 			account_free: "Эконом",
+			account_copy: "Копировать",
+			account_copied: "Скопировано",
 			telegram_id_title: "Telegram ID",
 			telegram_id_hint:
 				"Нужен ваш Telegram ID для обработки платежей и уведомлений о подписке.",
 			telegram_id_placeholder: "Введите ваш Telegram ID",
 			telegram_id_saved: "Telegram ID сохранён",
+			telegram_id_save_failed: "Не удалось сохранить Telegram ID",
+			recovery_hint:
+				"Потеряли устройство или переустановили приложение? Восстановите подписку по вашему Telegram ID.",
+			recovery_button: "Восстановить подписку",
+			recovery_tg_required: "Сначала введите ваш Telegram ID",
+			recovery_start_failed: "Не удалось начать восстановление",
+			recovery_success: "Подписка восстановлена",
+			recovery_timeout:
+				"Восстановление не подтверждено. Откройте ссылку в Telegram и попробуйте снова.",
 
 			toast_telegram_required_text1: "Необходим Telegram ID",
 			toast_telegram_required_text2:

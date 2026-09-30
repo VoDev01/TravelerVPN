@@ -3,12 +3,13 @@ import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 import { ServerRepository } from "../../db/repository/ServerRepository";
 import { ServerEntity } from "../../db/schema/servers";
+import { getStoredTelegramId } from "../utility/telegramId";
 import { useBackendClient } from "./useBackendClient";
 import { useLibxray } from "./useLibxray";
 
 export function useServers() {
 	const { t } = useTranslation();
-	const fetchServers = async (tgId?: bigint): Promise<ServerEntity[]> => {
+	const fetchServers = async (): Promise<ServerEntity[]> => {
 		const { getSubscription, getGeoFromIp } = useBackendClient();
 		const { convertShareLinksToJson } = useLibxray();
 
@@ -22,7 +23,10 @@ export function useServers() {
 			) {
 				return localServers;
 			} else {
-				const response = await getSubscription(tgId ?? 0n);
+				const storedTgId = await getStoredTelegramId();
+				const response = await getSubscription(
+					storedTgId ? BigInt(storedTgId) : 0n,
+				);
 
 				if (response && response.status === "denied") {
 					Toast.show({

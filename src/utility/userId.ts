@@ -55,3 +55,25 @@ export const getOrCreateUserId = (): Promise<string> => {
 	}
 	return userIdPromise;
 };
+
+/**
+ * Adopts an existing user id (e.g. after recovering a subscription on a new device)
+ * and persists it to both stores.
+ */
+export const setUserId = async (id: string): Promise<void> => {
+	const trimmed = id.trim();
+	if (!trimmed) {
+		return;
+	}
+
+	userIdPromise = Promise.resolve(trimmed);
+
+	await Promise.all([
+		SecureStore.setItemAsync(USER_ID_KEY, trimmed).catch((error) =>
+			console.warn("Unable to persist USER_ID to SecureStore", error),
+		),
+		AsyncStorage.setItem(USER_ID_BACKUP_KEY, trimmed).catch((error) =>
+			console.warn("Unable to persist USER_ID backup", error),
+		),
+	]);
+};
