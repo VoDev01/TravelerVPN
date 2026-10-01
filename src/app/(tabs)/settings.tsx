@@ -213,9 +213,7 @@ export default function SettingsScreen() {
 				</View>
 
 				<View style={styles.accountRow}>
-					<Text style={styles.accountLabel}>
-						{t("account_subscription")}
-					</Text>
+					<Text style={styles.accountLabel}>{t("account_subscription")}</Text>
 					{isLoadingSubscription ? (
 						<ActivityIndicator color={theme.colors.important2} />
 					) : (
@@ -228,7 +226,9 @@ export default function SettingsScreen() {
 
 				<View style={styles.accountRow}>
 					<Text style={styles.accountLabel}>{t("account_tgid")}</Text>
-					<Text style={styles.accountValue}>{tgId || "—"}</Text>
+					<Text style={styles.accountValue}>
+						{tgId.replaceAll("\d", "*") || "—"}
+					</Text>
 				</View>
 			</View>
 

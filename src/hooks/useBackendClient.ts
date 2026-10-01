@@ -197,17 +197,21 @@ export const useBackendClient = () => {
 	const getUserGeoFromIp = async () => {
 		try {
 			const userId = await getOrCreateUserId();
+
+			const testIpRaw = Constants.expoConfig?.extra?.testUserGeoIp;
+			const testIpString =
+				testIpRaw && typeof testIpRaw === "object"
+					? JSON.stringify(testIpRaw)
+					: String(testIpRaw);
+
 			return (await makeRequest(
 				"/api/ip/user/geo",
 				"POST",
-				{
-					userId,
-				},
+				undefined,
 				Constants.expoConfig?.extra?.testUserGeoIp
-					? {
-							"X-Forwarded-For": Constants.expoConfig?.extra?.testUserGeoIp,
-						}
+					? { "X-Forwarded-For": testIpString }
 					: undefined,
+				{ userId },
 			)) as VpnResponse;
 		} catch (error) {
 			console.error("Error attaching inbounds:", error);

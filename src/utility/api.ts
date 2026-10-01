@@ -21,7 +21,7 @@ const makeRequest = async (
 	url: string,
 	method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
 	data?: BodyParams,
-	headers?: HeadersInit,
+	reqHeaders?: HeadersInit,
 	jsonBody?: unknown,
 ) => {
 	try {
@@ -39,7 +39,7 @@ const makeRequest = async (
 			headers: {
 				Accept: "application/json",
 				...(hasJsonBody ? { "Content-Type": "application/json" } : {}),
-				...headers,
+				...reqHeaders,
 			},
 			body:
 				method === "GET"

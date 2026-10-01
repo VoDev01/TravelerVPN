@@ -7,24 +7,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 	slug: "TravelerVPN",
 	version: "1.0.0",
 	orientation: "portrait",
-	icon: "./assets/images/icon.png",
+	icon: "./assets/images/app_icon.png",
 	scheme: "travelervpn",
 	userInterfaceStyle: "automatic",
 
 	ios: {
 		...config.ios,
-		icon: "./assets/expo.icon",
 		bundleIdentifier: "com.traveler.vpn",
 	},
 
 	android: {
 		...config.android,
-		adaptiveIcon: {
-			backgroundColor: "#E6F4FE",
-			foregroundImage: "./assets/images/android-icon-foreground.png",
-			backgroundImage: "./assets/images/android-icon-background.png",
-			monochromeImage: "./assets/images/android-icon-monochrome.png",
-		},
 		predictiveBackGestureEnabled: false,
 		package: "com.traveler.vpn",
 		permissions: [
@@ -37,30 +30,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 			"ACCESS_WIFI_STATE",
 		],
 		allowBackup: true,
-	},
-
-	web: {
-		output: "static",
-		favicon: "./assets/images/favicon.png",
+		adaptiveIcon: {
+			foregroundImage: "./assets/images/adaptive-icon.png",
+			backgroundColor: "#000000",
+		},
 	},
 
 	extra: {
-		backendBaseUrl: "http://10.0.2.2",
-		backendWsUrl: "http://10.0.2.2/ws",
+		backendBaseUrl: "https://traveler-vpn.com",
+		backendWsUrl: "https://traveler-vpn.com/ws",
 		subscriptionExpiryReminderDays: 2, // Days before expiry to fire the local reminder.
 		testUserGeoIp: null, // Change to null or delete on release!
 	},
 
 	plugins: [
 		"expo-router",
-		[
-			"expo-splash-screen",
-			{
-				backgroundColor: "#208AEF",
-				image: "./assets/images/splash-icon.png",
-				imageWidth: 76,
-			},
-		],
 		"expo-sqlite",
 		[
 			"expo-secure-store",
@@ -79,7 +63,22 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 			"expo-build-properties",
 			{
 				android: {
-					usesCleartextTraffic: true, // Change to false or delete on release!
+					usesCleartextTraffic: false, // Change to false or delete on release!
+					enableMinifyInReleaseBuilds: true,
+					enableShrinkResourcesInReleaseBuilds: true,
+				},
+			},
+		],
+		[
+			"expo-splash-screen",
+			{
+				backgroundColor: "#000000",
+				image: "./assets/images/app_icon.png",
+				imageWidth: 160,
+				resizeMode: "contain",
+				dark: {
+					image: "./assets/images/app_icon.png",
+					backgroundColor: "#000000",
 				},
 			},
 		],

@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 
-const TELEGRAM_ID_KEY = "@telegram_id";
+const TELEGRAM_ID_KEY = "TELEGRAM_ID";
 
 export const getStoredTelegramId = async (): Promise<string> => {
 	try {

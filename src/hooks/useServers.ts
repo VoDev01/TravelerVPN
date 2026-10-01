@@ -35,8 +35,12 @@ export function useServers() {
 						text2: t("toast_subscription_denied_text2"),
 					});
 					return [];
-				} else if (!response || !response.response) {
-					throw new Error("Server didn't return any response.");
+				} else if (
+					!response ||
+					!response.response ||
+					response.status === "error"
+				) {
+					throw new Error(`Server error: ${JSON.stringify(response)}`);
 				}
 
 				await Promise.all(

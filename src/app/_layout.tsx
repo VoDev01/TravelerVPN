@@ -1,10 +1,8 @@
 import LeftArrowWhite from "@/assets/images/line-md_arrow-left-white.svg";
 import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
-import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { CanvasErrorBoundary } from "@/components/CanvasErrorBoundary";
 import { toastConfig } from "@/components/config/toastConfig";
 import InteractiveServerMap from "@/components/InteractiveServerMap";
-import { Loader } from "@/components/Loader";
 import { ModelProvider } from "@/context/ModelContext";
 import { ServerMapProvider } from "@/context/ServerMapContext";
 import {
@@ -43,9 +41,9 @@ LogBox.ignoreLogs([
 	"SafeAreaView has been deprecated and will be removed in a future release",
 ]);
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
-function LayoutContent() {
+function LayoutContent({ dbLoaded }: { dbLoaded: boolean }) {
 	const theme = useAppTheme();
 	const { t } = useTranslation();
 	const { updateSetting } = useSettings();
@@ -64,15 +62,15 @@ function LayoutContent() {
 	const insets = useSafeAreaInsets();
 
 	useEffect(() => {
-		if (loaded || error) {
-			SplashScreen.hideAsync();
-		}
-	}, [loaded, error]);
-
-	useEffect(() => {
 		if (systemLocale)
 			updateSetting("localization", systemLocale !== "ru" ? "en" : "ru");
 	}, [systemLocale]);
+
+	useEffect(() => {
+		if (error || (loaded && dbLoaded)) {
+			SplashScreen.hide();
+		}
+	}, [error, loaded, dbLoaded]);
 
 	const bottomInset = insets?.bottom ?? 0;
 
@@ -94,8 +92,8 @@ function LayoutContent() {
 		);
 	}
 
-	if (!loaded) {
-		return <Loader loaderText={t("loader_fonts")} />;
+	if (!loaded || !dbLoaded) {
+		return null;
 	}
 
 	return (
@@ -273,22 +271,13 @@ export default function Layout() {
 		);
 	}
 
-	if (!success) {
-		return (
-			<ThemeProvider>
-				<LoadingDatabase />
-			</ThemeProvider>
-		);
-	}
-
 	return (
 		<ThemeProvider>
 			<ModelProvider>
 				<SafeAreaProvider initialMetrics={initialWindowMetrics}>
 					<ServerMapProvider>
-						<LayoutContent />
+						<LayoutContent dbLoaded={success} />
 					</ServerMapProvider>
-					<AnimatedSplashOverlay />
 					<ThemedSystemUI />
 				</SafeAreaProvider>
 			</ModelProvider>

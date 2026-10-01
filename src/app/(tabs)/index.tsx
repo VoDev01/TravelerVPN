@@ -390,6 +390,7 @@ const createStyles = (theme: CustomTheme) =>
 		},
 		chooseServerButtonText: {
 			color: theme.colors.important2,
+			textAlign: "center",
 			fontSize: 20,
 			fontFamily: "Nunito-Regular",
 		},
