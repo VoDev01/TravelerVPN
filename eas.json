@@ -7,7 +7,7 @@
 			"developmentClient": true,
 			"distribution": "internal"
 		},
-		"profile": {
+		"mvp": {
 			"developmentClient": false,
 			"distribution": "internal",
 			"android": {
@@ -17,7 +17,7 @@
 				"simulator": false
 			}
 		},
-		"production": {
+		"store": {
 			"developmentClient": false,
 			"android": {
 				"buildType": "app-bundle"
