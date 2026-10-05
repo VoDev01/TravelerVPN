@@ -1,7 +1,6 @@
 import CancelIcon from "@/assets/images/at-icons_cross.svg";
 import DeleteIcon from "@/assets/images/bi_trash-fill.svg";
 import EditIcon from "@/assets/images/bxs_pencil.svg";
-import VpnConsentModal from "@/components/ConsentScreen";
 import { Loader } from "@/components/Loader";
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
@@ -410,15 +409,27 @@ export default function ServersScreen() {
 	const paddingTop = headerHeight + 16;
 	const paddingBottom = insets.bottom;
 
+	/* Uncomment consent when submitting to the store
+
+	const { settings, updateSetting } = useSettings();
 	const [hasConsent, setHasConsent] = useState(false);
 	const [isModalVisible, setIsModalVisible] = useState(false);
 
 	const handleAcceptConsent = () => {
-		setHasConsent(true);
+		updateSetting("consent", true);
 		setIsModalVisible(false);
 
 		executeConnection();
 	};
+
+	const handleConnectPress = () => {
+		if (!hasConsent) {
+			setIsModalVisible(true);
+			return;
+		}
+
+		executeConnection();
+	};*/
 
 	const executeConnection = () => {
 		if (!selectedServer) {
@@ -436,15 +447,6 @@ export default function ServersScreen() {
 				connectNonce: `${Date.now()}`,
 			},
 		} as Href);
-	};
-
-	const handleConnectPress = () => {
-		if (!hasConsent) {
-			setIsModalVisible(true);
-			return;
-		}
-
-		executeConnection();
 	};
 
 	const toggleDeleteSelection = (id: number) => {
@@ -532,6 +534,10 @@ export default function ServersScreen() {
 			.catch((e) => console.error(e));
 	}, [selectedServer]);
 
+	/*useEffect(() => {
+		setHasConsent(settings.consent);
+	}, [settings]);*/
+
 	return (
 		<View style={[styles.container, { paddingTop, paddingBottom }]}>
 			<Text style={styles.title}>
@@ -549,17 +555,17 @@ export default function ServersScreen() {
 				setIsUserServersEmpty={setIsUserServersEmpty}
 			/>
 
-			<VpnConsentModal
+			{/*<VpnConsentModal
 				isVisible={isModalVisible}
 				onAccept={handleAcceptConsent}
 				onClose={() => setIsModalVisible(false)}
-			/>
+			/>*/}
 
 			{!deleteMode && (
 				<View style={styles.buttonContainer}>
 					<TouchableOpacity
 						style={[styles.button, styles.submitButton]}
-						onPress={handleConnectPress}>
+						onPress={/* handleConnectPress */ executeConnection}>
 						<Text style={styles.buttonText}>{t("connect")}</Text>
 					</TouchableOpacity>
 				</View>
