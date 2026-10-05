@@ -15,12 +15,7 @@ export function useServers() {
 
 		try {
 			const localServers = await ServerRepository.getAll();
-			if (
-				localServers &&
-				localServers.length > 0 &&
-				localServers.filter((server) => server.type === "traveler_vpn").length >
-					0
-			) {
+			if (localServers && localServers.length > 0) {
 				return localServers;
 			} else {
 				const storedTgId = await getStoredTelegramId();
@@ -29,11 +24,7 @@ export function useServers() {
 				);
 
 				if (response && response.status === "denied") {
-					Toast.show({
-						type: "info",
-						text1: t("toast_subscription_denied_text1"),
-						text2: t("toast_subscription_denied_text2"),
-					});
+					// Handle denied subscription response
 					return [];
 				} else if (
 					!response ||

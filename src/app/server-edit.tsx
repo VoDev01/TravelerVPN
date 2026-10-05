@@ -6,6 +6,7 @@ import { useServers } from "@/hooks/useServers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/build/react-navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	ActivityIndicator,
 	StyleSheet,
@@ -22,6 +23,7 @@ import Toast from "react-native-toast-message";
 import { ServerEntity } from "../../db/schema/servers";
 
 export default function EditServerScreen() {
+	const { t } = useTranslation();
 	const { serverId } = useLocalSearchParams<{ serverId: string }>();
 	const router = useRouter();
 	const { getServerById, updateServer } = useServers();
@@ -68,7 +70,7 @@ export default function EditServerScreen() {
 		if (!remark.trim() || !connectionLink.trim()) {
 			Toast.show({
 				type: "error",
-				text1: "Server name and connection link are required",
+				text1: t("edit_servers_invalid"),
 			});
 			return;
 		}

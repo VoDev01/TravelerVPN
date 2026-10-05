@@ -66,7 +66,7 @@ export default function AddServers() {
 			.catch((e) => {
 				Toast.show({
 					type: "error",
-					text1: "Invalid connection link",
+					text1: t("add_server_invalid_link"),
 					text2: e.message,
 				});
 				console.error(e);
@@ -81,8 +81,8 @@ export default function AddServers() {
 				if (!responseObj.success) {
 					Toast.show({
 						type: "error",
-						text1: "Invalid connection link",
-						text2: "Ensure that connection link has a valid syntax",
+						text1: t("add_server_invalid_link"),
+						text2: t("add_server_invalid_link_msg"),
 					});
 					console.warn(responseObj.error);
 				}
@@ -101,7 +101,7 @@ export default function AddServers() {
 						}).then(() => {
 							Toast.show({
 								type: "success",
-								text1: "Successfully added new server",
+								text1: t("add_server_success"),
 							});
 							setServerSubmit(false);
 						});
@@ -109,7 +109,7 @@ export default function AddServers() {
 					.catch((e) => {
 						Toast.show({
 							type: "error",
-							text1: "Unable to add this server",
+							text1: t("add_server_error"),
 						});
 						console.error(e);
 					});
@@ -191,15 +191,15 @@ export default function AddServers() {
 					if (connectionLink.length === 0) {
 						Toast.show({
 							type: "error",
-							text1: "Invalid server data",
-							text2: "Connection link cant be empty",
+							text1: t("add_server_invalid_link"),
+							text2: t("add_server_invalid_link_empty_msg"),
 						});
 						return;
 					} else if (remark.length <= 3) {
 						Toast.show({
 							type: "error",
-							text1: "Invalid server data",
-							text2: "Remark cant be empty or less than 3 characters",
+							text1: t("add_server_invalid_server"),
+							text2: t("add_server_name_empty_or_less"),
 						});
 						return;
 					} /*else if (country === null) {

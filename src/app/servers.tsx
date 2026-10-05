@@ -1,6 +1,7 @@
 import CancelIcon from "@/assets/images/at-icons_cross.svg";
 import DeleteIcon from "@/assets/images/bi_trash-fill.svg";
 import EditIcon from "@/assets/images/bxs_pencil.svg";
+import VpnConsentModal from "@/components/ConsentScreen";
 import { Loader } from "@/components/Loader";
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
@@ -184,7 +185,7 @@ function ServersScreenContent({
 				batchResponse = await pingBatch({
 					configs: configsPayload,
 					timeout: 5,
-					url: "https://cp.cloudflare.com/",
+					url: "https://dl.google.com/",
 					locationUrl: undefined,
 				});
 			} catch (e) {
@@ -196,6 +197,8 @@ function ServersScreenContent({
 			for (let j = 0; j < batchItems.length; j++) {
 				const responseItem = batchResponse?.results?.[j];
 				if (!responseItem) continue;
+				if (!responseItem.success)
+					console.warn(`Server ${j} not responding: ${responseItem.error}`);
 				applyMetric(batchItems[j].id, {
 					latencyMs: responseItem.delay ?? 1000n,
 					status: responseItem.success ? "success" : "timeout",
@@ -386,6 +389,7 @@ export default function ServersScreen() {
 
 	const [selectedServer, setSelectedServer] = useState<number>();
 	const [deleteMode, setDeleteMode] = useState(false);
+	const [editMode, setEditMode] = useState(false);
 	const [selectedForDeletion, setSelectedForDeletion] = useState<Set<number>>(
 		new Set(),
 	);
@@ -406,19 +410,58 @@ export default function ServersScreen() {
 	const paddingTop = headerHeight + 16;
 	const paddingBottom = insets.bottom;
 
+	const [hasConsent, setHasConsent] = useState(false);
+	const [isModalVisible, setIsModalVisible] = useState(false);
+
+	const handleAcceptConsent = () => {
+		setHasConsent(true);
+		setIsModalVisible(false);
+
+		executeConnection();
+	};
+
+	const executeConnection = () => {
+		if (!selectedServer) {
+			console.error("No server selected");
+			return;
+		}
+		// Navigate to the status screen and tell it which server to bind.
+		// The index plays the flight animation first, then starts the VPN
+		// service when the plane lands (connectNonce forces a re-bind even
+		// when reconnecting to the same server).
+		router.navigate({
+			pathname: "/",
+			params: {
+				selectedServerId: `${selectedServer}`,
+				connectNonce: `${Date.now()}`,
+			},
+		} as Href);
+	};
+
+	const handleConnectPress = () => {
+		if (!hasConsent) {
+			setIsModalVisible(true);
+			return;
+		}
+
+		executeConnection();
+	};
+
 	const toggleDeleteSelection = (id: number) => {
 		setSelectedForDeletion((current) => {
 			const next = new Set(current);
 			if (next.has(id)) next.delete(id);
 			else next.add(id);
+			console.log(next);
 			return next;
 		});
 	};
 
 	const editSelectedServer = async () => {
+		setEditMode(!editMode);
 		Toast.show({
 			type: "info",
-			text2: "Select a user-defined server to update",
+			text2: t("edit_servers_remind"),
 		});
 	};
 
@@ -428,10 +471,12 @@ export default function ServersScreen() {
 			setDeleteMode(true);
 			return;
 		}
+		console.log(selectedForDeletion);
 		if (selectedForDeletion.size === 0) {
 			Toast.show({
 				type: "error",
-				text1: "Select at least one user-defined server",
+				text1: t("delete_servers_not_selected"),
+				text2: t("delete_servers_not_selected_msg"),
 			});
 			return;
 		}
@@ -476,7 +521,7 @@ export default function ServersScreen() {
 		if (!selectedServer) return;
 		getServerById(selectedServer)
 			.then((server) => {
-				if (server?.type !== "user_defined") {
+				if (server?.type !== "user_defined" || !editMode) {
 					return;
 				}
 				router.push({
@@ -504,27 +549,17 @@ export default function ServersScreen() {
 				setIsUserServersEmpty={setIsUserServersEmpty}
 			/>
 
+			<VpnConsentModal
+				isVisible={isModalVisible}
+				onAccept={handleAcceptConsent}
+				onClose={() => setIsModalVisible(false)}
+			/>
+
 			{!deleteMode && (
 				<View style={styles.buttonContainer}>
 					<TouchableOpacity
 						style={[styles.button, styles.submitButton]}
-						onPress={() => {
-							if (!selectedServer) {
-								console.error("No server selected");
-								return;
-							}
-							// Navigate to the status screen and tell it which server to bind.
-							// The index plays the flight animation first, then starts the VPN
-							// service when the plane lands (connectNonce forces a re-bind even
-							// when reconnecting to the same server).
-							router.navigate({
-								pathname: "/",
-								params: {
-									selectedServerId: `${selectedServer}`,
-									connectNonce: `${Date.now()}`,
-								},
-							} as Href);
-						}}>
+						onPress={handleConnectPress}>
 						<Text style={styles.buttonText}>{t("connect")}</Text>
 					</TouchableOpacity>
 				</View>

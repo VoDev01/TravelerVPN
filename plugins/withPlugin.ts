@@ -1,5 +1,4 @@
 import { ConfigPlugin } from "expo/config-plugins";
-import "tsx/cjs";
 import withAndroidAbiFilters from "./withAndroidAbiFilters";
 import withAndroidPlugin from "./withAndroidPlugin";
 

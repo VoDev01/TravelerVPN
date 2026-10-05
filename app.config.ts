@@ -1,19 +1,22 @@
 import { ConfigContext, ExpoConfig } from "expo/config";
+import "tsx/cjs";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
 	...config,
 
 	name: "TravelerVPN",
 	slug: "TravelerVPN",
-	version: "1.0.0",
+	version: "1.1.0",
 	orientation: "portrait",
 	icon: "./assets/images/app_icon.png",
 	scheme: "travelervpn",
 	userInterfaceStyle: "automatic",
+	owner: "vodev",
 
 	ios: {
 		...config.ios,
 		bundleIdentifier: "com.traveler.vpn",
+		icon: "./assets/images/app_icon.png",
 	},
 
 	android: {
@@ -39,8 +42,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 	extra: {
 		backendBaseUrl: "https://traveler-vpn.com",
 		backendWsUrl: "https://traveler-vpn.com/ws",
+		privacyUrl: "https://traveler-vpn.com/privacy/",
+		termsUrl: "https://traveler-vpn.com/privacy/",
 		subscriptionExpiryReminderDays: 2, // Days before expiry to fire the local reminder.
 		testUserGeoIp: null, // Change to null or delete on release!
+		eas: {
+			projectId: "93b52c4c-aab5-4020-85e9-f916a32f0c7d",
+		},
 	},
 
 	plugins: [
@@ -66,6 +74,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 					usesCleartextTraffic: false, // Change to false or delete on release!
 					enableMinifyInReleaseBuilds: true,
 					enableShrinkResourcesInReleaseBuilds: true,
+					extraProguardRules:
+						"-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,MethodParameters,SourceFile,LineNumberTable\n\n# 1. Protect all JNI interactions (Critical for expo-gl and expo-libxray)\n-keepclasseswithmembernames,includedescriptorclasses class * {\n    native <methods>;\n}\n\n# 2. Complete exclusion for Expo core, its Views, and Modules\n-keep class expo.modules.** { *; }\n-keep class * extends expo.modules.kotlin.modules.Module { *; }\n-keep class * extends expo.modules.kotlin.views.ExpoView { *; }\n-keepclassmembers class * extends expo.modules.kotlin.modules.Module { <init>(...); }\n-keepclassmembers class * extends expo.modules.kotlin.views.ExpoView { <init>(...); }\n\n# 3. Specific rules for OpenGL / expo-gl\n-keep class com.expo.modules.gl.** { *; }\n-keep class expo.modules.gl.** { *; }\n-keepclassmembers class expo.modules.gl.GLView { *; }\n\n# 4. Protect Reanimated and Worklets (used in 3D animations)\n-keep class com.swmansion.reanimated.** { *; }\n-keep class com.swmansion.worklets.** { *; }\n\n# 5. Protect SQLite (required for Drizzle ORM)\n-keep class io.requery.android.database.** { *; }",
 				},
 			},
 		],

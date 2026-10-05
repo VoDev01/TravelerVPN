@@ -19,6 +19,9 @@ const fallbackResources = {
 			connecting: "Connecting...",
 			disconnect: "Disconnect",
 			save: "Save",
+			save_changes: "Save changes",
+			saving: "Saving...",
+			continue: "Continue",
 
 			loader_fonts: "Loading fonts...",
 			loader_servers: "Loading servers...",
@@ -94,6 +97,21 @@ const fallbackResources = {
 			add_servers_name_label: "Name of your server",
 			add_servers_link_label: "Paste connection link",
 
+			add_server_invalid_link: "Connection link invalid",
+			add_server_invalid_server: "Server invalid",
+			add_server_name_empty_or_less:
+				"Server name can't be empty or less than 3 symbols",
+			add_server_invalid_link_msg: "Ensure that connection link is valid.",
+			add_server_invalid_link_empty_msg: "Connection link is empty.",
+			add_server_success: "Server added.",
+			add_server_error: "Unable to add server. Please, try again...",
+
+			edit_servers_invalid: "Server name and connection link are required.",
+			edit_servers_remind: "Select servers to edit.",
+
+			delete_servers_not_selected: "Unable to delete",
+			delete_servers_not_selected_msg: "Select at least one server to delete.",
+
 			toast_subscription_denied_text1: "Denied access to servers",
 			toast_subscription_denied_text2:
 				"Start using TravelerVPN servers by buying a subcription",
@@ -134,6 +152,14 @@ const fallbackResources = {
 			toast_telegram_required_text1: "Telegram ID required",
 			toast_telegram_required_text2:
 				"Please add your Telegram ID in Settings before making a payment.",
+
+			consent_screen_title: "Protection of your connection",
+			consent_screen_description:
+				"To enable secure VPN-connection you need to agree to the following conditions.",
+			consent_screen_accept_label: "I accept",
+			consent_screen_aggree_label: "I aggree with",
+			consent_screen_terms_label: "Terms of use",
+			consent_screen_privacy_label: "Privacy policy",
 		},
 	},
 	ru: {
@@ -151,6 +177,9 @@ const fallbackResources = {
 			connecting: "Подключение...",
 			disconnect: "Отключиться",
 			save: "Сохранить",
+			save_changes: "Сохранить изменения",
+			saving: "Сохранить...",
+			continue: "Продолжить",
 
 			loader_fonts: "Загрузка шрифтов...",
 			loader_servers: "Загрузка серверов...",
@@ -226,6 +255,22 @@ const fallbackResources = {
 			add_servers_name_label: "Название сервера",
 			add_servers_link_label: "Вставьте строку подключения",
 
+			add_server_invalid_link: "Ссылка подключения невалидна",
+			add_server_invalid_server: "Сервер невалиден",
+			add_server_name_empty_or_less:
+				"Название сервера не может быть пустым или меньше 3 символов",
+			add_server_invalid_link_msg: "Убедитесь, что ссылка подключения валидна.",
+			add_server_invalid_link_empty_msg: "Ссылка не должна быть пустой",
+			add_server_success: "Сервер добавлен.",
+			add_server_error: "Не удалось добавить сервер. Повторите попытку...",
+
+			edit_servers_invalid: "Имя сервера и ссылка подключения обязательны.",
+			edit_servers_remind: "Выберите сервер, который нужно изменить.",
+
+			delete_servers_not_selected: "Не получилось удалить",
+			delete_servers_not_selected_msg:
+				"Выберите хотя-бы один сервер, который нужно удалить.",
+
 			toast_subscription_denied_text1: "Сервера недоступны",
 			toast_subscription_denied_text2:
 				"Начните использовать сервера TravelerVPN, купив подписку",
@@ -266,6 +311,14 @@ const fallbackResources = {
 			toast_telegram_required_text1: "Необходим Telegram ID",
 			toast_telegram_required_text2:
 				"Добавьте ваш Telegram ID в настройках перед оплатой.",
+
+			consent_screen_title: "Защита вашего соединения",
+			consent_screen_description:
+				"Для включения безопасного VPN-соединения необходимо ознакомиться и согласиться с условиями сервиса.",
+			consent_screen_accept_label: "Я принимаю",
+			consent_screen_aggree_label: "Я согласен с",
+			consent_screen_terms_label: "Условия использования",
+			consent_screen_privacy_label: "Политикой конфиденциальности",
 		},
 	},
 };
