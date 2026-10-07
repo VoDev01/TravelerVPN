@@ -6,7 +6,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
 	name: "TravelerVPN",
 	slug: "TravelerVPN",
-	version: "1.1.0",
+	version: "1.1.1",
 	orientation: "portrait",
 	icon: "./assets/images/app_icon.png",
 	scheme: "travelervpn",
