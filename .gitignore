@@ -234,3 +234,4 @@ __pycache__/
 
 i18next.config.ts
 *.env
+yarn.lock

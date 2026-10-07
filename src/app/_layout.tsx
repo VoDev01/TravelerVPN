@@ -68,7 +68,7 @@ function LayoutContent({ dbLoaded }: { dbLoaded: boolean }) {
 
 	useEffect(() => {
 		if (error || (loaded && dbLoaded)) {
-			SplashScreen.hide();
+			SplashScreen.hideAsync();
 		}
 	}, [error, loaded, dbLoaded]);
 

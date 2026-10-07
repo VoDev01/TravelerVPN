@@ -77,7 +77,6 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-react-native": "^5.0.0",
 		"i18next-cli": "^1.65.0",
-		"postinstall": "patch-package",
 		"react-native-svg-transformer": "^1.5.3",
 		"tsx": "^4.23.15",
 		"typescript": "~6.0.3"

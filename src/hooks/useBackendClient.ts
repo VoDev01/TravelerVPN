@@ -207,11 +207,10 @@ export const useBackendClient = () => {
 			return (await makeRequest(
 				"/api/ip/user/geo",
 				"POST",
-				undefined,
+				{ userId },
 				Constants.expoConfig?.extra?.testUserGeoIp
 					? { "X-Forwarded-For": testIpString }
 					: undefined,
-				{ userId },
 			)) as VpnResponse;
 		} catch (error) {
 			console.error("Error attaching inbounds:", error);

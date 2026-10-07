@@ -3,7 +3,14 @@ import { GeoLocation, useBackendClient } from "@/hooks/useBackendClient";
 import { useServers } from "@/hooks/useServers";
 import { OrbitControls, useProgress } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	RefObject,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -121,13 +128,6 @@ export default function InteractiveServerMap() {
 		setFlightInProgress(flight !== null);
 	}, [flight, setFlightInProgress]);
 
-	useEffect(
-		() => () => {
-			setFlightInProgress(false);
-		},
-		[setFlightInProgress],
-	);
-
 	const { getUserGeoFromIp } = useBackendClient();
 	const { fetchServers } = useServers();
 
@@ -169,7 +169,7 @@ export default function InteractiveServerMap() {
 			});
 		refreshServers();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [refreshServers]);
+	}, []);
 
 	// Re-sync markers when the globe becomes visible (e.g. returning to the index
 	// tab after adding/removing servers elsewhere). R3F re-renders the marker
@@ -188,8 +188,12 @@ export default function InteractiveServerMap() {
 			setFlight(null);
 			return;
 		}
-		if (connectingServerId === lastFlightIdRef.current) return;
-		if (!userGeo) return;
+		if (connectingServerId === lastFlightIdRef.current) {
+			return;
+		}
+		if (!userGeo) {
+			return;
+		}
 
 		const endpoint = serversById.get(connectingServerId);
 		if (!endpoint) return;

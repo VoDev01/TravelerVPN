@@ -12,6 +12,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 	scheme: "travelervpn",
 	userInterfaceStyle: "automatic",
 	owner: "vodev",
+	backgroundColor: "#000000",
 
 	ios: {
 		...config.ios,
@@ -40,12 +41,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 	},
 
 	extra: {
-		backendBaseUrl: "https://traveler-vpn.com",
-		backendWsUrl: "https://traveler-vpn.com/ws",
+		backendBaseUrl: "http://192.168.0.143",
+		backendWsUrl: "http://192.168.0.143/ws",
 		privacyUrl: "https://traveler-vpn.com/privacy/",
-		termsUrl: "https://traveler-vpn.com/privacy/",
+		termsUrl: "https://traveler-vpn.com/terms/",
 		subscriptionExpiryReminderDays: 2, // Days before expiry to fire the local reminder.
-		testUserGeoIp: null, // Change to null or delete on release!
+		testUserGeoIp: "145.217.210.77", // Change to null or delete on release!
 		eas: {
 			projectId: "93b52c4c-aab5-4020-85e9-f916a32f0c7d",
 		},
@@ -71,7 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 			"expo-build-properties",
 			{
 				android: {
-					usesCleartextTraffic: false, // Change to false or delete on release!
+					usesCleartextTraffic: true, // Change to false or delete on release!
 					enableMinifyInReleaseBuilds: true,
 					enableShrinkResourcesInReleaseBuilds: true,
 					extraProguardRules:

@@ -20,5 +20,20 @@ module.exports = (() => {
 			.concat(["svg", "sql", "cjs", "mjs", "json"]),
 	};
 
+	config.server = {
+		...config.server,
+		enhanceMiddleware: (middleware) => {
+			return (req, res, next) => {
+				if (
+					req.url.startsWith("/inspector") &&
+					(!req.headers.origin || req.headers.origin === "undefined")
+				) {
+					req.headers.origin = "http://localhost:8081";
+				}
+				return middleware(req, res, next);
+			};
+		},
+	};
+
 	return config;
 })();
