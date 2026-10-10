@@ -9,7 +9,6 @@ import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
 import { MetricsServerData } from "@/hooks/useWebSocketClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { PingBatchItem } from "expo-libxray";
 import {
 	Href,
 	useLocalSearchParams,
@@ -28,6 +27,7 @@ import {
 	View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import TcpSocket from "react-native-tcp-socket";
 import Toast from "react-native-toast-message";
 import { ServerEntity } from "../../db/schema/servers";
 
@@ -163,43 +163,90 @@ function ServersScreenContent({
 		runId: number,
 	) => {
 		const BATCH_SIZE = 5;
+		const TIMEOUT_MS = 4000;
 
 		for (let i = 0; i < flatServers.length; i += BATCH_SIZE) {
 			if (pingRunIdRef.current !== runId) return;
 			const batchItems = flatServers.slice(i, i + BATCH_SIZE);
 
-			const configsPayload: PingBatchItem[] = [];
-			for (const server of batchItems) {
-				try {
-					const xrayJson = await buildPingConfig(server.connectionLink);
-					configsPayload.push({ xrayJson, outboundTag: undefined });
-				} catch (e) {
-					console.error("Failed to build Xray config for ping:", e);
-					configsPayload.push({ xrayJson: "", outboundTag: undefined });
-				}
-			}
+			const batchPromises = batchItems.map(async (server) => {
+				let client: any = null;
+				let timer: ReturnType<typeof setTimeout> | null = null;
 
-			let batchResponse: Awaited<ReturnType<typeof pingBatch>> | undefined;
-			try {
-				batchResponse = await pingBatch({
-					configs: configsPayload,
-					timeout: 5,
-					url: "https://dl.google.com/",
-					locationUrl: undefined,
+				return new Promise<{
+					success: boolean;
+					delay: number;
+					error: string | null;
+				}>((resolve) => {
+					async function runTcpTest() {
+						try {
+							const xrayJson = await buildPingConfig(server.connectionLink);
+							const config = JSON.parse(xrayJson);
+							const outbound = config?.outbounds?.[0];
+
+							let host = "";
+							let port = 0;
+
+							if (outbound?.settings) {
+								host = outbound.settings.address;
+								port = parseInt(outbound.settings.port, 10);
+							}
+
+							if (!host || !port) {
+								throw new Error("Unable to extract host or port");
+							}
+
+							const startTime = Date.now();
+
+							client = TcpSocket.createConnection({ host, port }, () => {
+								const delay = Date.now() - startTime;
+								if (timer) clearTimeout(timer);
+								if (client) client.destroy();
+								resolve({ success: true, delay, error: null });
+							});
+
+							timer = setTimeout(() => {
+								if (client) client.destroy();
+								resolve({ success: false, delay: 1000, error: "timeout" });
+							}, TIMEOUT_MS);
+
+							client.on("error", (err: any) => {
+								if (timer) clearTimeout(timer);
+								if (client) client.destroy();
+								resolve({
+									success: false,
+									delay: 1000,
+									error: err.message || "error",
+								});
+							});
+						} catch (e: any) {
+							resolve({
+								success: false,
+								delay: 1000,
+								error: e.message || "config_error",
+							});
+						}
+					}
+
+					runTcpTest();
 				});
-			} catch (e) {
-				console.error("pingBatch failed:", e);
-				continue;
-			}
+			});
+
+			const batchResults = await Promise.all(batchPromises);
+
 			if (pingRunIdRef.current !== runId) return;
 
 			for (let j = 0; j < batchItems.length; j++) {
-				const responseItem = batchResponse?.results?.[j];
-				if (!responseItem) continue;
-				if (!responseItem.success)
-					console.warn(`Server ${j} not responding: ${responseItem.error}`);
+				const responseItem = batchResults[j];
+
+				if (!responseItem.success) {
+					console.warn(
+						`Server ${batchItems[j].id} not responding: ${responseItem.error}`,
+					);
+				}
+
 				applyMetric(batchItems[j].id, {
-					latencyMs: responseItem.delay ?? 1000n,
+					latencyMs: BigInt(responseItem.delay),
 					status: responseItem.success ? "success" : "timeout",
 				});
 			}
@@ -321,7 +368,7 @@ function ServersScreenContent({
 								: item.remark}
 						</Text>
 						<Text style={[styles.serverInfoText, { flexShrink: 0 }]}>
-							{!item.metrics || item.metrics.latencyMs > 1000
+							{!item.metrics || item.metrics.latencyMs > 1000n
 								? "? ms"
 								: `${item.metrics.latencyMs} ms`}
 						</Text>
