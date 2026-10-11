@@ -69,7 +69,7 @@ function ServersScreenContent({
 	setIsUserServersEmpty,
 }: ServersScreenContentProps) {
 	const [servers, setServers] = useState<MetricsServerSection[]>([]);
-	const { pingBatch, buildPingConfig, getXrayState } = useLibxray();
+	const { buildPingConfig, getXrayState } = useLibxray();
 
 	// Full-screen loader covers only the first server fetch, never the pings.
 	const [booting, setBooting] = useState(true);
@@ -330,7 +330,7 @@ function ServersScreenContent({
 	useEffect(() => {
 		loadServers("mount");
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [booting]);
 
 	const renderServer = ({ item }: { item: MetricsServerData }) => {
 		const isDeleteSelected = selectedForDeletion.has(item.id);

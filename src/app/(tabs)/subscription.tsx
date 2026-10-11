@@ -278,7 +278,7 @@ export default function SubscriptionScreen() {
 						</Text>
 					)}
 				</View>
-				{isBusiness && expiryLabel && (
+				{expiryLabel && (
 					<View style={styles.statusRow}>
 						<Text style={styles.statusLabel}>
 							{t("subscription_expires_on")}
