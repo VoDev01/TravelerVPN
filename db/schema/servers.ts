@@ -11,7 +11,7 @@ export const serversTable = sqliteTable("servers", {
 	latitude: integer().notNull().default(0),
 	longitude: integer().notNull().default(0),
 	connectionLink: text().notNull(),
-	inboundId: integer("inbound_id"),
+	inboundId: integer("inbound_id").unique(),
 	type: text("type", { enum: ["traveler_vpn", "user_defined"] }).default(
 		"traveler_vpn",
 	),

@@ -18,7 +18,23 @@ export const ServerDAO = {
 	},
 
 	async add(server: NewServer) {
-		await db.insert(serversTable).values(server);
+		await db
+			.insert(serversTable)
+			.values(server)
+			.onConflictDoUpdate({
+				target: serversTable.inboundId,
+				set: {
+					address: server.address,
+					remark: server.remark,
+					countryTag: server.countryTag,
+					country: server.country,
+					city: server.city,
+					latitude: server.latitude,
+					longitude: server.longitude,
+					connectionLink: server.connectionLink,
+					type: server.type,
+				},
+			});
 	},
 
 	async delete(server: ServerEntity) {
@@ -30,9 +46,7 @@ export const ServerDAO = {
 	},
 
 	async deleteManaged() {
-		await db
-			.delete(serversTable)
-			.where(eq(serversTable.type, "traveler_vpn"));
+		await db.delete(serversTable).where(eq(serversTable.type, "traveler_vpn"));
 	},
 
 	async deleteUserDefined(ids: number[]) {

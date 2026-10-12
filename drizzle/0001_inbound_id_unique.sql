@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `servers_inbound_id_unique` ON `servers` (`inbound_id`);
