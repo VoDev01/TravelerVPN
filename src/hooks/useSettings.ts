@@ -39,7 +39,7 @@ export const useSettings = () => {
 					setSettings(JSON.parse(savedSettings));
 				}
 			} catch (e) {
-				console.log(`Error loading settings: ${e}`);
+				console.error(`Error loading settings: ${e}`);
 			} finally {
 				setIsLoading(false);
 			}
@@ -52,14 +52,18 @@ export const useSettings = () => {
 		key: K,
 		value: SettingsState[K],
 	) => {
+		if (isLoading) return;
+
 		try {
-			const updatedSettings = { ...settings, [key]: value };
+			setSettings((prevSettings) => {
+				const updatedSettings = { ...prevSettings, [key]: value };
 
-			setSettings(updatedSettings);
+				AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
 
-			AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
+				return updatedSettings;
+			});
 		} catch (e) {
-			console.log(`Error saving setting [${key}]: ${e}`);
+			console.error(`Error saving setting [${key}]: ${e}`);
 		}
 	};
 

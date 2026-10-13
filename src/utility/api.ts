@@ -25,7 +25,15 @@ const makeRequest = async (
 	jsonBody?: unknown,
 ) => {
 	try {
-		const urlEncoded = new URLSearchParams(data);
+		const cleanData = data
+			? Object.fromEntries(
+					Object.entries(data).filter(
+						([_, value]) => value !== undefined && value !== null,
+					),
+				)
+			: undefined;
+
+		const urlEncoded = new URLSearchParams(cleanData);
 
 		const queryString = urlEncoded.toString();
 		const getUrl = queryString
@@ -46,7 +54,7 @@ const makeRequest = async (
 					? undefined
 					: hasJsonBody
 						? JSON.stringify(jsonBody)
-						: urlEncoded,
+						: undefined,
 		};
 
 		const response = await fetch(getUrl, options);

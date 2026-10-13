@@ -146,6 +146,8 @@ export default function MainScreen() {
 				const running = await getXrayState();
 				if (!running) {
 					setConnectionState("DISCONNECTED");
+				} else {
+					setConnectionState("CONNECTED");
 				}
 			} catch (e) {
 				console.error("Unable to read Xray state:", e);

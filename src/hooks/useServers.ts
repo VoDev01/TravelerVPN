@@ -34,30 +34,28 @@ export function useServers() {
 					throw new Error(`Server error: ${JSON.stringify(response)}`);
 				}
 
-				await Promise.all(
-					(response.response as any[]).map(async (r) => {
-						try {
-							const linkJson = await convertShareLinksToJson(r.connectionLink);
-							const linkObj = JSON.parse(linkJson);
-							const address = linkObj.data.outbounds[0].settings.address;
-							const geo = await getGeoFromIp(address);
-							await ServerRepository.add({
-								connectionLink: r.connectionLink,
-								remark: r.inbound.remark,
-								countryTag: getCode(geo?.response.country) ?? "US",
-								inboundId: r.inbound.id,
-								address,
-								country: geo?.response.country,
-								city: geo?.response.city,
-								latitude: geo?.response.latitude,
-								longitude: geo?.response.longitude,
-								type: "traveler_vpn",
-							});
-						} catch (error) {
-							console.error(error);
-						}
-					}),
-				);
+				(response.response as any[]).map(async (r) => {
+					try {
+						const linkJson = await convertShareLinksToJson(r.connectionLink);
+						const linkObj = JSON.parse(linkJson);
+						const address = linkObj.data.outbounds[0].settings.address;
+						const geo = await getGeoFromIp(address);
+						await ServerRepository.add({
+							connectionLink: r.connectionLink,
+							remark: r.inbound.remark,
+							countryTag: getCode(geo?.response.country) ?? "US",
+							inboundId: r.inbound.id,
+							address,
+							country: geo?.response.country,
+							city: geo?.response.city,
+							latitude: geo?.response.latitude,
+							longitude: geo?.response.longitude,
+							type: "traveler_vpn",
+						});
+					} catch (error) {
+						console.error(error);
+					}
+				});
 
 				return await ServerRepository.getAll();
 			}

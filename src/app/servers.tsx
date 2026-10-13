@@ -1,12 +1,14 @@
 import CancelIcon from "@/assets/images/at-icons_cross.svg";
 import DeleteIcon from "@/assets/images/bi_trash-fill.svg";
 import EditIcon from "@/assets/images/bxs_pencil.svg";
+import VpnConsentModal from "@/components/ConsentScreen";
 import { Loader } from "@/components/Loader";
 import { CustomTheme } from "@/constants/theme";
 import { useAppTheme } from "@/context/ThemeContext";
 import { ServerMetrics } from "@/hooks/useBackendClient";
 import { useLibxray } from "@/hooks/useLibxray";
 import { useServers } from "@/hooks/useServers";
+import { useSettings } from "@/hooks/useSettings";
 import { MetricsServerData } from "@/hooks/useWebSocketClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -330,7 +332,7 @@ function ServersScreenContent({
 	useEffect(() => {
 		loadServers("mount");
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [booting]);
+	}, []);
 
 	const renderServer = ({ item }: { item: MetricsServerData }) => {
 		const isDeleteSelected = selectedForDeletion.has(item.id);
@@ -456,10 +458,7 @@ export default function ServersScreen() {
 	const paddingTop = headerHeight + 16;
 	const paddingBottom = insets.bottom;
 
-	/* Uncomment consent when submitting to the store
-
-	const { settings, updateSetting } = useSettings();
-	const [hasConsent, setHasConsent] = useState(false);
+	const { settings, isLoading, updateSetting } = useSettings();
 	const [isModalVisible, setIsModalVisible] = useState(false);
 
 	const handleAcceptConsent = () => {
@@ -470,13 +469,13 @@ export default function ServersScreen() {
 	};
 
 	const handleConnectPress = () => {
-		if (!hasConsent) {
+		if (!settings.consent) {
 			setIsModalVisible(true);
 			return;
 		}
 
 		executeConnection();
-	};*/
+	};
 
 	const executeConnection = () => {
 		if (!selectedServer) {
@@ -581,9 +580,9 @@ export default function ServersScreen() {
 			.catch((e) => console.error(e));
 	}, [selectedServer]);
 
-	/*useEffect(() => {
-		setHasConsent(settings.consent);
-	}, [settings]);*/
+	if (isLoading) {
+		return <Loader loaderText={t("loader_app")} />;
+	}
 
 	return (
 		<View style={[styles.container, { paddingTop, paddingBottom }]}>
@@ -602,17 +601,19 @@ export default function ServersScreen() {
 				setIsUserServersEmpty={setIsUserServersEmpty}
 			/>
 
-			{/*<VpnConsentModal
-				isVisible={isModalVisible}
-				onAccept={handleAcceptConsent}
-				onClose={() => setIsModalVisible(false)}
-			/>*/}
+			{
+				<VpnConsentModal
+					isVisible={isModalVisible}
+					onAccept={handleAcceptConsent}
+					onClose={() => setIsModalVisible(false)}
+				/>
+			}
 
 			{!deleteMode && (
 				<View style={styles.buttonContainer}>
 					<TouchableOpacity
 						style={[styles.button, styles.submitButton]}
-						onPress={/* handleConnectPress */ executeConnection}>
+						onPress={handleConnectPress}>
 						<Text style={styles.buttonText}>{t("connect")}</Text>
 					</TouchableOpacity>
 				</View>

@@ -3,6 +3,7 @@ import LeftArrow from "@/assets/images/line-md_arrow-left.svg";
 import { CanvasErrorBoundary } from "@/components/CanvasErrorBoundary";
 import { toastConfig } from "@/components/config/toastConfig";
 import InteractiveServerMap from "@/components/InteractiveServerMap";
+import { Loader } from "@/components/Loader";
 import { ModelProvider } from "@/context/ModelContext";
 import { ServerMapProvider } from "@/context/ServerMapContext";
 import {
@@ -19,14 +20,7 @@ import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import {
-	ActivityIndicator,
-	LogBox,
-	StatusBar,
-	Text,
-	TouchableOpacity,
-	View,
-} from "react-native";
+import { LogBox, StatusBar, Text, TouchableOpacity, View } from "react-native";
 import {
 	initialWindowMetrics,
 	SafeAreaProvider,
@@ -41,7 +35,7 @@ LogBox.ignoreLogs([
 	"SafeAreaView has been deprecated and will be removed in a future release",
 ]);
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync();
 
 function LayoutContent({ dbLoaded }: { dbLoaded: boolean }) {
 	const theme = useAppTheme();
@@ -93,7 +87,30 @@ function LayoutContent({ dbLoaded }: { dbLoaded: boolean }) {
 	}
 
 	if (!loaded || !dbLoaded) {
-		return null;
+		return (
+			<View
+				style={{
+					flex: 1,
+					justifyContent: "center",
+					alignItems: "center",
+					gap: 24,
+					backgroundColor: theme.colors.primary,
+				}}>
+				<View
+					style={{
+						flexDirection: "row",
+						justifyContent: "center",
+					}}>
+					<Text style={{ fontSize: 32, color: theme.colors.text }}>
+						Traveler
+					</Text>
+					<Text style={{ fontSize: 32, color: theme.colors.important2 }}>
+						/VPN
+					</Text>
+				</View>
+				<Loader loaderText={t("loader_app")} />
+			</View>
+		);
 	}
 
 	return (
@@ -218,24 +235,6 @@ function LayoutContent({ dbLoaded }: { dbLoaded: boolean }) {
 				bottomOffset={safeBottomOffset}
 			/>
 		</>
-	);
-}
-
-function LoadingDatabase() {
-	const theme = useAppTheme();
-
-	return (
-		<View
-			style={{
-				flex: 1,
-				justifyContent: "center",
-				alignItems: "center",
-				padding: 12,
-				backgroundColor: theme.colors.primary,
-			}}>
-			<Text style={{ fontSize: 20, marginBottom: 10 }}>Loading Database</Text>
-			<ActivityIndicator size="large" />
-		</View>
 	);
 }
 

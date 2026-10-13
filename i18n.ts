@@ -23,10 +23,11 @@ const fallbackResources = {
 			saving: "Saving...",
 			continue: "Continue",
 
+			loader_app: "Loading app...",
 			loader_fonts: "Loading fonts...",
 			loader_servers: "Loading servers...",
 			loader_map: "Loading map...",
-			loader_assets: "Loading 3d assets",
+			loader_assets: "Loading 3d assets...",
 
 			settings_title: "Settings",
 			section_ui: "UI",
@@ -181,6 +182,7 @@ const fallbackResources = {
 			saving: "Сохранить...",
 			continue: "Продолжить",
 
+			loader_app: "Загрузка приложения...",
 			loader_fonts: "Загрузка шрифтов...",
 			loader_servers: "Загрузка серверов...",
 			loader_map: "Загрузка карты...",

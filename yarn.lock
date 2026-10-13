@@ -3889,9 +3889,9 @@ expo-keep-awake@~57.0.2:
   integrity sha512-GqgH746wtJImmsbyHmCQoi7cOslKuWQBbJHXr53S35Bpf5UvxCAztvnitUEd7D0QvFN2rvkOhylbZpgZZfBLlQ==
 
 expo-libxray@^1.3.1:
-  version "1.4.0"
-  resolved "https://registry.npmjs.org/expo-libxray/-/expo-libxray-1.4.0.tgz"
-  integrity sha512-8MKBgS76qt0vZX7YtXx+OQuyBm29sgKyXt+wTAuMXpBwoid1VzMSRKD0413j/PZI4+UTcuz5oVjRHm8EW3vyyw==
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/expo-libxray/-/expo-libxray-1.4.1.tgz#b81bb1fc41a29ae74d0d63d7c1a1ecbb6f62b8e9"
+  integrity sha512-cyZGzfFn7Zh6qpWFP9SerC0z2js48Vw0FFFNeyz3BAcX0FEKhRMIbXTgTXSsCxEOOsGAOE7neQMSZ8K56tLzgw==
   dependencies:
     lodash "^4.18.1"
 
@@ -5039,7 +5039,7 @@ lodash.toarray@^4.4.0:
 
 lodash@^4.18.1:
   version "4.18.1"
-  resolved "https://registry.npmjs.org/lodash/-/lodash-4.18.1.tgz"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.18.1.tgz#ff2b66c1f6326d59513de2407bf881439812771c"
   integrity sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==
 
 log-symbols@^2.2.0:

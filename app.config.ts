@@ -6,7 +6,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
 	name: "TravelerVPN",
 	slug: "TravelerVPN",
-	version: "1.1.11",
+	version: "1.1.2",
 	orientation: "portrait",
 	icon: "./assets/images/app_icon.png",
 	scheme: "travelervpn",
@@ -41,12 +41,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 	},
 
 	extra: {
-		backendBaseUrl: "http://192.168.0.143",
-		backendWsUrl: "http://192.168.0.143/ws",
+		backendBaseUrl: "https://traveler-vpn.com",
+		backendWsUrl: "https://traveler-vpn.com/ws",
 		privacyUrl: "https://traveler-vpn.com/privacy/",
 		termsUrl: "https://traveler-vpn.com/terms/",
-		subscriptionExpiryReminderDays: 2, // Days before expiry to fire the local reminder.
-		testUserGeoIp: "145.217.210.77", // Change to null or delete on release!
+		subscriptionExpiryReminderDays: 3, // Days before expiry to fire the local reminder.
+		testUserGeoIp: null, // Change to null or delete on release!
 		eas: {
 			projectId: "93b52c4c-aab5-4020-85e9-f916a32f0c7d",
 		},
@@ -72,7 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 			"expo-build-properties",
 			{
 				android: {
-					usesCleartextTraffic: true, // Change to false or delete on release!
+					usesCleartextTraffic: false, // Change to false or delete on release!
 					enableMinifyInReleaseBuilds: true,
 					enableShrinkResourcesInReleaseBuilds: true,
 					extraProguardRules:
